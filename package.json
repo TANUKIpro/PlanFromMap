@@ -1,0 +1,62 @@
+{
+  "name": "semantic-map-platform",
+  "version": "0.1.0",
+  "description": "Semantic Map Platform for HSR - RoboCup@Home DSPL",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=@semantic-map/backend",
+    "dev:frontend": "npm run dev --workspace=@semantic-map/frontend",
+    "dev:ros": "npm run dev --workspace=@semantic-map/ros-bridge",
+    "build": "npm run build:all",
+    "build:all": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "test:unit": "npm run test:unit --workspaces --if-present",
+    "test:integration": "npm run test:integration --workspaces --if-present",
+    "test:e2e": "playwright test",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "setup": "npm install && npm run db:setup && npm run seed:demo",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "db:migrate": "npm run migrate --workspace=@semantic-map/backend",
+    "db:seed": "npm run seed --workspace=@semantic-map/backend",
+    "seed:maps": "npm run seed:maps --workspace=@semantic-map/backend",
+    "seed:catalog": "npm run seed:catalog --workspace=@semantic-map/backend",
+    "seed:demo": "npm run seed:demo --workspace=@semantic-map/backend",
+    "catalog:add": "npm run catalog:add --workspace=@semantic-map/catalog",
+    "map:import": "npm run import --workspace=@semantic-map/core",
+    "clean": "rm -rf node_modules **/node_modules **/dist **/build",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0",
+    "@playwright/test": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

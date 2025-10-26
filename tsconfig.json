@@ -1,0 +1,63 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "composite": true,
+    "removeComments": true,
+    "noEmit": false,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@semantic-map/core": ["packages/core/src"],
+      "@semantic-map/core/*": ["packages/core/src/*"],
+      "@semantic-map/mapql": ["packages/mapql/src"],
+      "@semantic-map/mapql/*": ["packages/mapql/src/*"],
+      "@semantic-map/catalog": ["packages/catalog/src"],
+      "@semantic-map/catalog/*": ["packages/catalog/src/*"],
+      "@semantic-map/shared": ["packages/shared/src"],
+      "@semantic-map/shared/*": ["packages/shared/src/*"]
+    }
+  },
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/core" },
+    { "path": "./packages/mapql" },
+    { "path": "./packages/catalog" },
+    { "path": "./apps/backend" },
+    { "path": "./apps/frontend" },
+    { "path": "./apps/ros-bridge" }
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}
