@@ -24,14 +24,51 @@ RoboCup@Home DSPL向けの意味地図プラットフォーム。HSRが効率的
 
 ## 🚀 クイックスタート
 
-### 1. リポジトリのクローン
+### Pythonでの起動（推奨・最速）
+
+ローカルPCで素早く動作を確認したい場合は、Pythonコマンドで起動できます。
+
+#### 1. リポジトリのクローン
 
 ```bash
 git clone https://github.com/your-org/semantic-map-platform.git
 cd semantic-map-platform
 ```
 
-### 2. 依存関係のインストール
+#### 2. Python依存関係のインストール
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. サーバーの起動
+
+```bash
+python server.py
+```
+
+#### 4. ブラウザでアクセス
+
+```
+http://localhost:5173
+```
+
+✅ これだけで完了！バックエンドAPI(port:3000)とフロントエンド(port:5173)が起動します。
+
+詳細な手順は [QUICKSTART.md](QUICKSTART.md) を参照してください。
+
+---
+
+### Node.jsでの起動（フル機能版）
+
+#### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/your-org/semantic-map-platform.git
+cd semantic-map-platform
+```
+
+#### 2. 依存関係のインストール
 
 ```bash
 # Node.js依存関係
@@ -44,7 +81,7 @@ pip install -r requirements.txt
 npm run setup
 ```
 
-### 3. 開発サーバーの起動
+#### 3. 開発サーバーの起動
 
 ```bash
 # すべてのサービスを起動
@@ -55,7 +92,7 @@ npm run dev:backend   # APIサーバー (http://localhost:3000)
 npm run dev:frontend  # Webアプリ (http://localhost:5173)
 ```
 
-### 4. 初期データのインポート
+#### 4. 初期データのインポート
 
 ```bash
 # サンプル地図データのロード
@@ -69,16 +106,24 @@ npm run seed:catalog
 
 ```
 semantic-map-platform/
+├── server.py            # メインサーバー起動スクリプト（Python）
+├── requirements.txt     # Python依存関係
 ├── apps/
-│   ├── backend/          # Express.js APIサーバー
-│   ├── frontend/         # React/Three.js Webアプリ  
-│   └── ros-bridge/       # ROS統合ブリッジ
+│   ├── backend/         # Flask APIサーバー
+│   │   └── server.py   # バックエンドAPI (port:3000)
+│   ├── frontend/        # Webアプリ
+│   │   ├── server.py   # フロントエンドサーバー (port:5173)
+│   │   └── static/     # 静的ファイル (HTML/CSS/JS)
+│   └── ros-bridge/      # ROS統合ブリッジ
 ├── packages/
 │   ├── core/            # コアロジック
 │   ├── mapql/           # MapQLエンジン
 │   ├── catalog/         # 操作カタログ
 │   └── shared/          # 共有型定義・ユーティリティ
 ├── docs/                # ドキュメント
+├── data/                # データディレクトリ
+│   ├── maps/           # 地図データ
+│   └── catalogs/       # カタログデータ
 ├── config/              # 設定ファイル
 ├── scripts/             # ビルド・デプロイスクリプト
 └── tests/              # E2Eテスト
@@ -93,6 +138,16 @@ semantic-map-platform/
 - [開発者ガイド](docs/DEVELOPMENT.md)
 
 ## 🔧 主要コマンド
+
+### Python版（シンプル・高速）
+
+| コマンド | 説明 |
+|---------|------|
+| `python server.py` | サーバー起動（バックエンド+フロントエンド） |
+| `python apps/backend/server.py` | バックエンドのみ起動 |
+| `python apps/frontend/server.py` | フロントエンドのみ起動 |
+
+### Node.js版（フル機能）
 
 | コマンド | 説明 |
 |---------|------|
