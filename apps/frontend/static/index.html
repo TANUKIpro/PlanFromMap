@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗺️ Semantic Map Platform for HSR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-box p {
+            opacity: 0.9;
+        }
+
+        .operations {
+            display: grid;
+            gap: 15px;
+        }
+
+        .operation-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .operation-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .operation-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .operation-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .operation-details {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .query-section {
+            margin-top: 20px;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .query-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .query-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .query-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 15px;
+            background: #ffe6e6;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #27ae60;
+            padding: 15px;
+            background: #e6f7ed;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ Semantic Map Platform for HSR</h1>
+            <p>RoboCup@Home DSPL 意味地図プラットフォーム</p>
+        </header>
+
+        <!-- 統計情報 -->
+        <div class="card">
+            <h2>📊 システム統計</h2>
+            <div class="stats" id="stats">
+                <div class="loading">統計情報を読み込み中...</div>
+            </div>
+        </div>
+
+        <!-- 操作カタログ -->
+        <div class="card">
+            <h2>🚪 操作カタログ</h2>
+            <div class="operations" id="operations">
+                <div class="loading">操作カタログを読み込み中...</div>
+            </div>
+        </div>
+
+        <!-- MapQLクエリ -->
+        <div class="card">
+            <h2>🔍 MapQLクエリ</h2>
+            <div class="query-section">
+                <input
+                    type="text"
+                    class="query-input"
+                    id="queryInput"
+                    placeholder="例: GET Operation FOR 'kitchen_door'"
+                >
+                <button class="query-button" onclick="executeQuery()">クエリ実行</button>
+                <div id="queryResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        // 統計情報を取得
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/stats`);
+                const data = await response.json();
+
+                const statsHTML = `
+                    <div class="stat-box">
+                        <h3>${data.operations_count}</h3>
+                        <p>操作カタログ</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>${data.maps_count}</h3>
+                        <p>意味地図</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>${data.operation_types.door}</h3>
+                        <p>ドア操作</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>${data.operation_types.drawer}</h3>
+                        <p>引き出し</p>
+                    </div>
+                `;
+
+                document.getElementById('stats').innerHTML = statsHTML;
+            } catch (error) {
+                console.error('統計情報の取得に失敗:', error);
+                document.getElementById('stats').innerHTML =
+                    '<div class="error">統計情報の取得に失敗しました</div>';
+            }
+        }
+
+        // 操作カタログを取得
+        async function loadOperations() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/operations`);
+                const data = await response.json();
+
+                const operationsHTML = data.operations.map(op => `
+                    <div class="operation-item">
+                        <span class="operation-type">${op.type}</span>
+                        <h3>${op.name}</h3>
+                        <div class="operation-details">
+                            <p><strong>ID:</strong> ${op.id}</p>
+                            <p><strong>位置:</strong> X: ${op.location.x}, Y: ${op.location.y}, Z: ${op.location.z}</p>
+                            <p><strong>操作:</strong> ${JSON.stringify(op.operation, null, 2)}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('operations').innerHTML = operationsHTML;
+            } catch (error) {
+                console.error('操作カタログの取得に失敗:', error);
+                document.getElementById('operations').innerHTML =
+                    '<div class="error">操作カタログの取得に失敗しました</div>';
+            }
+        }
+
+        // MapQLクエリを実行
+        async function executeQuery() {
+            const query = document.getElementById('queryInput').value;
+            const resultDiv = document.getElementById('queryResult');
+
+            if (!query) {
+                resultDiv.innerHTML = '<div class="error">クエリを入力してください</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading">クエリを実行中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/mapql/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (data.result) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>クエリ結果:</h4>
+                            <pre>${JSON.stringify(data.result, null, 2)}</pre>
+                            <p><small>実行時間: ${data.execution_time}</small></p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="query-result">
+                            <p>${data.message || '結果が見つかりませんでした'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('クエリの実行に失敗:', error);
+                resultDiv.innerHTML = '<div class="error">クエリの実行に失敗しました</div>';
+            }
+        }
+
+        // Enterキーでクエリ実行
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeQuery();
+            }
+        });
+
+        // ページ読み込み時にデータを取得
+        window.addEventListener('load', () => {
+            loadStats();
+            loadOperations();
+        });
+    </script>
+</body>
+</html>
