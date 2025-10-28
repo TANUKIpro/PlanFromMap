@@ -319,6 +319,77 @@
         .control-button:hover {
             background: #5568d3;
         }
+
+        /* タブナビゲーション */
+        .tabs-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .tab-navigation {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            background: #ebebeb;
+            color: #333;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        /* マップビューアのタブ用調整 */
+        .map-viewer-tab {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0;
+        }
+
+        .map-viewer-tab h2 {
+            margin-bottom: 15px;
+        }
+
+        .map-viewer-tab .map-canvas-container {
+            flex: 1;
+            min-height: 500px;
+        }
     </style>
 </head>
 <body>
@@ -332,10 +403,10 @@
         <div class="menubar">
             <ul class="menu">
                 <li class="menu-item">
-                    <button class="menu-button" onclick="toggleDropdown('fileMenu')">ファイル</button>
+                    <button class="menu-button" onclick="toggleDropdown('fileMenu', event)">ファイル</button>
                     <div class="dropdown" id="fileMenu">
-                        <button class="dropdown-item" onclick="importMap()">マップのインポート</button>
-                        <button class="dropdown-item" onclick="clearMap()">マップのクリア</button>
+                        <button class="dropdown-item" onclick="importMap(event)">マップのインポート</button>
+                        <button class="dropdown-item" onclick="clearMap(event)">マップのクリア</button>
                     </div>
                 </li>
             </ul>
@@ -344,52 +415,62 @@
         <!-- 隠しファイル入力 -->
         <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
 
-        <!-- マップビューア -->
-        <div class="map-viewer">
-            <h2>🗺️ マップビューア</h2>
-            <div class="map-canvas-container" id="mapContainer">
-                <div class="map-placeholder" id="mapPlaceholder">
-                    マップがインポートされていません。<br>
-                    「ファイル」→「マップのインポート」から画像を選択してください。
+        <!-- タブコンテナ -->
+        <div class="tabs-container">
+            <!-- タブナビゲーション -->
+            <div class="tab-navigation">
+                <button class="tab-button active" onclick="switchTab('mapViewer', event)">🗺️ マップビューア</button>
+                <button class="tab-button" onclick="switchTab('stats', event)">📊 システム統計</button>
+                <button class="tab-button" onclick="switchTab('operations', event)">🚪 操作カタログ</button>
+                <button class="tab-button" onclick="switchTab('mapql', event)">🔍 MapQLクエリ</button>
+            </div>
+
+            <!-- タブコンテンツ -->
+            <div id="mapViewer" class="tab-content active">
+                <div class="map-viewer-tab">
+                    <h2>🗺️ マップビューア</h2>
+                    <div class="map-canvas-container" id="mapContainer">
+                        <div class="map-placeholder" id="mapPlaceholder">
+                            マップがインポートされていません。<br>
+                            「ファイル」→「マップのインポート」から画像を選択してください。
+                        </div>
+                        <canvas id="mapCanvas" style="display: none;"></canvas>
+                    </div>
+                    <div class="map-controls">
+                        <button class="control-button" onclick="resetView()">表示リセット</button>
+                        <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
+                        <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
+                        <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
+                    </div>
                 </div>
-                <canvas id="mapCanvas" style="display: none;"></canvas>
             </div>
-            <div class="map-controls">
-                <button class="control-button" onclick="resetView()">表示リセット</button>
-                <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
-                <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
-                <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
-            </div>
-        </div>
 
-        <!-- 統計情報 -->
-        <div class="card">
-            <h2>📊 システム統計</h2>
-            <div class="stats" id="stats">
-                <div class="loading">統計情報を読み込み中...</div>
+            <div id="stats" class="tab-content">
+                <h2>📊 システム統計</h2>
+                <div class="stats" id="statsContent">
+                    <div class="loading">統計情報を読み込み中...</div>
+                </div>
             </div>
-        </div>
 
-        <!-- 操作カタログ -->
-        <div class="card">
-            <h2>🚪 操作カタログ</h2>
-            <div class="operations" id="operations">
-                <div class="loading">操作カタログを読み込み中...</div>
+            <div id="operations" class="tab-content">
+                <h2>🚪 操作カタログ</h2>
+                <div class="operations" id="operationsContent">
+                    <div class="loading">操作カタログを読み込み中...</div>
+                </div>
             </div>
-        </div>
 
-        <!-- MapQLクエリ -->
-        <div class="card">
-            <h2>🔍 MapQLクエリ</h2>
-            <div class="query-section">
-                <input
-                    type="text"
-                    class="query-input"
-                    id="queryInput"
-                    placeholder="例: GET Operation FOR 'kitchen_door'"
-                >
-                <button class="query-button" onclick="executeQuery()">クエリ実行</button>
-                <div id="queryResult"></div>
+            <div id="mapql" class="tab-content">
+                <h2>🔍 MapQLクエリ</h2>
+                <div class="query-section">
+                    <input
+                        type="text"
+                        class="query-input"
+                        id="queryInput"
+                        placeholder="例: GET Operation FOR 'kitchen_door'"
+                    >
+                    <button class="query-button" onclick="executeQuery()">クエリ実行</button>
+                    <div id="queryResult"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -414,8 +495,36 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('mapContainer');
 
+        // タブ切り替え
+        function switchTab(tabId, event) {
+            // すべてのタブボタンとコンテンツを非アクティブに
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 選択されたタブをアクティブに
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            document.getElementById(tabId).classList.add('active');
+
+            // マップビューアタブに切り替えた時、キャンバスをリサイズ
+            if (tabId === 'mapViewer' && mapState.image) {
+                setTimeout(() => {
+                    const containerRect = container.getBoundingClientRect();
+                    canvas.width = containerRect.width;
+                    canvas.height = containerRect.height;
+                    drawMap();
+                }, 50);
+            }
+        }
+
         // ドロップダウンメニューの制御
-        function toggleDropdown(menuId) {
+        function toggleDropdown(menuId, event) {
+            event.stopPropagation();
             const dropdown = document.getElementById(menuId);
             const isActive = dropdown.classList.contains('active');
 
@@ -440,8 +549,28 @@
         });
 
         // マップのインポート
-        function importMap() {
-            document.getElementById('fileInput').click();
+        function importMap(event) {
+            event.stopPropagation();
+
+            // ドロップダウンを閉じる
+            document.querySelectorAll('.dropdown').forEach(d => {
+                d.classList.remove('active');
+            });
+
+            // マップビューアタブに切り替え
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelector('.tab-button').classList.add('active');
+            document.getElementById('mapViewer').classList.add('active');
+
+            // 少し遅延させてファイル選択ダイアログを開く
+            setTimeout(() => {
+                document.getElementById('fileInput').click();
+            }, 100);
         }
 
         // ファイル選択時の処理
@@ -472,15 +601,12 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
-
-            // ドロップダウンを閉じる
-            document.querySelectorAll('.dropdown').forEach(d => {
-                d.classList.remove('active');
-            });
         }
 
         // マップのクリア
-        function clearMap() {
+        function clearMap(event) {
+            event.stopPropagation();
+
             mapState.image = null;
             mapState.scale = 1.0;
             mapState.offsetX = 0;
@@ -667,10 +793,10 @@
                     </div>
                 `;
 
-                document.getElementById('stats').innerHTML = statsHTML;
+                document.getElementById('statsContent').innerHTML = statsHTML;
             } catch (error) {
                 console.error('統計情報の取得に失敗:', error);
-                document.getElementById('stats').innerHTML =
+                document.getElementById('statsContent').innerHTML =
                     '<div class="error">統計情報の取得に失敗しました</div>';
             }
         }
@@ -693,10 +819,10 @@
                     </div>
                 `).join('');
 
-                document.getElementById('operations').innerHTML = operationsHTML;
+                document.getElementById('operationsContent').innerHTML = operationsHTML;
             } catch (error) {
                 console.error('操作カタログの取得に失敗:', error);
-                document.getElementById('operations').innerHTML =
+                document.getElementById('operationsContent').innerHTML =
                     '<div class="error">操作カタログの取得に失敗しました</div>';
             }
         }
