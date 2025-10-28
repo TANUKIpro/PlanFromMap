@@ -233,10 +233,6 @@
             flex-wrap: wrap;
         }
 
-        .metadata-options.inactive {
-            opacity: 0.6;
-        }
-
         .layer-toggle {
             display: flex;
             align-items: center;
@@ -261,7 +257,7 @@
         .metadata-overlay-panel {
             position: absolute;
             top: 20px;
-            right: 20px;
+            left: 20px;
             width: clamp(220px, 28vw, 320px);
             max-height: 70%;
             display: none;
@@ -327,7 +323,7 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 16px;
         }
 
         .metadata-overlay-body::-webkit-scrollbar {
@@ -337,6 +333,19 @@
         .metadata-overlay-body::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.25);
             border-radius: 3px;
+        }
+
+        .metadata-overlay-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .metadata-overlay-section-title {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.65);
         }
 
         .metadata-overlay-list {
@@ -371,6 +380,67 @@
 
         .metadata-overlay-panel.collapsed .metadata-overlay-collapse-icon {
             transform: rotate(-90deg);
+        }
+
+        .metadata-overlay-options.inactive {
+            opacity: 0.6;
+        }
+
+        .metadata-overlay-toggle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .metadata-overlay-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(30, 34, 66, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.9em;
+            color: #f5f6ff;
+            cursor: pointer;
+        }
+
+        .metadata-overlay-toggle.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .metadata-overlay-toggle span {
+            flex: 1;
+        }
+
+        .metadata-overlay-toggle input {
+            accent-color: #8895ff;
+            cursor: pointer;
+        }
+
+        .metadata-overlay-placeholder {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.25);
+            background: rgba(30, 34, 66, 0.6);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .metadata-overlay-panel.info-hidden .metadata-overlay-info {
+            display: none;
+        }
+
+        .metadata-overlay-panel.info-hidden .metadata-overlay-placeholder {
+            display: block;
+        }
+
+        .metadata-overlay-panel:not(.active) .metadata-overlay-body {
+            display: none;
         }
 
         .control-button {
@@ -521,7 +591,37 @@
                                 </div>
                             </div>
                             <div class="metadata-overlay-body" id="metadataOverlayBody">
-                                <div class="metadata-overlay-list" id="metadataOverlayContent"></div>
+                                <div class="metadata-overlay-section metadata-overlay-info" id="metadataOverlayInfo">
+                                    <div class="metadata-overlay-list" id="metadataOverlayContent"></div>
+                                </div>
+                                <div class="metadata-overlay-placeholder" id="metadataOverlayPlaceholder" aria-hidden="true">
+                                    情報パネルは非表示です。再表示するには「情報パネル」のチェックボックスをオンにしてください。
+                                </div>
+                                <div class="metadata-overlay-section metadata-overlay-options inactive" id="metadataOverlayOptions">
+                                    <div class="metadata-overlay-section-title">表示オプション</div>
+                                    <div class="metadata-overlay-toggle-list">
+                                        <label class="metadata-overlay-toggle metadata-toggle">
+                                            <span>メタデータオーバーレイ</span>
+                                            <input type="checkbox" id="metadataLayerToggle" checked onchange="toggleLayer('metadataOverlay', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>1mグリッド</span>
+                                            <input type="checkbox" id="gridOverlayToggle" data-option="showGrid" checked onchange="toggleOverlayOption('showGrid', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>原点マーカー</span>
+                                            <input type="checkbox" id="originOverlayToggle" data-option="showOrigin" checked onchange="toggleOverlayOption('showOrigin', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>スケールバー</span>
+                                            <input type="checkbox" id="scaleOverlayToggle" data-option="showScaleBar" checked onchange="toggleOverlayOption('showScaleBar', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>情報パネル</span>
+                                            <input type="checkbox" id="infoOverlayToggle" data-option="showInfoPanel" checked onchange="toggleOverlayOption('showInfoPanel', this.checked)">
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -539,28 +639,6 @@
                             <label class="layer-toggle">
                                 <input type="checkbox" id="imageLayerToggle" checked onchange="toggleLayer('image', this.checked)">
                                 画像レイヤー
-                            </label>
-                            <label class="layer-toggle metadata-toggle">
-                                <input type="checkbox" id="metadataLayerToggle" checked onchange="toggleLayer('metadataOverlay', this.checked)">
-                                メタデータオーバーレイ
-                            </label>
-                        </div>
-                        <div class="layer-group metadata-options">
-                            <label class="layer-toggle metadata-dependent">
-                                <input type="checkbox" id="gridOverlayToggle" data-option="showGrid" checked onchange="toggleOverlayOption('showGrid', this.checked)">
-                                1mグリッド
-                            </label>
-                            <label class="layer-toggle metadata-dependent">
-                                <input type="checkbox" id="originOverlayToggle" data-option="showOrigin" checked onchange="toggleOverlayOption('showOrigin', this.checked)">
-                                原点マーカー
-                            </label>
-                            <label class="layer-toggle metadata-dependent">
-                                <input type="checkbox" id="scaleOverlayToggle" data-option="showScaleBar" checked onchange="toggleOverlayOption('showScaleBar', this.checked)">
-                                スケールバー
-                            </label>
-                            <label class="layer-toggle metadata-dependent">
-                                <input type="checkbox" id="infoOverlayToggle" data-option="showInfoPanel" checked onchange="toggleOverlayOption('showInfoPanel', this.checked)">
-                                情報パネル
                             </label>
                         </div>
                     </div>
@@ -708,7 +786,7 @@
             if (metadataToggle) {
                 metadataToggle.checked = metadataAvailable && !!mapState.layers.metadataOverlay;
                 metadataToggle.disabled = !metadataAvailable;
-                const label = metadataToggle.closest('.layer-toggle');
+                const label = metadataToggle.closest('.metadata-overlay-toggle');
                 if (label) {
                     label.classList.toggle('disabled', !metadataAvailable);
                 }
@@ -720,13 +798,13 @@
                     input.checked = !!mapState.overlaySettings[optionKey];
                 }
                 input.disabled = !metadataAvailable;
-                const wrapper = input.closest('.layer-toggle');
+                const wrapper = input.closest('.metadata-overlay-toggle');
                 if (wrapper) {
                     wrapper.classList.toggle('disabled', !metadataAvailable);
                 }
             });
 
-            const optionsGroup = document.querySelector('.metadata-options');
+            const optionsGroup = document.getElementById('metadataOverlayOptions');
             if (optionsGroup) {
                 optionsGroup.classList.toggle('inactive', !metadataAvailable);
             }
@@ -739,15 +817,27 @@
             const overlay = document.getElementById('metadataOverlay');
             if (!overlay) return;
 
-            const shouldShow = !!(
-                mapState.metadata &&
-                mapState.layers.metadataOverlay &&
+            const metadataAvailable = !!mapState.metadata;
+            overlay.classList.toggle('active', metadataAvailable);
+            overlay.setAttribute('aria-hidden', metadataAvailable ? 'false' : 'true');
+
+            if (!metadataAvailable) {
+                overlay.classList.remove('collapsed', 'info-hidden');
+            }
+
+            const infoVisible = !!(
+                metadataAvailable &&
                 mapState.overlaySettings &&
                 mapState.overlaySettings.showInfoPanel
             );
 
-            overlay.classList.toggle('active', shouldShow);
-            overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+            overlay.classList.toggle('info-hidden', !infoVisible);
+
+            const placeholder = document.getElementById('metadataOverlayPlaceholder');
+            if (placeholder) {
+                const placeholderHidden = !metadataAvailable || infoVisible;
+                placeholder.setAttribute('aria-hidden', placeholderHidden ? 'true' : 'false');
+            }
         }
 
         function syncMetadataOverlayCollapseState() {
@@ -886,8 +976,12 @@
 
             if (!metadata) {
                 contentDiv.innerHTML = '';
-                overlay.classList.remove('active');
+                overlay.classList.remove('active', 'collapsed', 'info-hidden');
                 overlay.setAttribute('aria-hidden', 'true');
+                const placeholder = document.getElementById('metadataOverlayPlaceholder');
+                if (placeholder) {
+                    placeholder.setAttribute('aria-hidden', 'true');
+                }
                 return;
             }
 
@@ -1117,8 +1211,12 @@
                 metadataContent.innerHTML = '';
             }
             if (metadataOverlay) {
-                metadataOverlay.classList.remove('active', 'collapsed');
+                metadataOverlay.classList.remove('active', 'collapsed', 'info-hidden');
                 metadataOverlay.setAttribute('aria-hidden', 'true');
+            }
+            const metadataPlaceholder = document.getElementById('metadataOverlayPlaceholder');
+            if (metadataPlaceholder) {
+                metadataPlaceholder.setAttribute('aria-hidden', 'true');
             }
             if (collapseButton) {
                 collapseButton.setAttribute('aria-expanded', 'true');
