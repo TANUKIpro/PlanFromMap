@@ -514,6 +514,272 @@
         .map-viewer-tab .map-canvas-container {
             flex: 1;
         }
+
+        /* 描画ツールパレット */
+        .drawing-tools-palette {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+            min-width: 60px;
+        }
+
+        .drawing-tools-palette.active {
+            display: flex;
+        }
+
+        .tool-button {
+            width: 44px;
+            height: 44px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: relative;
+        }
+
+        .tool-button:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .tool-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .tool-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .tool-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 4px 0;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .color-picker-label {
+            font-size: 0.75em;
+            color: #666;
+            text-align: center;
+        }
+
+        .color-picker-input {
+            width: 44px;
+            height: 32px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .brush-size-control {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .brush-size-label {
+            font-size: 0.75em;
+            color: #666;
+            text-align: center;
+        }
+
+        .brush-size-slider {
+            width: 100%;
+        }
+
+        /* レイヤーパネル */
+        .layers-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            max-height: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .layers-panel.active {
+            display: flex;
+        }
+
+        .layers-panel-header {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .layers-panel-title {
+            font-size: 0.95em;
+        }
+
+        .layer-add-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background 0.2s ease;
+        }
+
+        .layer-add-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .layers-panel-body {
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .layers-panel-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .layers-panel-body::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+        }
+
+        .layer-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: border-color 0.2s ease;
+        }
+
+        .layer-item:hover {
+            border-color: #667eea;
+        }
+
+        .layer-item.permanent {
+            border-color: #ffa726;
+        }
+
+        .layer-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .layer-visibility-toggle {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .layer-name {
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .layer-delete-button {
+            background: #e74c3c;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: background 0.2s ease;
+        }
+
+        .layer-delete-button:hover {
+            background: #c0392b;
+        }
+
+        .layer-delete-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .layer-opacity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .layer-opacity-label {
+            font-size: 0.75em;
+            color: #666;
+            min-width: 60px;
+        }
+
+        .layer-opacity-slider {
+            flex: 1;
+            accent-color: #667eea;
+        }
+
+        .layer-opacity-value {
+            font-size: 0.75em;
+            color: #666;
+            min-width: 35px;
+            text-align: right;
+        }
+
+        /* 複数のキャンバスを重ねる */
+        .canvas-stack {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
@@ -543,7 +809,48 @@
                                 <button class="load-button" onclick="loadYAMLFile()" style="margin-left: 10px;">📄 YAMLを読み込む</button>
                             </div>
                         </div>
+                        <div id="canvasStack" class="canvas-stack" style="display: none;"></div>
                         <canvas id="mapCanvas" style="display: none;"></canvas>
+
+                        <!-- 描画ツールパレット -->
+                        <div class="drawing-tools-palette" id="drawingToolsPalette">
+                            <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
+                                ✋
+                            </button>
+                            <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
+                                ✏️
+                            </button>
+                            <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
+                                🧹
+                            </button>
+                            <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
+                                📏
+                            </button>
+                            <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
+                                🪣
+                            </button>
+                            <div class="tool-divider"></div>
+                            <div class="color-picker-wrapper">
+                                <div class="color-picker-label">色</div>
+                                <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                            </div>
+                            <div class="brush-size-control">
+                                <div class="brush-size-label">サイズ: <span id="brushSizeValue">5</span></div>
+                                <input type="range" class="brush-size-slider" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- レイヤーパネル -->
+                        <div class="layers-panel" id="layersPanel">
+                            <div class="layers-panel-header">
+                                <span class="layers-panel-title">レイヤー</span>
+                                <button class="layer-add-button" onclick="addNewLayer()">+ 追加</button>
+                            </div>
+                            <div class="layers-panel-body" id="layersPanelBody">
+                                <!-- レイヤーアイテムがここに動的に追加される -->
+                            </div>
+                        </div>
+
                         <div class="metadata-overlay-panel" id="metadataOverlay" aria-hidden="true">
                             <div class="metadata-overlay-header">
                                 <span class="metadata-overlay-title">📋 マップメタデータ</span>
@@ -587,6 +894,10 @@
                     <div class="map-controls">
                         <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
                         <button class="load-button" onclick="loadYAMLFile()">📄 YAMLを読み込む</button>
+                        <button class="control-button" onclick="toggleDrawingTools()">🎨 描画ツール</button>
+                        <button class="control-button" onclick="toggleLayersPanel()">📚 レイヤー</button>
+                        <button class="control-button" onclick="undo()" id="undoButton" disabled>↶ 戻る</button>
+                        <button class="control-button" onclick="redo()" id="redoButton" disabled>↷ 進む</button>
                         <button class="control-button" onclick="clearMap()">クリア</button>
                         <button class="control-button" onclick="resetView()">表示リセット</button>
                         <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
@@ -655,12 +966,435 @@
                 gridSpacingMeters: 1,
                 showOrigin: true,
                 showScaleBar: true
+            },
+            // 新しいレイヤー管理システム
+            layerStack: [],  // レイヤーの配列（下から上の順）
+            nextLayerId: 1,
+            // 描画ツールの状態
+            drawingState: {
+                currentTool: 'pan',  // 'pan', 'pencil', 'eraser', 'measure', 'bucket'
+                color: '#FF0000',
+                brushSize: 5,
+                isDrawing: false,
+                currentStroke: [],
+                measurePoints: []
+            },
+            // アンドゥ/リドゥ用の履歴
+            history: {
+                past: [],
+                future: [],
+                maxHistory: 50
             }
         };
 
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('mapContainer');
+        const canvasStack = document.getElementById('canvasStack');
+
+        // ======================
+        // レイヤー管理システム
+        // ======================
+
+        // レイヤーを初期化
+        function initializeLayers() {
+            mapState.layerStack = [];
+            canvasStack.innerHTML = '';
+
+            // 画像レイヤーを作成（恒久的）
+            createLayer('map-image', '地図画像', 'image', true);
+
+            // メタデータレイヤーを作成（恒久的）
+            createLayer('metadata', 'メタデータ', 'metadata', true);
+
+            updateLayersPanel();
+        }
+
+        // 新しいレイヤーを作成
+        function createLayer(id, name, type, permanent = false) {
+            const layer = {
+                id: id,
+                name: name,
+                type: type,  // 'image', 'metadata', 'drawing'
+                permanent: permanent,
+                visible: true,
+                opacity: 1.0,
+                canvas: document.createElement('canvas'),
+                ctx: null
+            };
+
+            layer.canvas.className = 'canvas-layer';
+            layer.canvas.style.display = 'block';
+            layer.ctx = layer.canvas.getContext('2d');
+
+            // キャンバスのサイズを設定
+            const containerRect = container.getBoundingClientRect();
+            layer.canvas.width = containerRect.width;
+            layer.canvas.height = containerRect.height;
+
+            // canvasStackに追加
+            canvasStack.appendChild(layer.canvas);
+
+            // レイヤースタックに追加
+            mapState.layerStack.push(layer);
+
+            return layer;
+        }
+
+        // 新しい描画レイヤーを追加
+        function addNewLayer() {
+            const layerId = 'layer-' + mapState.nextLayerId;
+            const layerName = 'レイヤー ' + mapState.nextLayerId;
+            mapState.nextLayerId++;
+
+            createLayer(layerId, layerName, 'drawing', false);
+            updateLayersPanel();
+            redrawAllLayers();
+
+            // パネルが閉じている場合は開く
+            const panel = document.getElementById('layersPanel');
+            if (!panel.classList.contains('active')) {
+                toggleLayersPanel();
+            }
+        }
+
+        // レイヤーを削除
+        function deleteLayer(layerId) {
+            const layerIndex = mapState.layerStack.findIndex(l => l.id === layerId);
+            if (layerIndex === -1) return;
+
+            const layer = mapState.layerStack[layerIndex];
+            if (layer.permanent) {
+                alert('このレイヤーは削除できません');
+                return;
+            }
+
+            // 履歴に追加
+            saveToHistory();
+
+            // キャンバスを削除
+            canvasStack.removeChild(layer.canvas);
+
+            // レイヤースタックから削除
+            mapState.layerStack.splice(layerIndex, 1);
+
+            updateLayersPanel();
+            redrawAllLayers();
+        }
+
+        // レイヤーの表示/非表示を切り替え
+        function toggleLayerVisibility(layerId, visible) {
+            const layer = mapState.layerStack.find(l => l.id === layerId);
+            if (!layer) return;
+
+            layer.visible = visible;
+            layer.canvas.style.display = visible ? 'block' : 'none';
+
+            redrawAllLayers();
+        }
+
+        // レイヤーの透過率を変更
+        function changeLayerOpacity(layerId, opacity) {
+            const layer = mapState.layerStack.find(l => l.id === layerId);
+            if (!layer) return;
+
+            layer.opacity = opacity;
+            layer.canvas.style.opacity = opacity;
+
+            redrawAllLayers();
+        }
+
+        // レイヤーパネルを更新
+        function updateLayersPanel() {
+            const panelBody = document.getElementById('layersPanelBody');
+            if (!panelBody) return;
+
+            panelBody.innerHTML = '';
+
+            // レイヤーを逆順で表示（上のレイヤーが先に表示される）
+            const reversedLayers = [...mapState.layerStack].reverse();
+
+            reversedLayers.forEach(layer => {
+                const layerItem = document.createElement('div');
+                layerItem.className = 'layer-item' + (layer.permanent ? ' permanent' : '');
+
+                const opacityPercent = Math.round(layer.opacity * 100);
+
+                layerItem.innerHTML = `
+                    <div class="layer-item-header">
+                        <input type="checkbox" class="layer-visibility-toggle"
+                               ${layer.visible ? 'checked' : ''}
+                               onchange="toggleLayerVisibility('${layer.id}', this.checked)">
+                        <span class="layer-name">${layer.name}</span>
+                        <button class="layer-delete-button"
+                                ${layer.permanent ? 'disabled' : ''}
+                                onclick="deleteLayer('${layer.id}')">削除</button>
+                    </div>
+                    <div class="layer-opacity-control">
+                        <span class="layer-opacity-label">透過率</span>
+                        <input type="range" class="layer-opacity-slider"
+                               min="0" max="1" step="0.01" value="${layer.opacity}"
+                               oninput="changeLayerOpacity('${layer.id}', parseFloat(this.value)); this.nextElementSibling.textContent = Math.round(this.value * 100) + '%'">
+                        <span class="layer-opacity-value">${opacityPercent}%</span>
+                    </div>
+                `;
+
+                panelBody.appendChild(layerItem);
+            });
+        }
+
+        // 全レイヤーを再描画
+        function redrawAllLayers() {
+            mapState.layerStack.forEach(layer => {
+                if (!layer.visible) return;
+
+                // キャンバスをクリア
+                layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+
+                if (layer.type === 'image' && mapState.image) {
+                    drawImageLayer(layer);
+                } else if (layer.type === 'metadata' && mapState.metadata) {
+                    drawMetadataLayer(layer);
+                }
+                // 描画レイヤーは後で実装
+            });
+        }
+
+        // 画像レイヤーを描画
+        function drawImageLayer(layer) {
+            if (!mapState.image) return;
+
+            const ctx = layer.ctx;
+
+            // 背景色
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, layer.canvas.width, layer.canvas.height);
+
+            // 画像のスケール後のサイズを計算
+            const scaledWidth = mapState.image.width * mapState.scale;
+            const scaledHeight = mapState.image.height * mapState.scale;
+
+            // 中央配置の基準位置を計算
+            const baseX = (layer.canvas.width - scaledWidth) / 2;
+            const baseY = (layer.canvas.height - scaledHeight) / 2;
+
+            // オフセットを適用して描画
+            const drawX = baseX + mapState.offsetX;
+            const drawY = baseY + mapState.offsetY;
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(mapState.image, drawX, drawY, scaledWidth, scaledHeight);
+        }
+
+        // メタデータレイヤーを描画
+        function drawMetadataLayer(layer) {
+            if (!mapState.metadata || !mapState.image) return;
+
+            const ctx = layer.ctx;
+
+            // 画像のスケール後のサイズを計算
+            const scaledWidth = mapState.image.width * mapState.scale;
+            const scaledHeight = mapState.image.height * mapState.scale;
+
+            // 中央配置の基準位置を計算
+            const baseX = (layer.canvas.width - scaledWidth) / 2;
+            const baseY = (layer.canvas.height - scaledHeight) / 2;
+
+            // オフセットを適用
+            const drawX = baseX + mapState.offsetX;
+            const drawY = baseY + mapState.offsetY;
+
+            // 既存のメタデータ描画関数を使用（ctxを一時的に切り替え）
+            const originalCtx = window.ctx;
+            window.ctx = ctx;
+
+            if (mapState.layers.metadataOverlay) {
+                drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight);
+            }
+
+            window.ctx = originalCtx;
+        }
+
+        // ======================
+        // 描画ツール管理
+        // ======================
+
+        // 描画ツールパレットの表示/非表示
+        function toggleDrawingTools() {
+            const palette = document.getElementById('drawingToolsPalette');
+            palette.classList.toggle('active');
+        }
+
+        // レイヤーパネルの表示/非表示
+        function toggleLayersPanel() {
+            const panel = document.getElementById('layersPanel');
+            panel.classList.toggle('active');
+        }
+
+        // ツールを選択
+        function selectTool(toolName) {
+            mapState.drawingState.currentTool = toolName;
+
+            // すべてのツールボタンからactiveクラスを削除
+            document.querySelectorAll('.tool-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 選択されたツールにactiveクラスを追加
+            const toolButton = document.getElementById(toolName + 'Tool');
+            if (toolButton) {
+                toolButton.classList.add('active');
+            }
+
+            // カーソルスタイルを変更
+            updateCursor();
+        }
+
+        // カーソルスタイルを更新
+        function updateCursor() {
+            const tool = mapState.drawingState.currentTool;
+
+            switch(tool) {
+                case 'pan':
+                    container.style.cursor = 'grab';
+                    break;
+                case 'pencil':
+                    container.style.cursor = 'crosshair';
+                    break;
+                case 'eraser':
+                    container.style.cursor = 'cell';
+                    break;
+                case 'measure':
+                    container.style.cursor = 'crosshair';
+                    break;
+                case 'bucket':
+                    container.style.cursor = 'pointer';
+                    break;
+                default:
+                    container.style.cursor = 'default';
+            }
+        }
+
+        // 描画色を変更
+        function changeDrawingColor(color) {
+            mapState.drawingState.color = color;
+        }
+
+        // ブラシサイズを変更
+        function changeBrushSize(size) {
+            mapState.drawingState.brushSize = parseInt(size);
+            document.getElementById('brushSizeValue').textContent = size;
+        }
+
+        // ======================
+        // アンドゥ/リドゥシステム
+        // ======================
+
+        // 履歴に保存
+        function saveToHistory() {
+            // 現在の状態をキャプチャ
+            const state = captureState();
+
+            mapState.history.past.push(state);
+            mapState.history.future = [];  // 新しいアクションで未来の履歴をクリア
+
+            // 最大履歴数を超えたら古いものを削除
+            if (mapState.history.past.length > mapState.history.maxHistory) {
+                mapState.history.past.shift();
+            }
+
+            updateUndoRedoButtons();
+        }
+
+        // 状態をキャプチャ
+        function captureState() {
+            const state = {
+                layers: mapState.layerStack.map(layer => ({
+                    id: layer.id,
+                    name: layer.name,
+                    type: layer.type,
+                    permanent: layer.permanent,
+                    visible: layer.visible,
+                    opacity: layer.opacity,
+                    imageData: layer.type === 'drawing' ? layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height) : null
+                }))
+            };
+            return state;
+        }
+
+        // 状態を復元
+        function restoreState(state) {
+            // レイヤーを復元
+            state.layers.forEach(savedLayer => {
+                const layer = mapState.layerStack.find(l => l.id === savedLayer.id);
+                if (layer) {
+                    layer.visible = savedLayer.visible;
+                    layer.opacity = savedLayer.opacity;
+                    layer.canvas.style.display = savedLayer.visible ? 'block' : 'none';
+                    layer.canvas.style.opacity = savedLayer.opacity;
+
+                    if (savedLayer.imageData && layer.type === 'drawing') {
+                        layer.ctx.putImageData(savedLayer.imageData, 0, 0);
+                    }
+                }
+            });
+
+            updateLayersPanel();
+            redrawAllLayers();
+        }
+
+        // アンドゥ
+        function undo() {
+            if (mapState.history.past.length === 0) return;
+
+            const currentState = captureState();
+            const previousState = mapState.history.past.pop();
+
+            mapState.history.future.push(currentState);
+            restoreState(previousState);
+
+            updateUndoRedoButtons();
+        }
+
+        // リドゥ
+        function redo() {
+            if (mapState.history.future.length === 0) return;
+
+            const currentState = captureState();
+            const nextState = mapState.history.future.pop();
+
+            mapState.history.past.push(currentState);
+            restoreState(nextState);
+
+            updateUndoRedoButtons();
+        }
+
+        // アンドゥ/リドゥボタンの状態を更新
+        function updateUndoRedoButtons() {
+            const undoButton = document.getElementById('undoButton');
+            const redoButton = document.getElementById('redoButton');
+
+            if (undoButton) {
+                undoButton.disabled = mapState.history.past.length === 0;
+            }
+            if (redoButton) {
+                redoButton.disabled = mapState.history.future.length === 0;
+            }
+        }
+
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Z (Undo)
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+            // Ctrl+Shift+Z (Redo) または Ctrl+Y (Redo)
+            else if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
+                e.preventDefault();
+                redo();
+            }
+        });
 
         // タブ切り替え
         function switchTab(tabId, event) {
@@ -833,12 +1567,16 @@
                     canvas.width = containerRect.width;
                     canvas.height = containerRect.height;
 
-                    // プレースホルダーを非表示、キャンバスを表示
+                    // プレースホルダーを非表示、新しいレイヤーシステムを表示
                     document.getElementById('mapPlaceholder').style.display = 'none';
-                    canvas.style.display = 'block';
+                    canvasStack.style.display = 'block';
+                    canvas.style.display = 'none';  // 古いcanvasは非表示に
+
+                    // レイヤーシステムを初期化
+                    initializeLayers();
 
                     updateOverlayControls();
-                    drawMap();
+                    redrawAllLayers();
                 };
                 img.src = e.target.result;
             };
@@ -861,7 +1599,13 @@
                     displayMetadata(metadata);
 
                     updateOverlayControls();
-                    drawMap();
+
+                    // レイヤーシステムが初期化されている場合は再描画
+                    if (mapState.layerStack.length > 0) {
+                        redrawAllLayers();
+                    } else {
+                        drawMap();
+                    }
                 } catch (error) {
                     console.error('YAMLファイルの読み込みに失敗:', error);
                     alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
@@ -988,12 +1732,16 @@
                         canvas.width = containerRect.width;
                         canvas.height = containerRect.height;
 
-                        // プレースホルダーを非表示、キャンバスを表示
+                        // プレースホルダーを非表示、新しいレイヤーシステムを表示
                         document.getElementById('mapPlaceholder').style.display = 'none';
-                        canvas.style.display = 'block';
+                        canvasStack.style.display = 'block';
+                        canvas.style.display = 'none';  // 古いcanvasは非表示に
+
+                        // レイヤーシステムを初期化
+                        initializeLayers();
 
                         updateOverlayControls();
-                        drawMap();
+                        redrawAllLayers();
                     };
                 } catch (error) {
                     console.error('PGMファイルの読み込みに失敗:', error);
@@ -1105,6 +1853,16 @@
             mapState.layers.image = true;
             mapState.layers.metadataOverlay = true;
 
+            // レイヤースタックをクリア
+            mapState.layerStack = [];
+            canvasStack.innerHTML = '';
+            canvasStack.style.display = 'none';
+
+            // 履歴をクリア
+            mapState.history.past = [];
+            mapState.history.future = [];
+            updateUndoRedoButtons();
+
             canvas.style.display = 'none';
             document.getElementById('mapPlaceholder').style.display = 'block';
 
@@ -1124,6 +1882,7 @@
             document.getElementById('yamlFileInput').value = '';
 
             updateOverlayControls();
+            updateLayersPanel();
             updateZoomInfo();
             updateMetadataOverlayVisibility();
         }
@@ -1413,14 +2172,26 @@
             mapState.scale = 1.0;
             mapState.offsetX = 0;
             mapState.offsetY = 0;
-            drawMap();
+
+            // レイヤーシステムが有効な場合
+            if (mapState.layerStack.length > 0) {
+                redrawAllLayers();
+            } else {
+                drawMap();
+            }
         }
 
         // ズームイン
         function zoomIn() {
             if (mapState.scale < mapState.maxScale) {
                 mapState.scale *= 1.2;
-                drawMap();
+
+                // レイヤーシステムが有効な場合
+                if (mapState.layerStack.length > 0) {
+                    redrawAllLayers();
+                } else {
+                    drawMap();
+                }
             }
         }
 
@@ -1428,7 +2199,13 @@
         function zoomOut() {
             if (mapState.scale > mapState.minScale) {
                 mapState.scale /= 1.2;
-                drawMap();
+
+                // レイヤーシステムが有効な場合
+                if (mapState.layerStack.length > 0) {
+                    redrawAllLayers();
+                } else {
+                    drawMap();
+                }
             }
         }
 
@@ -1443,75 +2220,349 @@
 
             if (newScale >= mapState.minScale && newScale <= mapState.maxScale) {
                 // マウス位置を中心にズーム
-                const rect = canvas.getBoundingClientRect();
+                const rect = container.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
+                // 現在のキャンバス幅/高さを取得
+                const currentWidth = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.width : canvas.width;
+                const currentHeight = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.height : canvas.height;
+
                 // ズーム前のマウス位置（画像座標）
-                const imgX = (mouseX - canvas.width / 2 - mapState.offsetX) / mapState.scale;
-                const imgY = (mouseY - canvas.height / 2 - mapState.offsetY) / mapState.scale;
+                const imgX = (mouseX - currentWidth / 2 - mapState.offsetX) / mapState.scale;
+                const imgY = (mouseY - currentHeight / 2 - mapState.offsetY) / mapState.scale;
 
                 // スケール更新
                 mapState.scale = newScale;
 
                 // ズーム後、同じ画像座標がマウス位置に来るようオフセットを調整
-                mapState.offsetX = mouseX - canvas.width / 2 - imgX * mapState.scale;
-                mapState.offsetY = mouseY - canvas.height / 2 - imgY * mapState.scale;
+                mapState.offsetX = mouseX - currentWidth / 2 - imgX * mapState.scale;
+                mapState.offsetY = mouseY - currentHeight / 2 - imgY * mapState.scale;
 
-                drawMap();
+                // レイヤーシステムが有効な場合
+                if (mapState.layerStack.length > 0) {
+                    redrawAllLayers();
+                } else {
+                    drawMap();
+                }
             }
         });
 
-        // 左クリックまたは中ボタンでパン
+        // マウスダウンイベント
         container.addEventListener('mousedown', function(e) {
             if (!mapState.image) return;
 
-            // 左ボタン（button === 0）または中ボタン（button === 1）でパン開始
-            if (e.button === 0 || e.button === 1) {
+            const tool = mapState.drawingState.currentTool;
+
+            // 左ボタンクリック
+            if (e.button === 0) {
+                e.preventDefault();
+
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                if (tool === 'pan') {
+                    // パンツール
+                    mapState.isPanning = true;
+                    mapState.lastX = e.clientX;
+                    mapState.lastY = e.clientY;
+                    container.style.cursor = 'grabbing';
+                } else if (tool === 'pencil' || tool === 'eraser') {
+                    // 鉛筆または消しゴム
+                    mapState.drawingState.isDrawing = true;
+                    mapState.drawingState.currentStroke = [{x, y}];
+
+                    // 履歴に保存（描画開始時）
+                    saveToHistory();
+                } else if (tool === 'measure') {
+                    // 測量ツール
+                    mapState.drawingState.measurePoints.push({x, y});
+
+                    // 2点目が置かれたら距離を表示して測量を終了
+                    if (mapState.drawingState.measurePoints.length === 2) {
+                        showMeasureDistance();
+                        mapState.drawingState.measurePoints = [];
+                    }
+                } else if (tool === 'bucket') {
+                    // バケツツール
+                    performBucketFill(x, y);
+                }
+            } else if (e.button === 1) {
+                // 中ボタンでパン
                 e.preventDefault();
                 mapState.isPanning = true;
                 mapState.lastX = e.clientX;
                 mapState.lastY = e.clientY;
-                container.classList.add('panning');
+                container.style.cursor = 'grabbing';
             }
         });
 
+        // マウス移動イベント
         container.addEventListener('mousemove', function(e) {
-            if (!mapState.isPanning) return;
+            const tool = mapState.drawingState.currentTool;
 
-            e.preventDefault();
+            // パン中
+            if (mapState.isPanning) {
+                e.preventDefault();
 
-            const dx = e.clientX - mapState.lastX;
-            const dy = e.clientY - mapState.lastY;
+                const dx = e.clientX - mapState.lastX;
+                const dy = e.clientY - mapState.lastY;
 
-            mapState.offsetX += dx;
-            mapState.offsetY += dy;
+                mapState.offsetX += dx;
+                mapState.offsetY += dy;
 
-            mapState.lastX = e.clientX;
-            mapState.lastY = e.clientY;
+                mapState.lastX = e.clientX;
+                mapState.lastY = e.clientY;
 
-            drawMap();
+                // レイヤーシステムが有効な場合
+                if (mapState.layerStack.length > 0) {
+                    redrawAllLayers();
+                } else {
+                    drawMap();
+                }
+            }
+            // 描画中
+            else if (mapState.drawingState.isDrawing && (tool === 'pencil' || tool === 'eraser')) {
+                e.preventDefault();
+
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                mapState.drawingState.currentStroke.push({x, y});
+                performDrawing(tool, mapState.drawingState.currentStroke);
+            }
         });
 
+        // マウスアップイベント
         container.addEventListener('mouseup', function(e) {
             if (e.button === 0 || e.button === 1) {
-                mapState.isPanning = false;
-                container.classList.remove('panning');
+                if (mapState.isPanning) {
+                    mapState.isPanning = false;
+                    updateCursor();
+                }
+
+                if (mapState.drawingState.isDrawing) {
+                    mapState.drawingState.isDrawing = false;
+                    mapState.drawingState.currentStroke = [];
+                }
             }
         });
 
+        // マウスリーブイベント
         container.addEventListener('mouseleave', function() {
-            mapState.isPanning = false;
-            container.classList.remove('panning');
+            if (mapState.isPanning) {
+                mapState.isPanning = false;
+                updateCursor();
+            }
+
+            if (mapState.drawingState.isDrawing) {
+                mapState.drawingState.isDrawing = false;
+                mapState.drawingState.currentStroke = [];
+            }
         });
+
+        // ======================
+        // 描画ツールの実装
+        // ======================
+
+        // アクティブな描画レイヤーを取得（なければ作成）
+        function getActiveDrawingLayer() {
+            // 描画レイヤーを検索
+            let drawingLayer = mapState.layerStack.find(l => l.type === 'drawing' && !l.permanent);
+
+            // 描画レイヤーがなければ作成
+            if (!drawingLayer) {
+                addNewLayer();
+                drawingLayer = mapState.layerStack[mapState.layerStack.length - 1];
+            }
+
+            return drawingLayer;
+        }
+
+        // 鉛筆または消しゴムで描画
+        function performDrawing(tool, stroke) {
+            if (stroke.length < 2) return;
+
+            const layer = getActiveDrawingLayer();
+            if (!layer) return;
+
+            const ctx = layer.ctx;
+
+            // 最後の2点を描画
+            const p1 = stroke[stroke.length - 2];
+            const p2 = stroke[stroke.length - 1];
+
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (tool === 'pencil') {
+                ctx.strokeStyle = mapState.drawingState.color;
+                ctx.lineWidth = mapState.drawingState.brushSize;
+                ctx.globalCompositeOperation = 'source-over';
+            } else if (tool === 'eraser') {
+                // 消しゴムは透明にする
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = mapState.drawingState.brushSize * 2;  // 消しゴムは大きめ
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 測量結果を表示
+        function showMeasureDistance() {
+            const points = mapState.drawingState.measurePoints;
+            if (points.length !== 2) return;
+
+            // ピクセル距離を計算
+            const dx = points[1].x - points[0].x;
+            const dy = points[1].y - points[0].y;
+            const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+
+            // メタデータがあれば実距離を計算
+            let message = `ピクセル距離: ${Math.round(pixelDistance)} px`;
+
+            if (mapState.metadata && mapState.metadata.resolution) {
+                const resolution = mapState.metadata.resolution;  // m/pixel
+                const realDistance = (pixelDistance / mapState.scale) * resolution;
+                message = `距離: ${realDistance.toFixed(2)} m (${Math.round(pixelDistance)} px)`;
+            }
+
+            alert(message);
+        }
+
+        // バケツ塗りつぶし（シンプルな実装）
+        function performBucketFill(x, y) {
+            const layer = getActiveDrawingLayer();
+            if (!layer) return;
+
+            // 履歴に保存
+            saveToHistory();
+
+            const ctx = layer.ctx;
+            const width = layer.canvas.width;
+            const height = layer.canvas.height;
+
+            // 現在のピクセルデータを取得
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            // クリック位置のピクセル座標
+            const pixelX = Math.floor(x);
+            const pixelY = Math.floor(y);
+
+            if (pixelX < 0 || pixelX >= width || pixelY < 0 || pixelY >= height) {
+                return;
+            }
+
+            // クリック位置の色を取得
+            const pixelIndex = (pixelY * width + pixelX) * 4;
+            const targetR = data[pixelIndex];
+            const targetG = data[pixelIndex + 1];
+            const targetB = data[pixelIndex + 2];
+            const targetA = data[pixelIndex + 3];
+
+            // 塗りつぶし色を取得
+            const fillColor = hexToRgb(mapState.drawingState.color);
+            if (!fillColor) return;
+
+            // 同じ色の場合は何もしない
+            if (targetR === fillColor.r && targetG === fillColor.g && targetB === fillColor.b && targetA === 255) {
+                return;
+            }
+
+            // フラッドフィル（幅優先探索）
+            const stack = [{x: pixelX, y: pixelY}];
+            const visited = new Set();
+
+            while (stack.length > 0) {
+                const {x, y} = stack.pop();
+                const key = `${x},${y}`;
+
+                if (visited.has(key)) continue;
+                if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+                const index = (y * width + x) * 4;
+
+                // 対象色と一致するかチェック
+                if (
+                    data[index] === targetR &&
+                    data[index + 1] === targetG &&
+                    data[index + 2] === targetB &&
+                    data[index + 3] === targetA
+                ) {
+                    // 塗りつぶし
+                    data[index] = fillColor.r;
+                    data[index + 1] = fillColor.g;
+                    data[index + 2] = fillColor.b;
+                    data[index + 3] = 255;
+
+                    visited.add(key);
+
+                    // 隣接ピクセルをスタックに追加
+                    stack.push({x: x + 1, y: y});
+                    stack.push({x: x - 1, y: y});
+                    stack.push({x: x, y: y + 1});
+                    stack.push({x: x, y: y - 1});
+                }
+
+                // スタックサイズ制限（パフォーマンス対策）
+                if (visited.size > 100000) {
+                    alert('塗りつぶし領域が大きすぎます');
+                    break;
+                }
+            }
+
+            // 画像データを書き戻す
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // HEX色をRGBに変換
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
 
         // ウィンドウリサイズ時にキャンバスサイズを調整
         window.addEventListener('resize', function() {
             if (mapState.image) {
                 const containerRect = container.getBoundingClientRect();
-                canvas.width = containerRect.width;
-                canvas.height = containerRect.height;
-                drawMap();
+
+                // 新しいレイヤーシステムの場合
+                if (mapState.layerStack.length > 0) {
+                    // すべてのレイヤーのキャンバスサイズを更新
+                    mapState.layerStack.forEach(layer => {
+                        // 既存の描画内容を保存
+                        const imageData = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+
+                        // キャンバスサイズを変更
+                        layer.canvas.width = containerRect.width;
+                        layer.canvas.height = containerRect.height;
+
+                        // 描画内容を復元（描画レイヤーのみ）
+                        if (layer.type === 'drawing') {
+                            layer.ctx.putImageData(imageData, 0, 0);
+                        }
+                    });
+
+                    redrawAllLayers();
+                } else {
+                    // 旧システムの場合
+                    canvas.width = containerRect.width;
+                    canvas.height = containerRect.height;
+                    drawMap();
+                }
             }
         });
 
