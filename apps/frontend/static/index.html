@@ -1562,12 +1562,12 @@
             }
         });
 
-        // ホイールボタン（中ボタン）でパン
+        // 左クリックまたは中ボタンでパン
         container.addEventListener('mousedown', function(e) {
             if (!mapState.image) return;
 
-            // 中ボタン（button === 1）でパン開始
-            if (e.button === 1) {
+            // 左ボタン（button === 0）または中ボタン（button === 1）でパン開始
+            if (e.button === 0 || e.button === 1) {
                 e.preventDefault();
                 mapState.isPanning = true;
                 mapState.lastX = e.clientX;
@@ -1594,7 +1594,7 @@
         });
 
         container.addEventListener('mouseup', function(e) {
-            if (e.button === 1) {
+            if (e.button === 0 || e.button === 1) {
                 mapState.isPanning = false;
                 container.classList.remove('panning');
             }
