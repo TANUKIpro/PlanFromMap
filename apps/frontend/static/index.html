@@ -950,13 +950,6 @@
 
                     updateOverlayControls();
                     drawMap();
-
-                    // 画像ファイル名が指定されている場合、ユーザーに通知
-                    if (metadata.image) {
-                        alert(`メタデータを読み込みました。\n次に「🖼️ 画像を読み込む」ボタンから画像ファイル「${metadata.image}」を読み込んでください。`);
-                    } else {
-                        alert('メタデータを読み込みました。');
-                    }
                 } catch (error) {
                     console.error('YAMLファイルの読み込みに失敗:', error);
                     alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
@@ -1569,12 +1562,12 @@
             }
         });
 
-        // ホイールボタン（中ボタン）でパン
+        // 左クリックまたは中ボタンでパン
         container.addEventListener('mousedown', function(e) {
             if (!mapState.image) return;
 
-            // 中ボタン（button === 1）でパン開始
-            if (e.button === 1) {
+            // 左ボタン（button === 0）または中ボタン（button === 1）でパン開始
+            if (e.button === 0 || e.button === 1) {
                 e.preventDefault();
                 mapState.isPanning = true;
                 mapState.lastX = e.clientX;
@@ -1601,7 +1594,7 @@
         });
 
         container.addEventListener('mouseup', function(e) {
-            if (e.button === 1) {
+            if (e.button === 0 || e.button === 1) {
                 mapState.isPanning = false;
                 container.classList.remove('panning');
             }
