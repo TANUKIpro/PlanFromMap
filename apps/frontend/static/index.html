@@ -359,7 +359,8 @@
 <body>
     <div class="container">
         <!-- 隠しファイル入力 -->
-        <input type="file" id="fileInput" accept="image/*,.pgm,.yaml,.yml" style="display: none;" onchange="handleFileSelect(event)">
+        <input type="file" id="imageFileInput" accept="image/*,.pgm" style="display: none;" onchange="handleImageFileSelect(event)">
+        <input type="file" id="yamlFileInput" accept=".yaml,.yml" style="display: none;" onchange="handleYAMLFileSelect(event)">
 
         <!-- タブコンテナ -->
         <div class="tabs-container">
@@ -378,13 +379,15 @@
                         <div class="map-placeholder" id="mapPlaceholder">
                             <div style="text-align: center;">
                                 <p style="margin-bottom: 20px; color: #999;">マップがインポートされていません。</p>
-                                <button class="load-button" onclick="loadMapFile()">📁 マップを読み込む</button>
+                                <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
+                                <button class="load-button" onclick="loadYAMLFile()" style="margin-left: 10px;">📄 YAMLを読み込む</button>
                             </div>
                         </div>
                         <canvas id="mapCanvas" style="display: none;"></canvas>
                     </div>
                     <div class="map-controls">
-                        <button class="load-button" onclick="loadMapFile()">📁 マップを読み込む</button>
+                        <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
+                        <button class="load-button" onclick="loadYAMLFile()">📄 YAMLを読み込む</button>
                         <button class="control-button" onclick="clearMap()">クリア</button>
                         <button class="control-button" onclick="resetView()">表示リセット</button>
                         <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
@@ -473,33 +476,42 @@
             }
         }
 
-        // マップファイルの読み込み
-        function loadMapFile() {
-            document.getElementById('fileInput').click();
+        // 画像ファイルの読み込みボタン
+        function loadImageFile() {
+            document.getElementById('imageFileInput').click();
         }
 
-        // ファイル選択時の処理
-        function handleFileSelect(event) {
+        // YAMLファイルの読み込みボタン
+        function loadYAMLFile() {
+            document.getElementById('yamlFileInput').click();
+        }
+
+        // 画像ファイル選択時の処理
+        function handleImageFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const fileName = file.name.toLowerCase();
 
-            // YAMLファイルの場合
-            if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) {
-                loadYAMLFile(file);
-            }
             // PGMファイルの場合
-            else if (fileName.endsWith('.pgm')) {
-                loadPGMFile(file);
+            if (fileName.endsWith('.pgm')) {
+                loadPGMImageFile(file);
             } else {
                 // 通常の画像ファイル
-                loadImageFile(file);
+                loadStandardImageFile(file);
             }
         }
 
+        // YAMLファイル選択時の処理
+        function handleYAMLFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            loadYAMLMetadataFile(file);
+        }
+
         // 通常の画像ファイルを読み込む
-        function loadImageFile(file) {
+        function loadStandardImageFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -525,8 +537,8 @@
             reader.readAsDataURL(file);
         }
 
-        // YAMLファイルを読み込む
-        function loadYAMLFile(file) {
+        // YAMLメタデータファイルを読み込む
+        function loadYAMLMetadataFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -541,7 +553,7 @@
 
                     // 画像ファイル名が指定されている場合、ユーザーに通知
                     if (metadata.image) {
-                        alert(`メタデータを読み込みました。\n次に画像ファイル「${metadata.image}」を読み込んでください。`);
+                        alert(`メタデータを読み込みました。\n次に「🖼️ 画像を読み込む」ボタンから画像ファイル「${metadata.image}」を読み込んでください。`);
                     } else {
                         alert('メタデータを読み込みました。');
                     }
@@ -629,8 +641,8 @@
             metadataDiv.classList.add('active');
         }
 
-        // PGMファイルを読み込む
-        function loadPGMFile(file) {
+        // PGM画像ファイルを読み込む
+        function loadPGMImageFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -775,7 +787,8 @@
             document.getElementById('mapMetadata').classList.remove('active');
 
             // ファイル入力をリセット
-            document.getElementById('fileInput').value = '';
+            document.getElementById('imageFileInput').value = '';
+            document.getElementById('yamlFileInput').value = '';
 
             updateZoomInfo();
         }
