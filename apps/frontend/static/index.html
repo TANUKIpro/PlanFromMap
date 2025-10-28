@@ -276,18 +276,50 @@
             display: flex;
         }
 
+        .metadata-overlay-panel.minimized .metadata-overlay-body {
+            display: none;
+        }
+
         .metadata-overlay-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 10px 14px;
             background: linear-gradient(120deg, rgba(102, 126, 234, 0.65), rgba(118, 75, 162, 0.45));
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
         }
 
         .metadata-overlay-title {
             font-size: 0.95em;
             font-weight: 600;
             letter-spacing: 0.02em;
+        }
+
+        .metadata-overlay-minimize {
+            appearance: none;
+            border: none;
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .metadata-overlay-minimize:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .metadata-overlay-minimize-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .metadata-overlay-panel.minimized .metadata-overlay-minimize-icon {
+            transform: rotate(-90deg);
         }
 
         .metadata-overlay-body {
@@ -515,6 +547,14 @@
                         <div class="metadata-overlay-panel" id="metadataOverlay" aria-hidden="true">
                             <div class="metadata-overlay-header">
                                 <span class="metadata-overlay-title">📋 マップメタデータ</span>
+                                <button
+                                    type="button"
+                                    class="metadata-overlay-minimize"
+                                    onclick="toggleMetadataMinimize()"
+                                    title="最小化"
+                                >
+                                    <span class="metadata-overlay-minimize-icon">▾</span>
+                                </button>
                             </div>
                             <div class="metadata-overlay-body" id="metadataOverlayBody">
                                 <div class="metadata-overlay-section metadata-overlay-info" id="metadataOverlayInfo">
@@ -737,6 +777,19 @@
             const metadataAvailable = !!mapState.metadata;
             overlay.classList.toggle('active', metadataAvailable);
             overlay.setAttribute('aria-hidden', metadataAvailable ? 'false' : 'true');
+        }
+
+        function toggleMetadataMinimize() {
+            const overlay = document.getElementById('metadataOverlay');
+            const button = document.querySelector('.metadata-overlay-minimize');
+            if (!overlay) return;
+
+            overlay.classList.toggle('minimized');
+
+            const isMinimized = overlay.classList.contains('minimized');
+            if (button) {
+                button.setAttribute('title', isMinimized ? '展開' : '最小化');
+            }
         }
 
         // 画像ファイル選択時の処理
@@ -1062,7 +1115,7 @@
                 metadataContent.innerHTML = '';
             }
             if (metadataOverlay) {
-                metadataOverlay.classList.remove('active');
+                metadataOverlay.classList.remove('active', 'minimized');
                 metadataOverlay.setAttribute('aria-hidden', 'true');
             }
 
