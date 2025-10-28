@@ -348,7 +348,7 @@
         </header>
 
         <!-- 隠しファイル入力 -->
-        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+        <input type="file" id="fileInput" accept="image/*,.pgm" style="display: none;" onchange="handleFileSelect(event)">
 
         <!-- タブコンテナ -->
         <div class="tabs-container">
@@ -471,6 +471,19 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            const fileName = file.name.toLowerCase();
+
+            // PGMファイルの場合
+            if (fileName.endsWith('.pgm')) {
+                loadPGMFile(file);
+            } else {
+                // 通常の画像ファイル
+                loadImageFile(file);
+            }
+        }
+
+        // 通常の画像ファイルを読み込む
+        function loadImageFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -494,6 +507,137 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        // PGMファイルを読み込む
+        function loadPGMFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const arrayBuffer = e.target.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+
+                    // PGMフォーマットをパース
+                    const pgmData = parsePGM(uint8Array);
+
+                    // PGMデータをImageに変換
+                    const img = pgmToImage(pgmData);
+
+                    img.onload = function() {
+                        mapState.image = img;
+                        mapState.scale = 1.0;
+                        mapState.offsetX = 0;
+                        mapState.offsetY = 0;
+
+                        // キャンバスのサイズを設定
+                        const containerRect = container.getBoundingClientRect();
+                        canvas.width = containerRect.width;
+                        canvas.height = containerRect.height;
+
+                        // プレースホルダーを非表示、キャンバスを表示
+                        document.getElementById('mapPlaceholder').style.display = 'none';
+                        canvas.style.display = 'block';
+
+                        drawMap();
+                    };
+                } catch (error) {
+                    console.error('PGMファイルの読み込みに失敗:', error);
+                    alert('PGMファイルの読み込みに失敗しました: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // PGMフォーマットをパース（P5形式とP2形式に対応）
+        function parsePGM(uint8Array) {
+            let offset = 0;
+
+            // ヘッダーを読み込む（テキスト形式）
+            let headerText = '';
+            while (offset < uint8Array.length) {
+                const char = String.fromCharCode(uint8Array[offset]);
+                headerText += char;
+                offset++;
+
+                // ヘッダーの終わりを検出（3つの数値を読み取ったら）
+                const lines = headerText.split('\n').filter(line =>
+                    line.trim() && !line.trim().startsWith('#')
+                );
+
+                if (lines.length >= 3) {
+                    break;
+                }
+            }
+
+            // ヘッダーをパース
+            const lines = headerText.split('\n').filter(line =>
+                line.trim() && !line.trim().startsWith('#')
+            );
+
+            const format = lines[0].trim();
+            if (format !== 'P5' && format !== 'P2') {
+                throw new Error('サポートされていないPGMフォーマット: ' + format);
+            }
+
+            const [width, height] = lines[1].trim().split(/\s+/).map(Number);
+            const maxVal = parseInt(lines[2].trim());
+
+            // バイナリデータを読み込む
+            const pixelData = new Uint8Array(width * height);
+
+            if (format === 'P5') {
+                // バイナリ形式
+                for (let i = 0; i < width * height; i++) {
+                    pixelData[i] = uint8Array[offset + i];
+                }
+            } else {
+                // ASCII形式（P2）
+                const dataText = String.fromCharCode.apply(null,
+                    Array.from(uint8Array.slice(offset))
+                );
+                const values = dataText.trim().split(/\s+/).map(Number);
+                for (let i = 0; i < width * height && i < values.length; i++) {
+                    pixelData[i] = values[i];
+                }
+            }
+
+            return {
+                width: width,
+                height: height,
+                maxVal: maxVal,
+                data: pixelData
+            };
+        }
+
+        // PGMデータをImageオブジェクトに変換
+        function pgmToImage(pgmData) {
+            // 一時キャンバスを作成
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = pgmData.width;
+            tempCanvas.height = pgmData.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // ImageDataを作成
+            const imageData = tempCtx.createImageData(pgmData.width, pgmData.height);
+
+            // グレースケールデータをRGBAに変換
+            for (let i = 0; i < pgmData.data.length; i++) {
+                const value = Math.floor((pgmData.data[i] / pgmData.maxVal) * 255);
+                const idx = i * 4;
+                imageData.data[idx] = value;     // R
+                imageData.data[idx + 1] = value; // G
+                imageData.data[idx + 2] = value; // B
+                imageData.data[idx + 3] = 255;   // A
+            }
+
+            // キャンバスに描画
+            tempCtx.putImageData(imageData, 0, 0);
+
+            // Imageオブジェクトを作成
+            const img = new Image();
+            img.src = tempCanvas.toDataURL();
+
+            return img;
         }
 
         // マップのクリア
