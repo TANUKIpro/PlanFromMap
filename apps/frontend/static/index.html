@@ -174,75 +174,6 @@
             margin-top: 10px;
         }
 
-        /* メニューバー */
-        .menubar {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .menu {
-            display: flex;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .menu-item {
-            position: relative;
-        }
-
-        .menu-button {
-            padding: 12px 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            color: #333;
-            transition: background 0.3s ease;
-            display: block;
-            width: 100%;
-            text-align: left;
-        }
-
-        .menu-button:hover {
-            background: #f0f0f0;
-        }
-
-        .dropdown {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
-            min-width: 200px;
-            z-index: 1000;
-        }
-
-        .dropdown.active {
-            display: block;
-        }
-
-        .dropdown-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            font-size: 1em;
-            color: #333;
-        }
-
-        .dropdown-item:hover {
-            background: #f0f0f0;
-        }
-
         /* マップビューア */
         .map-viewer {
             background: white;
@@ -318,6 +249,23 @@
 
         .control-button:hover {
             background: #5568d3;
+        }
+
+        .load-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .load-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         /* タブナビゲーション */
@@ -399,19 +347,6 @@
             <p>RoboCup@Home DSPL 意味地図プラットフォーム</p>
         </header>
 
-        <!-- メニューバー -->
-        <div class="menubar">
-            <ul class="menu">
-                <li class="menu-item">
-                    <button class="menu-button" onclick="toggleDropdown('fileMenu', event)">ファイル</button>
-                    <div class="dropdown" id="fileMenu">
-                        <button class="dropdown-item" onclick="importMap(event)">マップのインポート</button>
-                        <button class="dropdown-item" onclick="clearMap(event)">マップのクリア</button>
-                    </div>
-                </li>
-            </ul>
-        </div>
-
         <!-- 隠しファイル入力 -->
         <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
 
@@ -431,12 +366,16 @@
                     <h2>🗺️ マップビューア</h2>
                     <div class="map-canvas-container" id="mapContainer">
                         <div class="map-placeholder" id="mapPlaceholder">
-                            マップがインポートされていません。<br>
-                            「ファイル」→「マップのインポート」から画像を選択してください。
+                            <div style="text-align: center;">
+                                <p style="margin-bottom: 20px; color: #999;">マップがインポートされていません。</p>
+                                <button class="load-button" onclick="loadMapFile()">📁 マップを読み込む</button>
+                            </div>
                         </div>
                         <canvas id="mapCanvas" style="display: none;"></canvas>
                     </div>
                     <div class="map-controls">
+                        <button class="load-button" onclick="loadMapFile()">📁 マップを読み込む</button>
+                        <button class="control-button" onclick="clearMap()">クリア</button>
                         <button class="control-button" onclick="resetView()">表示リセット</button>
                         <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
                         <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
@@ -522,55 +461,9 @@
             }
         }
 
-        // ドロップダウンメニューの制御
-        function toggleDropdown(menuId, event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById(menuId);
-            const isActive = dropdown.classList.contains('active');
-
-            // すべてのドロップダウンを閉じる
-            document.querySelectorAll('.dropdown').forEach(d => {
-                d.classList.remove('active');
-            });
-
-            // クリックされたメニューをトグル
-            if (!isActive) {
-                dropdown.classList.add('active');
-            }
-        }
-
-        // ドロップダウン外をクリックしたら閉じる
-        document.addEventListener('click', function(event) {
-            if (!event.target.matches('.menu-button') && !event.target.matches('.dropdown-item')) {
-                document.querySelectorAll('.dropdown').forEach(d => {
-                    d.classList.remove('active');
-                });
-            }
-        });
-
-        // マップのインポート
-        function importMap(event) {
-            event.stopPropagation();
-
-            // ドロップダウンを閉じる
-            document.querySelectorAll('.dropdown').forEach(d => {
-                d.classList.remove('active');
-            });
-
-            // マップビューアタブに切り替え
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.querySelector('.tab-button').classList.add('active');
-            document.getElementById('mapViewer').classList.add('active');
-
-            // 少し遅延させてファイル選択ダイアログを開く
-            setTimeout(() => {
-                document.getElementById('fileInput').click();
-            }, 100);
+        // マップファイルの読み込み
+        function loadMapFile() {
+            document.getElementById('fileInput').click();
         }
 
         // ファイル選択時の処理
@@ -604,9 +497,7 @@
         }
 
         // マップのクリア
-        function clearMap(event) {
-            event.stopPropagation();
-
+        function clearMap() {
             mapState.image = null;
             mapState.scale = 1.0;
             mapState.offsetX = 0;
@@ -617,11 +508,6 @@
 
             // ファイル入力をリセット
             document.getElementById('fileInput').value = '';
-
-            // ドロップダウンを閉じる
-            document.querySelectorAll('.dropdown').forEach(d => {
-                d.classList.remove('active');
-            });
 
             updateZoomInfo();
         }
