@@ -207,6 +207,7 @@
             padding: 10px;
             background: #f9f9f9;
             border-radius: 8px;
+            flex-wrap: wrap;
         }
 
         .zoom-info {
@@ -215,49 +216,231 @@
             margin-left: auto;
         }
 
-        .map-metadata {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f9f9f9;
+        .layer-controls {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            background: #f1f1fb;
             border-radius: 8px;
+            padding: 10px;
+        }
+
+        .layer-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+            color: #555;
+            background: white;
+            border-radius: 6px;
+            padding: 6px 10px;
+            border: 1px solid #e0e0ff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .layer-toggle.disabled {
+            opacity: 0.5;
+        }
+
+        .layer-toggle input {
+            accent-color: #667eea;
+        }
+
+        .metadata-overlay-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: clamp(220px, 28vw, 320px);
+            max-height: 70%;
+            display: none;
+            flex-direction: column;
+            background: rgba(18, 22, 45, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            overflow: hidden;
+            color: #f5f6ff;
+            z-index: 5;
+        }
+
+        .metadata-overlay-panel.active {
+            display: flex;
+        }
+
+        .metadata-overlay-panel.collapsed .metadata-overlay-body {
             display: none;
         }
 
-        .map-metadata.active {
-            display: block;
+        .metadata-overlay-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 14px;
+            background: linear-gradient(120deg, rgba(102, 126, 234, 0.65), rgba(118, 75, 162, 0.45));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        .metadata-title {
+        .metadata-overlay-title {
+            font-size: 0.95em;
             font-weight: 600;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 1em;
+            letter-spacing: 0.02em;
         }
 
-        .metadata-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .metadata-overlay-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .metadata-overlay-button {
+            appearance: none;
+            border: none;
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .metadata-overlay-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .metadata-overlay-body {
+            padding: 12px 14px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .metadata-overlay-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .metadata-overlay-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 3px;
+        }
+
+        .metadata-overlay-section {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .metadata-item {
-            background: white;
-            padding: 10px;
-            border-radius: 6px;
-            border-left: 3px solid #667eea;
+        .metadata-overlay-section-title {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.65);
         }
 
-        .metadata-item label {
-            font-size: 0.85em;
-            color: #666;
-            display: block;
-            margin-bottom: 5px;
+        .metadata-overlay-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .metadata-item value {
+        .metadata-overlay-item {
+            background: rgba(30, 34, 66, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metadata-overlay-item label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .metadata-overlay-item value {
             font-size: 0.95em;
-            color: #333;
-            font-weight: 500;
+            font-weight: 600;
+            color: #ffffff;
+            word-break: break-word;
+        }
+
+        .metadata-overlay-panel.collapsed .metadata-overlay-collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .metadata-overlay-options.inactive {
+            opacity: 0.6;
+        }
+
+        .metadata-overlay-toggle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .metadata-overlay-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(30, 34, 66, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.9em;
+            color: #f5f6ff;
+            cursor: pointer;
+        }
+
+        .metadata-overlay-toggle.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .metadata-overlay-toggle span {
+            flex: 1;
+        }
+
+        .metadata-overlay-toggle input {
+            accent-color: #8895ff;
+            cursor: pointer;
+        }
+
+        .metadata-overlay-placeholder {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.25);
+            background: rgba(30, 34, 66, 0.6);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .metadata-overlay-panel.info-hidden .metadata-overlay-info {
+            display: none;
+        }
+
+        .metadata-overlay-panel.info-hidden .metadata-overlay-placeholder {
+            display: block;
+        }
+
+        .metadata-overlay-panel:not(.active) .metadata-overlay-body {
+            display: none;
         }
 
         .control-button {
@@ -384,6 +567,63 @@
                             </div>
                         </div>
                         <canvas id="mapCanvas" style="display: none;"></canvas>
+                        <div class="metadata-overlay-panel" id="metadataOverlay" aria-hidden="true">
+                            <div class="metadata-overlay-header">
+                                <span class="metadata-overlay-title">📋 マップメタデータ</span>
+                                <div class="metadata-overlay-actions">
+                                    <button
+                                        type="button"
+                                        class="metadata-overlay-button metadata-overlay-collapse"
+                                        aria-expanded="true"
+                                        onclick="toggleMetadataOverlayCollapse(event)"
+                                        title="折りたたむ"
+                                    >
+                                        <span class="metadata-overlay-collapse-icon">▾</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="metadata-overlay-button"
+                                        onclick="hideMetadataOverlay(event)"
+                                        title="パネルを閉じる"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="metadata-overlay-body" id="metadataOverlayBody">
+                                <div class="metadata-overlay-section metadata-overlay-info" id="metadataOverlayInfo">
+                                    <div class="metadata-overlay-list" id="metadataOverlayContent"></div>
+                                </div>
+                                <div class="metadata-overlay-placeholder" id="metadataOverlayPlaceholder" aria-hidden="true">
+                                    情報パネルは非表示です。再表示するには「情報パネル」のチェックボックスをオンにしてください。
+                                </div>
+                                <div class="metadata-overlay-section metadata-overlay-options inactive" id="metadataOverlayOptions">
+                                    <div class="metadata-overlay-section-title">表示オプション</div>
+                                    <div class="metadata-overlay-toggle-list">
+                                        <label class="metadata-overlay-toggle metadata-toggle">
+                                            <span>メタデータオーバーレイ</span>
+                                            <input type="checkbox" id="metadataLayerToggle" checked onchange="toggleLayer('metadataOverlay', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>1mグリッド</span>
+                                            <input type="checkbox" id="gridOverlayToggle" data-option="showGrid" checked onchange="toggleOverlayOption('showGrid', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>原点マーカー</span>
+                                            <input type="checkbox" id="originOverlayToggle" data-option="showOrigin" checked onchange="toggleOverlayOption('showOrigin', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>スケールバー</span>
+                                            <input type="checkbox" id="scaleOverlayToggle" data-option="showScaleBar" checked onchange="toggleOverlayOption('showScaleBar', this.checked)">
+                                        </label>
+                                        <label class="metadata-overlay-toggle metadata-dependent">
+                                            <span>情報パネル</span>
+                                            <input type="checkbox" id="infoOverlayToggle" data-option="showInfoPanel" checked onchange="toggleOverlayOption('showInfoPanel', this.checked)">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="map-controls">
                         <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
@@ -394,9 +634,13 @@
                         <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
                         <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
                     </div>
-                    <div class="map-metadata" id="mapMetadata">
-                        <div class="metadata-title">📋 マップメタデータ</div>
-                        <div class="metadata-grid" id="metadataContent"></div>
+                    <div class="layer-controls">
+                        <div class="layer-group">
+                            <label class="layer-toggle">
+                                <input type="checkbox" id="imageLayerToggle" checked onchange="toggleLayer('image', this.checked)">
+                                画像レイヤー
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -442,7 +686,18 @@
             lastY: 0,
             minScale: 0.1,
             maxScale: 10.0,
-            metadata: null  // YAMLから読み込まれたメタデータ
+            metadata: null,  // YAMLから読み込まれたメタデータ
+            layers: {
+                image: true,
+                metadataOverlay: true
+            },
+            overlaySettings: {
+                showGrid: true,
+                gridSpacingMeters: 1,
+                showOrigin: true,
+                showScaleBar: true,
+                showInfoPanel: true
+            }
         };
 
         const canvas = document.getElementById('mapCanvas');
@@ -486,6 +741,145 @@
             document.getElementById('yamlFileInput').click();
         }
 
+        // レイヤー表示の切り替え
+        function toggleLayer(layerKey, enabled) {
+            if (!mapState.layers || !(layerKey in mapState.layers)) {
+                return;
+            }
+
+            if (layerKey === 'metadataOverlay' && !mapState.metadata) {
+                mapState.layers[layerKey] = false;
+                updateOverlayControls();
+                return;
+            }
+
+            mapState.layers[layerKey] = enabled;
+            updateOverlayControls();
+            drawMap();
+        }
+
+        // オーバーレイオプションの切り替え
+        function toggleOverlayOption(optionKey, enabled) {
+            if (!mapState.overlaySettings || !(optionKey in mapState.overlaySettings)) {
+                return;
+            }
+
+            if (!mapState.metadata) {
+                updateOverlayControls();
+                return;
+            }
+
+            mapState.overlaySettings[optionKey] = enabled;
+            updateOverlayControls();
+            drawMap();
+        }
+
+        // レイヤーコントロールの状態更新
+        function updateOverlayControls() {
+            const imageToggle = document.getElementById('imageLayerToggle');
+            if (imageToggle) {
+                imageToggle.checked = !!mapState.layers.image;
+            }
+
+            const metadataAvailable = !!mapState.metadata;
+            const metadataToggle = document.getElementById('metadataLayerToggle');
+            if (metadataToggle) {
+                metadataToggle.checked = metadataAvailable && !!mapState.layers.metadataOverlay;
+                metadataToggle.disabled = !metadataAvailable;
+                const label = metadataToggle.closest('.metadata-overlay-toggle');
+                if (label) {
+                    label.classList.toggle('disabled', !metadataAvailable);
+                }
+            }
+
+            document.querySelectorAll('.metadata-dependent input').forEach(input => {
+                const optionKey = input.dataset.option;
+                if (optionKey && mapState.overlaySettings.hasOwnProperty(optionKey)) {
+                    input.checked = !!mapState.overlaySettings[optionKey];
+                }
+                input.disabled = !metadataAvailable;
+                const wrapper = input.closest('.metadata-overlay-toggle');
+                if (wrapper) {
+                    wrapper.classList.toggle('disabled', !metadataAvailable);
+                }
+            });
+
+            const optionsGroup = document.getElementById('metadataOverlayOptions');
+            if (optionsGroup) {
+                optionsGroup.classList.toggle('inactive', !metadataAvailable);
+            }
+
+            updateMetadataOverlayVisibility();
+            syncMetadataOverlayCollapseState();
+        }
+
+        function updateMetadataOverlayVisibility() {
+            const overlay = document.getElementById('metadataOverlay');
+            if (!overlay) return;
+
+            const metadataAvailable = !!mapState.metadata;
+            overlay.classList.toggle('active', metadataAvailable);
+            overlay.setAttribute('aria-hidden', metadataAvailable ? 'false' : 'true');
+
+            if (!metadataAvailable) {
+                overlay.classList.remove('collapsed', 'info-hidden');
+            }
+
+            const infoVisible = !!(
+                metadataAvailable &&
+                mapState.overlaySettings &&
+                mapState.overlaySettings.showInfoPanel
+            );
+
+            overlay.classList.toggle('info-hidden', !infoVisible);
+
+            const placeholder = document.getElementById('metadataOverlayPlaceholder');
+            if (placeholder) {
+                const placeholderHidden = !metadataAvailable || infoVisible;
+                placeholder.setAttribute('aria-hidden', placeholderHidden ? 'true' : 'false');
+            }
+        }
+
+        function syncMetadataOverlayCollapseState() {
+            const overlay = document.getElementById('metadataOverlay');
+            const collapseButton = document.querySelector('.metadata-overlay-collapse');
+            if (!collapseButton) return;
+
+            const isCollapsed = !!(overlay && overlay.classList.contains('collapsed'));
+            collapseButton.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            collapseButton.setAttribute('title', isCollapsed ? 'パネルを展開' : '折りたたむ');
+
+            const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
+            if (icon) {
+                icon.textContent = isCollapsed ? '▸' : '▾';
+            }
+        }
+
+        function toggleMetadataOverlayCollapse(event) {
+            event.stopPropagation();
+            const overlay = document.getElementById('metadataOverlay');
+            if (!overlay) return;
+
+            overlay.classList.toggle('collapsed');
+            syncMetadataOverlayCollapseState();
+        }
+
+        function hideMetadataOverlay(event) {
+            event.stopPropagation();
+
+            if (!mapState.overlaySettings) return;
+
+            mapState.overlaySettings.showInfoPanel = false;
+
+            const infoToggle = document.getElementById('infoOverlayToggle');
+            if (infoToggle) {
+                infoToggle.checked = false;
+            }
+
+            updateOverlayControls();
+            drawMap();
+        }
+
         // 画像ファイル選択時の処理
         function handleImageFileSelect(event) {
             const file = event.target.files[0];
@@ -520,6 +914,7 @@
                     mapState.scale = 1.0;
                     mapState.offsetX = 0;
                     mapState.offsetY = 0;
+                    mapState.layers.image = true;
 
                     // キャンバスのサイズを設定
                     const containerRect = container.getBoundingClientRect();
@@ -530,6 +925,7 @@
                     document.getElementById('mapPlaceholder').style.display = 'none';
                     canvas.style.display = 'block';
 
+                    updateOverlayControls();
                     drawMap();
                 };
                 img.src = e.target.result;
@@ -547,9 +943,13 @@
 
                     // メタデータを保存
                     mapState.metadata = metadata;
+                    mapState.layers.metadataOverlay = true;
 
                     // メタデータを表示
                     displayMetadata(metadata);
+
+                    updateOverlayControls();
+                    drawMap();
 
                     // 画像ファイル名が指定されている場合、ユーザーに通知
                     if (metadata.image) {
@@ -567,78 +967,94 @@
 
         // メタデータを表示
         function displayMetadata(metadata) {
-            const metadataDiv = document.getElementById('mapMetadata');
-            const contentDiv = document.getElementById('metadataContent');
+            const overlay = document.getElementById('metadataOverlay');
+            const contentDiv = document.getElementById('metadataOverlayContent');
 
-            if (!metadata) {
-                metadataDiv.classList.remove('active');
+            if (!overlay || !contentDiv) {
                 return;
             }
 
-            let html = '';
+            if (!metadata) {
+                contentDiv.innerHTML = '';
+                overlay.classList.remove('active', 'collapsed', 'info-hidden');
+                overlay.setAttribute('aria-hidden', 'true');
+                const placeholder = document.getElementById('metadataOverlayPlaceholder');
+                if (placeholder) {
+                    placeholder.setAttribute('aria-hidden', 'true');
+                }
+                return;
+            }
 
-            // 画像ファイル名
+            const sections = [];
+
             if (metadata.image) {
-                html += `
-                    <div class="metadata-item">
-                        <label>画像ファイル</label>
-                        <value>${metadata.image}</value>
-                    </div>
-                `;
+                sections.push({
+                    label: '画像ファイル',
+                    value: metadata.image
+                });
             }
 
-            // 解像度
             if (metadata.resolution !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>解像度 (m/pixel)</label>
-                        <value>${metadata.resolution.toFixed(6)}</value>
-                    </div>
-                `;
+                const resolution = Number(metadata.resolution);
+                sections.push({
+                    label: '解像度 (m/pixel)',
+                    value: isFinite(resolution) ? resolution.toFixed(6) : String(metadata.resolution)
+                });
             }
 
-            // 原点
             if (metadata.origin && Array.isArray(metadata.origin)) {
-                html += `
-                    <div class="metadata-item">
-                        <label>原点 [x, y, theta]</label>
-                        <value>[${metadata.origin.map(v => v.toFixed(6)).join(', ')}]</value>
-                    </div>
-                `;
+                const formattedOrigin = metadata.origin.map(value => {
+                    const num = Number(value);
+                    return Number.isFinite(num) ? num.toFixed(6) : String(value);
+                });
+                sections.push({
+                    label: '原点 [x, y, theta]',
+                    value: `[${formattedOrigin.join(', ')}]`
+                });
             }
 
-            // 反転フラグ
             if (metadata.negate !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>白黒反転</label>
-                        <value>${metadata.negate ? '有効' : '無効'}</value>
-                    </div>
-                `;
+                sections.push({
+                    label: '白黒反転',
+                    value: metadata.negate ? '有効' : '無効'
+                });
             }
 
-            // 占有閾値
             if (metadata.occupied_thresh !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>占有閾値</label>
-                        <value>${metadata.occupied_thresh.toFixed(2)}</value>
-                    </div>
-                `;
+                const occupied = Number(metadata.occupied_thresh);
+                sections.push({
+                    label: '占有閾値',
+                    value: isFinite(occupied) ? occupied.toFixed(2) : String(metadata.occupied_thresh)
+                });
             }
 
-            // 自由空間閾値
             if (metadata.free_thresh !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>自由空間閾値</label>
-                        <value>${metadata.free_thresh.toFixed(3)}</value>
-                    </div>
-                `;
+                const free = Number(metadata.free_thresh);
+                sections.push({
+                    label: '自由空間閾値',
+                    value: isFinite(free) ? free.toFixed(3) : String(metadata.free_thresh)
+                });
             }
 
-            contentDiv.innerHTML = html;
-            metadataDiv.classList.add('active');
+            if (sections.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="metadata-overlay-item">
+                        <label>メタデータ</label>
+                        <value>表示できる情報がありません</value>
+                    </div>
+                `;
+            } else {
+                const html = sections.map(section => `
+                    <div class="metadata-overlay-item">
+                        <label>${section.label}</label>
+                        <value>${section.value}</value>
+                    </div>
+                `).join('');
+                contentDiv.innerHTML = html;
+            }
+            overlay.classList.remove('collapsed');
+            syncMetadataOverlayCollapseState();
+            updateMetadataOverlayVisibility();
         }
 
         // PGM画像ファイルを読み込む
@@ -660,6 +1076,7 @@
                         mapState.scale = 1.0;
                         mapState.offsetX = 0;
                         mapState.offsetY = 0;
+                        mapState.layers.image = true;
 
                         // キャンバスのサイズを設定
                         const containerRect = container.getBoundingClientRect();
@@ -670,6 +1087,7 @@
                         document.getElementById('mapPlaceholder').style.display = 'none';
                         canvas.style.display = 'block';
 
+                        updateOverlayControls();
                         drawMap();
                     };
                 } catch (error) {
@@ -779,18 +1197,42 @@
             mapState.offsetX = 0;
             mapState.offsetY = 0;
             mapState.metadata = null;
+            mapState.layers.image = true;
+            mapState.layers.metadataOverlay = true;
 
             canvas.style.display = 'none';
             document.getElementById('mapPlaceholder').style.display = 'block';
 
-            // メタデータ表示を非表示
-            document.getElementById('mapMetadata').classList.remove('active');
+            // メタデータ表示をリセット
+            const metadataOverlay = document.getElementById('metadataOverlay');
+            const metadataContent = document.getElementById('metadataOverlayContent');
+            const collapseButton = document.querySelector('.metadata-overlay-collapse');
+            if (metadataContent) {
+                metadataContent.innerHTML = '';
+            }
+            if (metadataOverlay) {
+                metadataOverlay.classList.remove('active', 'collapsed', 'info-hidden');
+                metadataOverlay.setAttribute('aria-hidden', 'true');
+            }
+            const metadataPlaceholder = document.getElementById('metadataOverlayPlaceholder');
+            if (metadataPlaceholder) {
+                metadataPlaceholder.setAttribute('aria-hidden', 'true');
+            }
+            if (collapseButton) {
+                collapseButton.setAttribute('aria-expanded', 'true');
+                const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
+                if (icon) {
+                    icon.textContent = '▾';
+                }
+            }
 
             // ファイル入力をリセット
             document.getElementById('imageFileInput').value = '';
             document.getElementById('yamlFileInput').value = '';
 
+            updateOverlayControls();
             updateZoomInfo();
+            updateMetadataOverlayVisibility();
         }
 
         // マップの描画
@@ -816,10 +1258,255 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(mapState.image, drawX, drawY, scaledWidth, scaledHeight);
+            if (mapState.layers.image) {
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(mapState.image, drawX, drawY, scaledWidth, scaledHeight);
+            }
+
+            if (mapState.layers.metadataOverlay && mapState.metadata) {
+                drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight);
+            }
 
             updateZoomInfo();
+        }
+
+        function drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight) {
+            const metadata = mapState.metadata;
+            if (!metadata) return;
+
+            const resolution = metadata.resolution;
+
+            if (mapState.overlaySettings.showGrid && resolution) {
+                drawGridOverlay(drawX, drawY, scaledWidth, scaledHeight, resolution);
+            }
+
+            if (mapState.overlaySettings.showOrigin && Array.isArray(metadata.origin)) {
+                drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
+            }
+
+            if (mapState.overlaySettings.showScaleBar && resolution) {
+                drawScaleBar(resolution);
+            }
+        }
+
+        function drawGridOverlay(drawX, drawY, scaledWidth, scaledHeight, resolution) {
+            if (!resolution) return;
+
+            const spacingMeters = mapState.overlaySettings.gridSpacingMeters || 1;
+            if (spacingMeters <= 0) return;
+
+            const spacingPixels = spacingMeters / resolution;
+            const scaledSpacing = spacingPixels * mapState.scale;
+            if (!isFinite(scaledSpacing) || scaledSpacing < 4) {
+                return;
+            }
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.35)';
+            ctx.lineWidth = 1;
+
+            const imageWidth = mapState.image.width;
+            const imageHeight = mapState.image.height;
+
+            for (let px = 0; px <= imageWidth; px += spacingPixels) {
+                const canvasX = drawX + px * mapState.scale;
+                if (canvasX < drawX - 1 || canvasX > drawX + scaledWidth + 1) continue;
+                ctx.beginPath();
+                ctx.moveTo(canvasX, drawY);
+                ctx.lineTo(canvasX, drawY + scaledHeight);
+                ctx.stroke();
+            }
+
+            for (let py = 0; py <= imageHeight; py += spacingPixels) {
+                const canvasY = drawY + py * mapState.scale;
+                if (canvasY < drawY - 1 || canvasY > drawY + scaledHeight + 1) continue;
+                ctx.beginPath();
+                ctx.moveTo(drawX, canvasY);
+                ctx.lineTo(drawX + scaledWidth, canvasY);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origin) {
+            if (!Array.isArray(origin) || origin.length < 2) return;
+            if (!mapState.metadata || mapState.metadata.resolution === undefined) return;
+
+            const originCanvas = worldToCanvas(0, 0, drawX, drawY);
+            if (!originCanvas) return;
+
+            if (
+                originCanvas.x < drawX - 1 ||
+                originCanvas.x > drawX + scaledWidth + 1 ||
+                originCanvas.y < drawY - 1 ||
+                originCanvas.y > drawY + scaledHeight + 1
+            ) {
+                // 表示領域外の場合は描画しない
+                return;
+            }
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
+            ctx.lineWidth = 2;
+
+            const crossSize = 10;
+            ctx.beginPath();
+            ctx.moveTo(originCanvas.x - crossSize, originCanvas.y);
+            ctx.lineTo(originCanvas.x + crossSize, originCanvas.y);
+            ctx.moveTo(originCanvas.x, originCanvas.y - crossSize);
+            ctx.lineTo(originCanvas.x, originCanvas.y + crossSize);
+            ctx.stroke();
+
+            const theta = origin.length >= 3 ? origin[2] : 0;
+            const arrowLength = 60;
+            const dirX = Math.cos(theta);
+            const dirY = -Math.sin(theta);
+            const endX = originCanvas.x + dirX * arrowLength;
+            const endY = originCanvas.y + dirY * arrowLength;
+
+            ctx.beginPath();
+            ctx.moveTo(originCanvas.x, originCanvas.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            const headLength = 12;
+            const leftDirX = Math.cos(theta + Math.PI / 6);
+            const leftDirY = -Math.sin(theta + Math.PI / 6);
+            const rightDirX = Math.cos(theta - Math.PI / 6);
+            const rightDirY = -Math.sin(theta - Math.PI / 6);
+
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - leftDirX * headLength, endY - leftDirY * headLength);
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - rightDirX * headLength, endY - rightDirY * headLength);
+            ctx.stroke();
+
+            const label = '原点 (0,0)';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+            const labelPadding = 4;
+            const textWidth = ctx.measureText(label).width;
+            const labelX = originCanvas.x + 12;
+            const labelY = originCanvas.y + 12;
+
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.85)';
+            ctx.fillRect(
+                labelX - labelPadding,
+                labelY - labelPadding,
+                textWidth + labelPadding * 2,
+                18
+            );
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'top';
+            ctx.fillText(label, labelX, labelY - 1);
+            ctx.restore();
+        }
+
+        function drawScaleBar(resolution) {
+            if (!resolution) return;
+
+            const pixelsPerMeter = (1 / resolution) * mapState.scale;
+            if (!isFinite(pixelsPerMeter) || pixelsPerMeter <= 0) return;
+
+            const desiredPx = 160;
+            let meters = getNiceNumber(desiredPx / pixelsPerMeter);
+            let barPx = meters * pixelsPerMeter;
+
+            if (barPx < 60) {
+                while (barPx < 60) {
+                    meters *= 2;
+                    barPx = meters * pixelsPerMeter;
+                    if (meters > 1e6) break;
+                }
+            } else if (barPx > 220) {
+                while (barPx > 220) {
+                    meters /= 2;
+                    barPx = meters * pixelsPerMeter;
+                    if (meters < 1e-6) break;
+                }
+            }
+
+            if (!isFinite(barPx) || barPx <= 0) return;
+
+            const margin = 20;
+            const barHeight = 12;
+            const x = margin;
+            const y = canvas.height - margin;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(x, y - barHeight, barPx, barHeight);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(formatDistance(meters), x + barPx / 2, y - barHeight - 6);
+            ctx.restore();
+        }
+
+        function worldToCanvas(worldX, worldY, drawX, drawY) {
+            if (!mapState.metadata || !Array.isArray(mapState.metadata.origin)) {
+                return null;
+            }
+            const resolution = mapState.metadata.resolution;
+            if (!resolution) return null;
+
+            const [originX, originY] = mapState.metadata.origin;
+            const pixelX = (worldX - originX) / resolution;
+            const pixelY = mapState.image.height - (worldY - originY) / resolution;
+
+            if (!isFinite(pixelX) || !isFinite(pixelY)) {
+                return null;
+            }
+
+            return {
+                x: drawX + pixelX * mapState.scale,
+                y: drawY + pixelY * mapState.scale
+            };
+        }
+
+        function getNiceNumber(value) {
+            if (!isFinite(value) || value === 0) return 1;
+            const exponent = Math.floor(Math.log10(Math.abs(value)));
+            const fraction = Math.abs(value) / Math.pow(10, exponent);
+            let niceFraction;
+            if (fraction < 1.5) {
+                niceFraction = 1;
+            } else if (fraction < 3) {
+                niceFraction = 2;
+            } else if (fraction < 7) {
+                niceFraction = 5;
+            } else {
+                niceFraction = 10;
+            }
+            return Math.sign(value) * niceFraction * Math.pow(10, exponent);
+        }
+
+        function formatDistance(meters) {
+            if (!isFinite(meters)) return '';
+            const absMeters = Math.abs(meters);
+            if (absMeters >= 1000) {
+                return `${(meters / 1000).toFixed(2)} km`;
+            }
+            if (absMeters >= 1) {
+                const precision = absMeters >= 10 ? 0 : 2;
+                return `${meters.toFixed(precision)} m`;
+            }
+            const centimeters = meters * 100;
+            if (Math.abs(centimeters) >= 1) {
+                const precision = Math.abs(centimeters) >= 10 ? 0 : 1;
+                return `${centimeters.toFixed(precision)} cm`;
+            }
+            const millimeters = meters * 1000;
+            return `${millimeters.toFixed(0)} mm`;
         }
 
         // ズーム情報の更新
@@ -1044,6 +1731,8 @@
                 executeQuery();
             }
         });
+
+        updateOverlayControls();
 
         // ページ読み込み時にデータを取得
         window.addEventListener('load', () => {
