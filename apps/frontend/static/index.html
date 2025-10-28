@@ -258,49 +258,119 @@
             accent-color: #667eea;
         }
 
-        .map-metadata {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
+        .metadata-overlay-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: clamp(220px, 28vw, 320px);
+            max-height: 70%;
+            display: none;
+            flex-direction: column;
+            background: rgba(18, 22, 45, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            overflow: hidden;
+            color: #f5f6ff;
+            z-index: 5;
+        }
+
+        .metadata-overlay-panel.active {
+            display: flex;
+        }
+
+        .metadata-overlay-panel.collapsed .metadata-overlay-body {
             display: none;
         }
 
-        .map-metadata.active {
-            display: block;
+        .metadata-overlay-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 14px;
+            background: linear-gradient(120deg, rgba(102, 126, 234, 0.65), rgba(118, 75, 162, 0.45));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        .metadata-title {
+        .metadata-overlay-title {
+            font-size: 0.95em;
             font-weight: 600;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 1em;
+            letter-spacing: 0.02em;
         }
 
-        .metadata-grid {
-            display: grid;
-            grid-template-columns: 1fr;
+        .metadata-overlay-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .metadata-overlay-button {
+            appearance: none;
+            border: none;
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .metadata-overlay-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .metadata-overlay-body {
+            padding: 12px 14px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .metadata-item {
-            background: white;
-            padding: 10px;
-            border-radius: 6px;
-            border-left: 3px solid #667eea;
+        .metadata-overlay-body::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .metadata-item label {
-            font-size: 0.85em;
-            color: #666;
-            display: block;
-            margin-bottom: 5px;
+        .metadata-overlay-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 3px;
         }
 
-        .metadata-item value {
+        .metadata-overlay-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .metadata-overlay-item {
+            background: rgba(30, 34, 66, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metadata-overlay-item label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .metadata-overlay-item value {
             font-size: 0.95em;
-            color: #333;
-            font-weight: 500;
+            font-weight: 600;
+            color: #ffffff;
+            word-break: break-word;
+        }
+
+        .metadata-overlay-panel.collapsed .metadata-overlay-collapse-icon {
+            transform: rotate(-90deg);
         }
 
         .control-button {
@@ -427,6 +497,33 @@
                             </div>
                         </div>
                         <canvas id="mapCanvas" style="display: none;"></canvas>
+                        <div class="metadata-overlay-panel" id="metadataOverlay" aria-hidden="true">
+                            <div class="metadata-overlay-header">
+                                <span class="metadata-overlay-title">📋 マップメタデータ</span>
+                                <div class="metadata-overlay-actions">
+                                    <button
+                                        type="button"
+                                        class="metadata-overlay-button metadata-overlay-collapse"
+                                        aria-expanded="true"
+                                        onclick="toggleMetadataOverlayCollapse(event)"
+                                        title="折りたたむ"
+                                    >
+                                        <span class="metadata-overlay-collapse-icon">▾</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="metadata-overlay-button"
+                                        onclick="hideMetadataOverlay(event)"
+                                        title="パネルを閉じる"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="metadata-overlay-body" id="metadataOverlayBody">
+                                <div class="metadata-overlay-list" id="metadataOverlayContent"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="map-controls">
                         <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
@@ -466,10 +563,6 @@
                                 情報パネル
                             </label>
                         </div>
-                    </div>
-                    <div class="map-metadata" id="mapMetadata">
-                        <div class="metadata-title">📋 マップメタデータ</div>
-                        <div class="metadata-grid" id="metadataContent"></div>
                     </div>
                 </div>
             </div>
@@ -637,6 +730,64 @@
             if (optionsGroup) {
                 optionsGroup.classList.toggle('inactive', !metadataAvailable);
             }
+
+            updateMetadataOverlayVisibility();
+            syncMetadataOverlayCollapseState();
+        }
+
+        function updateMetadataOverlayVisibility() {
+            const overlay = document.getElementById('metadataOverlay');
+            if (!overlay) return;
+
+            const shouldShow = !!(
+                mapState.metadata &&
+                mapState.layers.metadataOverlay &&
+                mapState.overlaySettings &&
+                mapState.overlaySettings.showInfoPanel
+            );
+
+            overlay.classList.toggle('active', shouldShow);
+            overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+        }
+
+        function syncMetadataOverlayCollapseState() {
+            const overlay = document.getElementById('metadataOverlay');
+            const collapseButton = document.querySelector('.metadata-overlay-collapse');
+            if (!collapseButton) return;
+
+            const isCollapsed = !!(overlay && overlay.classList.contains('collapsed'));
+            collapseButton.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            collapseButton.setAttribute('title', isCollapsed ? 'パネルを展開' : '折りたたむ');
+
+            const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
+            if (icon) {
+                icon.textContent = isCollapsed ? '▸' : '▾';
+            }
+        }
+
+        function toggleMetadataOverlayCollapse(event) {
+            event.stopPropagation();
+            const overlay = document.getElementById('metadataOverlay');
+            if (!overlay) return;
+
+            overlay.classList.toggle('collapsed');
+            syncMetadataOverlayCollapseState();
+        }
+
+        function hideMetadataOverlay(event) {
+            event.stopPropagation();
+
+            if (!mapState.overlaySettings) return;
+
+            mapState.overlaySettings.showInfoPanel = false;
+
+            const infoToggle = document.getElementById('infoOverlayToggle');
+            if (infoToggle) {
+                infoToggle.checked = false;
+            }
+
+            updateOverlayControls();
+            drawMap();
         }
 
         // 画像ファイル選択時の処理
@@ -726,78 +877,90 @@
 
         // メタデータを表示
         function displayMetadata(metadata) {
-            const metadataDiv = document.getElementById('mapMetadata');
-            const contentDiv = document.getElementById('metadataContent');
+            const overlay = document.getElementById('metadataOverlay');
+            const contentDiv = document.getElementById('metadataOverlayContent');
 
-            if (!metadata) {
-                metadataDiv.classList.remove('active');
+            if (!overlay || !contentDiv) {
                 return;
             }
 
-            let html = '';
+            if (!metadata) {
+                contentDiv.innerHTML = '';
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden', 'true');
+                return;
+            }
 
-            // 画像ファイル名
+            const sections = [];
+
             if (metadata.image) {
-                html += `
-                    <div class="metadata-item">
-                        <label>画像ファイル</label>
-                        <value>${metadata.image}</value>
-                    </div>
-                `;
+                sections.push({
+                    label: '画像ファイル',
+                    value: metadata.image
+                });
             }
 
-            // 解像度
             if (metadata.resolution !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>解像度 (m/pixel)</label>
-                        <value>${metadata.resolution.toFixed(6)}</value>
-                    </div>
-                `;
+                const resolution = Number(metadata.resolution);
+                sections.push({
+                    label: '解像度 (m/pixel)',
+                    value: isFinite(resolution) ? resolution.toFixed(6) : String(metadata.resolution)
+                });
             }
 
-            // 原点
             if (metadata.origin && Array.isArray(metadata.origin)) {
-                html += `
-                    <div class="metadata-item">
-                        <label>原点 [x, y, theta]</label>
-                        <value>[${metadata.origin.map(v => v.toFixed(6)).join(', ')}]</value>
-                    </div>
-                `;
+                const formattedOrigin = metadata.origin.map(value => {
+                    const num = Number(value);
+                    return Number.isFinite(num) ? num.toFixed(6) : String(value);
+                });
+                sections.push({
+                    label: '原点 [x, y, theta]',
+                    value: `[${formattedOrigin.join(', ')}]`
+                });
             }
 
-            // 反転フラグ
             if (metadata.negate !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>白黒反転</label>
-                        <value>${metadata.negate ? '有効' : '無効'}</value>
-                    </div>
-                `;
+                sections.push({
+                    label: '白黒反転',
+                    value: metadata.negate ? '有効' : '無効'
+                });
             }
 
-            // 占有閾値
             if (metadata.occupied_thresh !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>占有閾値</label>
-                        <value>${metadata.occupied_thresh.toFixed(2)}</value>
-                    </div>
-                `;
+                const occupied = Number(metadata.occupied_thresh);
+                sections.push({
+                    label: '占有閾値',
+                    value: isFinite(occupied) ? occupied.toFixed(2) : String(metadata.occupied_thresh)
+                });
             }
 
-            // 自由空間閾値
             if (metadata.free_thresh !== undefined) {
-                html += `
-                    <div class="metadata-item">
-                        <label>自由空間閾値</label>
-                        <value>${metadata.free_thresh.toFixed(3)}</value>
-                    </div>
-                `;
+                const free = Number(metadata.free_thresh);
+                sections.push({
+                    label: '自由空間閾値',
+                    value: isFinite(free) ? free.toFixed(3) : String(metadata.free_thresh)
+                });
             }
 
-            contentDiv.innerHTML = html;
-            metadataDiv.classList.add('active');
+            if (sections.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="metadata-overlay-item">
+                        <label>メタデータ</label>
+                        <value>表示できる情報がありません</value>
+                    </div>
+                `;
+            } else {
+                const html = sections.map(section => `
+                    <div class="metadata-overlay-item">
+                        <label>${section.label}</label>
+                        <value>${section.value}</value>
+                    </div>
+                `).join('');
+                contentDiv.innerHTML = html;
+            }
+            overlay.classList.remove('collapsed');
+            syncMetadataOverlayCollapseState();
+            updateMetadataOverlayVisibility();
         }
 
         // PGM画像ファイルを読み込む
@@ -946,8 +1109,24 @@
             canvas.style.display = 'none';
             document.getElementById('mapPlaceholder').style.display = 'block';
 
-            // メタデータ表示を非表示
-            document.getElementById('mapMetadata').classList.remove('active');
+            // メタデータ表示をリセット
+            const metadataOverlay = document.getElementById('metadataOverlay');
+            const metadataContent = document.getElementById('metadataOverlayContent');
+            const collapseButton = document.querySelector('.metadata-overlay-collapse');
+            if (metadataContent) {
+                metadataContent.innerHTML = '';
+            }
+            if (metadataOverlay) {
+                metadataOverlay.classList.remove('active', 'collapsed');
+                metadataOverlay.setAttribute('aria-hidden', 'true');
+            }
+            if (collapseButton) {
+                collapseButton.setAttribute('aria-expanded', 'true');
+                const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
+                if (icon) {
+                    icon.textContent = '▾';
+                }
+            }
 
             // ファイル入力をリセット
             document.getElementById('imageFileInput').value = '';
@@ -955,6 +1134,7 @@
 
             updateOverlayControls();
             updateZoomInfo();
+            updateMetadataOverlayVisibility();
         }
 
         // マップの描画
@@ -1008,10 +1188,6 @@
 
             if (mapState.overlaySettings.showScaleBar && resolution) {
                 drawScaleBar(resolution);
-            }
-
-            if (mapState.overlaySettings.showInfoPanel) {
-                drawInfoPanel(metadata);
             }
         }
 
@@ -1175,60 +1351,6 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.fillText(formatDistance(meters), x + barPx / 2, y - barHeight - 6);
-            ctx.restore();
-        }
-
-        function drawInfoPanel(metadata) {
-            const lines = [];
-
-            if (metadata.image) {
-                lines.push(`画像: ${metadata.image}`);
-            }
-            if (typeof metadata.resolution === 'number') {
-                lines.push(`解像度: ${metadata.resolution.toFixed(3)} m/px`);
-            }
-            if (Array.isArray(metadata.origin)) {
-                lines.push(`原点: [${metadata.origin.map(v => Number(v).toFixed(2)).join(', ')}]`);
-            }
-            if (metadata.negate !== undefined) {
-                lines.push(`白黒反転: ${metadata.negate ? '有効' : '無効'}`);
-            }
-            if (metadata.occupied_thresh !== undefined) {
-                lines.push(`占有閾値: ${Number(metadata.occupied_thresh).toFixed(2)}`);
-            }
-            if (metadata.free_thresh !== undefined) {
-                lines.push(`自由閾値: ${Number(metadata.free_thresh).toFixed(2)}`);
-            }
-
-            if (!lines.length) {
-                return;
-            }
-
-            ctx.save();
-            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
-            ctx.textBaseline = 'top';
-            const padding = 10;
-            const lineHeight = 16;
-            let panelWidth = 0;
-            lines.forEach(line => {
-                const width = ctx.measureText(line).width;
-                panelWidth = Math.max(panelWidth, width);
-            });
-            panelWidth += padding * 2;
-            const panelHeight = padding * 2 + lineHeight * lines.length;
-            const x = 20;
-            const y = 20;
-
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(x, y, panelWidth, panelHeight);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.strokeRect(x, y, panelWidth, panelHeight);
-            ctx.fillStyle = '#ffffff';
-
-            lines.forEach((line, index) => {
-                ctx.fillText(line, x + padding, y + padding + index * lineHeight);
-            });
-
             ctx.restore();
         }
 
