@@ -950,13 +950,6 @@
 
                     updateOverlayControls();
                     drawMap();
-
-                    // 画像ファイル名が指定されている場合、ユーザーに通知
-                    if (metadata.image) {
-                        alert(`メタデータを読み込みました。\n次に「🖼️ 画像を読み込む」ボタンから画像ファイル「${metadata.image}」を読み込んでください。`);
-                    } else {
-                        alert('メタデータを読み込みました。');
-                    }
                 } catch (error) {
                     console.error('YAMLファイルの読み込みに失敗:', error);
                     alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
