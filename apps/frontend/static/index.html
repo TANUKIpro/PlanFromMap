@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🗺️ Semantic Map Platform for HSR</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -214,6 +215,51 @@
             margin-left: auto;
         }
 
+        .map-metadata {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .map-metadata.active {
+            display: block;
+        }
+
+        .metadata-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .metadata-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .metadata-item label {
+            font-size: 0.85em;
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .metadata-item value {
+            font-size: 0.95em;
+            color: #333;
+            font-weight: 500;
+        }
+
         .control-button {
             background: #667eea;
             color: white;
@@ -313,7 +359,7 @@
 <body>
     <div class="container">
         <!-- 隠しファイル入力 -->
-        <input type="file" id="fileInput" accept="image/*,.pgm" style="display: none;" onchange="handleFileSelect(event)">
+        <input type="file" id="fileInput" accept="image/*,.pgm,.yaml,.yml" style="display: none;" onchange="handleFileSelect(event)">
 
         <!-- タブコンテナ -->
         <div class="tabs-container">
@@ -344,6 +390,10 @@
                         <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
                         <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
                         <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
+                    </div>
+                    <div class="map-metadata" id="mapMetadata">
+                        <div class="metadata-title">📋 マップメタデータ</div>
+                        <div class="metadata-grid" id="metadataContent"></div>
                     </div>
                 </div>
             </div>
@@ -388,7 +438,8 @@
             lastX: 0,
             lastY: 0,
             minScale: 0.1,
-            maxScale: 10.0
+            maxScale: 10.0,
+            metadata: null  // YAMLから読み込まれたメタデータ
         };
 
         const canvas = document.getElementById('mapCanvas');
@@ -434,8 +485,12 @@
 
             const fileName = file.name.toLowerCase();
 
+            // YAMLファイルの場合
+            if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) {
+                loadYAMLFile(file);
+            }
             // PGMファイルの場合
-            if (fileName.endsWith('.pgm')) {
+            else if (fileName.endsWith('.pgm')) {
                 loadPGMFile(file);
             } else {
                 // 通常の画像ファイル
@@ -468,6 +523,110 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        // YAMLファイルを読み込む
+        function loadYAMLFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const yamlText = e.target.result;
+                    const metadata = jsyaml.load(yamlText);
+
+                    // メタデータを保存
+                    mapState.metadata = metadata;
+
+                    // メタデータを表示
+                    displayMetadata(metadata);
+
+                    // 画像ファイル名が指定されている場合、ユーザーに通知
+                    if (metadata.image) {
+                        alert(`メタデータを読み込みました。\n次に画像ファイル「${metadata.image}」を読み込んでください。`);
+                    } else {
+                        alert('メタデータを読み込みました。');
+                    }
+                } catch (error) {
+                    console.error('YAMLファイルの読み込みに失敗:', error);
+                    alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // メタデータを表示
+        function displayMetadata(metadata) {
+            const metadataDiv = document.getElementById('mapMetadata');
+            const contentDiv = document.getElementById('metadataContent');
+
+            if (!metadata) {
+                metadataDiv.classList.remove('active');
+                return;
+            }
+
+            let html = '';
+
+            // 画像ファイル名
+            if (metadata.image) {
+                html += `
+                    <div class="metadata-item">
+                        <label>画像ファイル</label>
+                        <value>${metadata.image}</value>
+                    </div>
+                `;
+            }
+
+            // 解像度
+            if (metadata.resolution !== undefined) {
+                html += `
+                    <div class="metadata-item">
+                        <label>解像度 (m/pixel)</label>
+                        <value>${metadata.resolution.toFixed(6)}</value>
+                    </div>
+                `;
+            }
+
+            // 原点
+            if (metadata.origin && Array.isArray(metadata.origin)) {
+                html += `
+                    <div class="metadata-item">
+                        <label>原点 [x, y, theta]</label>
+                        <value>[${metadata.origin.map(v => v.toFixed(6)).join(', ')}]</value>
+                    </div>
+                `;
+            }
+
+            // 反転フラグ
+            if (metadata.negate !== undefined) {
+                html += `
+                    <div class="metadata-item">
+                        <label>白黒反転</label>
+                        <value>${metadata.negate ? '有効' : '無効'}</value>
+                    </div>
+                `;
+            }
+
+            // 占有閾値
+            if (metadata.occupied_thresh !== undefined) {
+                html += `
+                    <div class="metadata-item">
+                        <label>占有閾値</label>
+                        <value>${metadata.occupied_thresh.toFixed(2)}</value>
+                    </div>
+                `;
+            }
+
+            // 自由空間閾値
+            if (metadata.free_thresh !== undefined) {
+                html += `
+                    <div class="metadata-item">
+                        <label>自由空間閾値</label>
+                        <value>${metadata.free_thresh.toFixed(3)}</value>
+                    </div>
+                `;
+            }
+
+            contentDiv.innerHTML = html;
+            metadataDiv.classList.add('active');
         }
 
         // PGMファイルを読み込む
@@ -607,9 +766,13 @@
             mapState.scale = 1.0;
             mapState.offsetX = 0;
             mapState.offsetY = 0;
+            mapState.metadata = null;
 
             canvas.style.display = 'none';
             document.getElementById('mapPlaceholder').style.display = 'block';
+
+            // メタデータ表示を非表示
+            document.getElementById('mapMetadata').classList.remove('active');
 
             // ファイル入力をリセット
             document.getElementById('fileInput').value = '';
