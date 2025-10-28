@@ -276,10 +276,6 @@
             display: flex;
         }
 
-        .metadata-overlay-panel.collapsed .metadata-overlay-body {
-            display: none;
-        }
-
         .metadata-overlay-header {
             display: flex;
             align-items: center;
@@ -360,8 +356,29 @@
             border-radius: 8px;
             padding: 10px 12px;
             display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .metadata-overlay-item-content {
+            flex: 1;
+            display: flex;
             flex-direction: column;
             gap: 4px;
+            min-width: 0;
+        }
+
+        .metadata-overlay-item-checkbox {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .metadata-overlay-item-checkbox input {
+            accent-color: #8895ff;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
         }
 
         .metadata-overlay-item label {
@@ -376,10 +393,6 @@
             font-weight: 600;
             color: #ffffff;
             word-break: break-word;
-        }
-
-        .metadata-overlay-panel.collapsed .metadata-overlay-collapse-icon {
-            transform: rotate(-90deg);
         }
 
         .metadata-overlay-options.inactive {
@@ -573,15 +586,6 @@
                                 <div class="metadata-overlay-actions">
                                     <button
                                         type="button"
-                                        class="metadata-overlay-button metadata-overlay-collapse"
-                                        aria-expanded="true"
-                                        onclick="toggleMetadataOverlayCollapse(event)"
-                                        title="折りたたむ"
-                                    >
-                                        <span class="metadata-overlay-collapse-icon">▾</span>
-                                    </button>
-                                    <button
-                                        type="button"
                                         class="metadata-overlay-button"
                                         onclick="hideMetadataOverlay(event)"
                                         title="パネルを閉じる"
@@ -697,6 +701,14 @@
                 showOrigin: true,
                 showScaleBar: true,
                 showInfoPanel: true
+            },
+            metadataFieldsVisibility: {
+                image: true,
+                resolution: true,
+                origin: true,
+                negate: true,
+                occupied_thresh: true,
+                free_thresh: true
             }
         };
 
@@ -840,28 +852,10 @@
             }
         }
 
-        function syncMetadataOverlayCollapseState() {
-            const overlay = document.getElementById('metadataOverlay');
-            const collapseButton = document.querySelector('.metadata-overlay-collapse');
-            if (!collapseButton) return;
-
-            const isCollapsed = !!(overlay && overlay.classList.contains('collapsed'));
-            collapseButton.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-            collapseButton.setAttribute('title', isCollapsed ? 'パネルを展開' : '折りたたむ');
-
-            const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
-            if (icon) {
-                icon.textContent = isCollapsed ? '▸' : '▾';
-            }
-        }
-
-        function toggleMetadataOverlayCollapse(event) {
-            event.stopPropagation();
-            const overlay = document.getElementById('metadataOverlay');
-            if (!overlay) return;
-
-            overlay.classList.toggle('collapsed');
-            syncMetadataOverlayCollapseState();
+        function toggleMetadataField(fieldKey, visible) {
+            if (!mapState.metadataFieldsVisibility) return;
+            mapState.metadataFieldsVisibility[fieldKey] = visible;
+            displayMetadata(mapState.metadata);
         }
 
         function hideMetadataOverlay(event) {
@@ -969,7 +963,7 @@
 
             if (!metadata) {
                 contentDiv.innerHTML = '';
-                overlay.classList.remove('active', 'collapsed', 'info-hidden');
+                overlay.classList.remove('active', 'info-hidden');
                 overlay.setAttribute('aria-hidden', 'true');
                 const placeholder = document.getElementById('metadataOverlayPlaceholder');
                 if (placeholder) {
@@ -982,6 +976,7 @@
 
             if (metadata.image) {
                 sections.push({
+                    key: 'image',
                     label: '画像ファイル',
                     value: metadata.image
                 });
@@ -990,6 +985,7 @@
             if (metadata.resolution !== undefined) {
                 const resolution = Number(metadata.resolution);
                 sections.push({
+                    key: 'resolution',
                     label: '解像度 (m/pixel)',
                     value: isFinite(resolution) ? resolution.toFixed(6) : String(metadata.resolution)
                 });
@@ -1001,6 +997,7 @@
                     return Number.isFinite(num) ? num.toFixed(6) : String(value);
                 });
                 sections.push({
+                    key: 'origin',
                     label: '原点 [x, y, theta]',
                     value: `[${formattedOrigin.join(', ')}]`
                 });
@@ -1008,6 +1005,7 @@
 
             if (metadata.negate !== undefined) {
                 sections.push({
+                    key: 'negate',
                     label: '白黒反転',
                     value: metadata.negate ? '有効' : '無効'
                 });
@@ -1016,6 +1014,7 @@
             if (metadata.occupied_thresh !== undefined) {
                 const occupied = Number(metadata.occupied_thresh);
                 sections.push({
+                    key: 'occupied_thresh',
                     label: '占有閾値',
                     value: isFinite(occupied) ? occupied.toFixed(2) : String(metadata.occupied_thresh)
                 });
@@ -1024,6 +1023,7 @@
             if (metadata.free_thresh !== undefined) {
                 const free = Number(metadata.free_thresh);
                 sections.push({
+                    key: 'free_thresh',
                     label: '自由空間閾値',
                     value: isFinite(free) ? free.toFixed(3) : String(metadata.free_thresh)
                 });
@@ -1032,21 +1032,31 @@
             if (sections.length === 0) {
                 contentDiv.innerHTML = `
                     <div class="metadata-overlay-item">
-                        <label>メタデータ</label>
-                        <value>表示できる情報がありません</value>
+                        <div class="metadata-overlay-item-content">
+                            <label>メタデータ</label>
+                            <value>表示できる情報がありません</value>
+                        </div>
                     </div>
                 `;
             } else {
-                const html = sections.map(section => `
-                    <div class="metadata-overlay-item">
-                        <label>${section.label}</label>
-                        <value>${section.value}</value>
-                    </div>
-                `).join('');
+                const html = sections.map(section => {
+                    const isVisible = mapState.metadataFieldsVisibility[section.key] !== false;
+                    return `
+                        <div class="metadata-overlay-item">
+                            <div class="metadata-overlay-item-content">
+                                <label>${section.label}</label>
+                                <value>${section.value}</value>
+                            </div>
+                            <div class="metadata-overlay-item-checkbox">
+                                <input type="checkbox" ${isVisible ? 'checked' : ''}
+                                    onchange="toggleMetadataField('${section.key}', this.checked)"
+                                    title="表示/非表示">
+                            </div>
+                        </div>
+                    `;
+                }).join('');
                 contentDiv.innerHTML = html;
             }
-            overlay.classList.remove('collapsed');
-            syncMetadataOverlayCollapseState();
             updateMetadataOverlayVisibility();
         }
 
@@ -1199,24 +1209,16 @@
             // メタデータ表示をリセット
             const metadataOverlay = document.getElementById('metadataOverlay');
             const metadataContent = document.getElementById('metadataOverlayContent');
-            const collapseButton = document.querySelector('.metadata-overlay-collapse');
             if (metadataContent) {
                 metadataContent.innerHTML = '';
             }
             if (metadataOverlay) {
-                metadataOverlay.classList.remove('active', 'collapsed', 'info-hidden');
+                metadataOverlay.classList.remove('active', 'info-hidden');
                 metadataOverlay.setAttribute('aria-hidden', 'true');
             }
             const metadataPlaceholder = document.getElementById('metadataOverlayPlaceholder');
             if (metadataPlaceholder) {
                 metadataPlaceholder.setAttribute('aria-hidden', 'true');
-            }
-            if (collapseButton) {
-                collapseButton.setAttribute('aria-expanded', 'true');
-                const icon = collapseButton.querySelector('.metadata-overlay-collapse-icon');
-                if (icon) {
-                    icon.textContent = '▾';
-                }
             }
 
             // ファイル入力をリセット
@@ -1614,6 +1616,15 @@
                 drawMap();
             }
         });
+
+        // メタデータパネルのスクロールがマップに影響しないようにする
+        const metadataOverlayBody = document.getElementById('metadataOverlayBody');
+        if (metadataOverlayBody) {
+            metadataOverlayBody.addEventListener('wheel', function(e) {
+                // メタデータパネル内でスクロール中の場合、イベントの伝播を止める
+                e.stopPropagation();
+            }, { passive: false });
+        }
 
         // 統計情報を取得
         async function loadStats() {
