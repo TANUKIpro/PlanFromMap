@@ -173,6 +173,152 @@
             border-radius: 8px;
             margin-top: 10px;
         }
+
+        /* メニューバー */
+        .menubar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .menu-item {
+            position: relative;
+        }
+
+        .menu-button {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #333;
+            transition: background 0.3s ease;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .menu-button:hover {
+            background: #f0f0f0;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            min-width: 200px;
+            z-index: 1000;
+        }
+
+        .dropdown.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .dropdown-item:hover {
+            background: #f0f0f0;
+        }
+
+        /* マップビューア */
+        .map-viewer {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .map-viewer h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .map-canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+            cursor: grab;
+        }
+
+        .map-canvas-container.panning {
+            cursor: grabbing;
+        }
+
+        #mapCanvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .map-placeholder {
+            color: #999;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .map-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .zoom-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: auto;
+        }
+
+        .control-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .control-button:hover {
+            background: #5568d3;
+        }
     </style>
 </head>
 <body>
@@ -181,6 +327,40 @@
             <h1>🗺️ Semantic Map Platform for HSR</h1>
             <p>RoboCup@Home DSPL 意味地図プラットフォーム</p>
         </header>
+
+        <!-- メニューバー -->
+        <div class="menubar">
+            <ul class="menu">
+                <li class="menu-item">
+                    <button class="menu-button" onclick="toggleDropdown('fileMenu')">ファイル</button>
+                    <div class="dropdown" id="fileMenu">
+                        <button class="dropdown-item" onclick="importMap()">マップのインポート</button>
+                        <button class="dropdown-item" onclick="clearMap()">マップのクリア</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 隠しファイル入力 -->
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+
+        <!-- マップビューア -->
+        <div class="map-viewer">
+            <h2>🗺️ マップビューア</h2>
+            <div class="map-canvas-container" id="mapContainer">
+                <div class="map-placeholder" id="mapPlaceholder">
+                    マップがインポートされていません。<br>
+                    「ファイル」→「マップのインポート」から画像を選択してください。
+                </div>
+                <canvas id="mapCanvas" style="display: none;"></canvas>
+            </div>
+            <div class="map-controls">
+                <button class="control-button" onclick="resetView()">表示リセット</button>
+                <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
+                <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
+                <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
+            </div>
+        </div>
 
         <!-- 統計情報 -->
         <div class="card">
@@ -216,6 +396,251 @@
 
     <script>
         const API_BASE_URL = 'http://localhost:3000/api';
+
+        // マップビューアの状態管理
+        let mapState = {
+            image: null,
+            scale: 1.0,
+            offsetX: 0,
+            offsetY: 0,
+            isPanning: false,
+            lastX: 0,
+            lastY: 0,
+            minScale: 0.1,
+            maxScale: 10.0
+        };
+
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('mapContainer');
+
+        // ドロップダウンメニューの制御
+        function toggleDropdown(menuId) {
+            const dropdown = document.getElementById(menuId);
+            const isActive = dropdown.classList.contains('active');
+
+            // すべてのドロップダウンを閉じる
+            document.querySelectorAll('.dropdown').forEach(d => {
+                d.classList.remove('active');
+            });
+
+            // クリックされたメニューをトグル
+            if (!isActive) {
+                dropdown.classList.add('active');
+            }
+        }
+
+        // ドロップダウン外をクリックしたら閉じる
+        document.addEventListener('click', function(event) {
+            if (!event.target.matches('.menu-button') && !event.target.matches('.dropdown-item')) {
+                document.querySelectorAll('.dropdown').forEach(d => {
+                    d.classList.remove('active');
+                });
+            }
+        });
+
+        // マップのインポート
+        function importMap() {
+            document.getElementById('fileInput').click();
+        }
+
+        // ファイル選択時の処理
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    mapState.image = img;
+                    mapState.scale = 1.0;
+                    mapState.offsetX = 0;
+                    mapState.offsetY = 0;
+
+                    // キャンバスのサイズを設定
+                    const containerRect = container.getBoundingClientRect();
+                    canvas.width = containerRect.width;
+                    canvas.height = containerRect.height;
+
+                    // プレースホルダーを非表示、キャンバスを表示
+                    document.getElementById('mapPlaceholder').style.display = 'none';
+                    canvas.style.display = 'block';
+
+                    drawMap();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            // ドロップダウンを閉じる
+            document.querySelectorAll('.dropdown').forEach(d => {
+                d.classList.remove('active');
+            });
+        }
+
+        // マップのクリア
+        function clearMap() {
+            mapState.image = null;
+            mapState.scale = 1.0;
+            mapState.offsetX = 0;
+            mapState.offsetY = 0;
+
+            canvas.style.display = 'none';
+            document.getElementById('mapPlaceholder').style.display = 'block';
+
+            // ファイル入力をリセット
+            document.getElementById('fileInput').value = '';
+
+            // ドロップダウンを閉じる
+            document.querySelectorAll('.dropdown').forEach(d => {
+                d.classList.remove('active');
+            });
+
+            updateZoomInfo();
+        }
+
+        // マップの描画
+        function drawMap() {
+            if (!mapState.image) return;
+
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 背景色
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 画像のスケール後のサイズを計算
+            const scaledWidth = mapState.image.width * mapState.scale;
+            const scaledHeight = mapState.image.height * mapState.scale;
+
+            // 中央配置の基準位置を計算
+            const baseX = (canvas.width - scaledWidth) / 2;
+            const baseY = (canvas.height - scaledHeight) / 2;
+
+            // オフセットを適用して描画
+            const drawX = baseX + mapState.offsetX;
+            const drawY = baseY + mapState.offsetY;
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(mapState.image, drawX, drawY, scaledWidth, scaledHeight);
+
+            updateZoomInfo();
+        }
+
+        // ズーム情報の更新
+        function updateZoomInfo() {
+            const zoomPercent = Math.round(mapState.scale * 100);
+            document.getElementById('zoomInfo').textContent = `倍率: ${zoomPercent}%`;
+        }
+
+        // 表示リセット
+        function resetView() {
+            mapState.scale = 1.0;
+            mapState.offsetX = 0;
+            mapState.offsetY = 0;
+            drawMap();
+        }
+
+        // ズームイン
+        function zoomIn() {
+            if (mapState.scale < mapState.maxScale) {
+                mapState.scale *= 1.2;
+                drawMap();
+            }
+        }
+
+        // ズームアウト
+        function zoomOut() {
+            if (mapState.scale > mapState.minScale) {
+                mapState.scale /= 1.2;
+                drawMap();
+            }
+        }
+
+        // マウスホイールでズーム
+        container.addEventListener('wheel', function(e) {
+            if (!mapState.image) return;
+
+            e.preventDefault();
+
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = mapState.scale * delta;
+
+            if (newScale >= mapState.minScale && newScale <= mapState.maxScale) {
+                // マウス位置を中心にズーム
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // ズーム前のマウス位置（画像座標）
+                const imgX = (mouseX - canvas.width / 2 - mapState.offsetX) / mapState.scale;
+                const imgY = (mouseY - canvas.height / 2 - mapState.offsetY) / mapState.scale;
+
+                // スケール更新
+                mapState.scale = newScale;
+
+                // ズーム後、同じ画像座標がマウス位置に来るようオフセットを調整
+                mapState.offsetX = mouseX - canvas.width / 2 - imgX * mapState.scale;
+                mapState.offsetY = mouseY - canvas.height / 2 - imgY * mapState.scale;
+
+                drawMap();
+            }
+        });
+
+        // ホイールボタン（中ボタン）でパン
+        container.addEventListener('mousedown', function(e) {
+            if (!mapState.image) return;
+
+            // 中ボタン（button === 1）でパン開始
+            if (e.button === 1) {
+                e.preventDefault();
+                mapState.isPanning = true;
+                mapState.lastX = e.clientX;
+                mapState.lastY = e.clientY;
+                container.classList.add('panning');
+            }
+        });
+
+        container.addEventListener('mousemove', function(e) {
+            if (!mapState.isPanning) return;
+
+            e.preventDefault();
+
+            const dx = e.clientX - mapState.lastX;
+            const dy = e.clientY - mapState.lastY;
+
+            mapState.offsetX += dx;
+            mapState.offsetY += dy;
+
+            mapState.lastX = e.clientX;
+            mapState.lastY = e.clientY;
+
+            drawMap();
+        });
+
+        container.addEventListener('mouseup', function(e) {
+            if (e.button === 1) {
+                mapState.isPanning = false;
+                container.classList.remove('panning');
+            }
+        });
+
+        container.addEventListener('mouseleave', function() {
+            mapState.isPanning = false;
+            container.classList.remove('panning');
+        });
+
+        // ウィンドウリサイズ時にキャンバスサイズを調整
+        window.addEventListener('resize', function() {
+            if (mapState.image) {
+                const containerRect = container.getBoundingClientRect();
+                canvas.width = containerRect.width;
+                canvas.height = containerRect.height;
+                drawMap();
+            }
+        });
 
         // 統計情報を取得
         async function loadStats() {
