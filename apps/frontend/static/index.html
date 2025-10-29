@@ -2605,10 +2605,10 @@
                     mapState.lastY = e.clientY;
                     container.style.cursor = 'grabbing';
                 } else if (tool === 'pencil' || tool === 'eraser') {
-                    // 鉛筆または消しゴム - ワールド座標に変換
-                    const worldPos = canvasToWorld(canvasX, canvasY);
+                    // 鉛筆または消しゴム - 画像ピクセル座標に変換
+                    const imagePixel = canvasToImagePixel(canvasX, canvasY);
                     mapState.drawingState.isDrawing = true;
-                    mapState.drawingState.currentStroke = [worldPos];
+                    mapState.drawingState.currentStroke = [imagePixel];
 
                     // 履歴に保存（描画開始時）
                     saveToHistory();
@@ -2667,9 +2667,9 @@
                 const canvasX = e.clientX - rect.left;
                 const canvasY = e.clientY - rect.top;
 
-                // ワールド座標に変換
-                const worldPos = canvasToWorld(canvasX, canvasY);
-                mapState.drawingState.currentStroke.push(worldPos);
+                // 画像ピクセル座標に変換
+                const imagePixel = canvasToImagePixel(canvasX, canvasY);
+                mapState.drawingState.currentStroke.push(imagePixel);
 
                 // 描画（色とブラシサイズを渡す）
                 performDrawing(tool, mapState.drawingState.currentStroke,
@@ -2740,8 +2740,8 @@
         // 描画ツールの実装
         // ======================
 
-        // キャンバス座標をワールド座標に変換（マップ画像上の座標）
-        function canvasToWorld(canvasX, canvasY) {
+        // キャンバス座標をマップ画像ピクセル座標に変換
+        function canvasToImagePixel(canvasX, canvasY) {
             if (!mapState.image) return {x: canvasX, y: canvasY};
 
             const scaledWidth = mapState.image.width * mapState.scale;
@@ -2753,15 +2753,15 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
-            const worldX = (canvasX - drawX) / mapState.scale;
-            const worldY = (canvasY - drawY) / mapState.scale;
+            const imagePixelX = (canvasX - drawX) / mapState.scale;
+            const imagePixelY = (canvasY - drawY) / mapState.scale;
 
-            return {x: worldX, y: worldY};
+            return {x: imagePixelX, y: imagePixelY};
         }
 
-        // ワールド座標をキャンバス座標に変換
-        function worldToCanvas(worldX, worldY) {
-            if (!mapState.image) return {x: worldX, y: worldY};
+        // マップ画像ピクセル座標をキャンバス座標に変換
+        function imagePixelToCanvas(imagePixelX, imagePixelY) {
+            if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
 
             const scaledWidth = mapState.image.width * mapState.scale;
             const scaledHeight = mapState.image.height * mapState.scale;
@@ -2772,10 +2772,32 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
-            const canvasX = worldX * mapState.scale + drawX;
-            const canvasY = worldY * mapState.scale + drawY;
+            const canvasX = imagePixelX * mapState.scale + drawX;
+            const canvasY = imagePixelY * mapState.scale + drawY;
 
             return {x: canvasX, y: canvasY};
+        }
+
+        // 実世界座標（メートル）をキャンバス座標に変換
+        function worldToCanvas(worldX, worldY, drawX, drawY) {
+            if (!mapState.metadata || !Array.isArray(mapState.metadata.origin)) {
+                return null;
+            }
+            const resolution = mapState.metadata.resolution;
+            if (!resolution) return null;
+
+            const [originX, originY] = mapState.metadata.origin;
+            const pixelX = (worldX - originX) / resolution;
+            const pixelY = mapState.image.height - (worldY - originY) / resolution;
+
+            if (!isFinite(pixelX) || !isFinite(pixelY)) {
+                return null;
+            }
+
+            return {
+                x: drawX + pixelX * mapState.scale,
+                y: drawY + pixelY * mapState.scale
+            };
         }
 
         // UIコントロール要素かどうかをチェック
@@ -2849,9 +2871,9 @@
             return drawingLayer;
         }
 
-        // 鉛筆または消しゴムで描画（ワールド座標版）
-        function performDrawing(tool, worldStroke, color, brushSize) {
-            if (worldStroke.length < 2) return;
+        // 鉛筆または消しゴムで描画（画像ピクセル座標版）
+        function performDrawing(tool, imagePixelStroke, color, brushSize) {
+            if (imagePixelStroke.length < 2) return;
 
             const layer = getActiveDrawingLayer();
             if (!layer) return;
@@ -2859,11 +2881,11 @@
             const ctx = layer.ctx;
 
             // 最後の2点をキャンバス座標に変換
-            const wp1 = worldStroke[worldStroke.length - 2];
-            const wp2 = worldStroke[worldStroke.length - 1];
+            const ip1 = imagePixelStroke[imagePixelStroke.length - 2];
+            const ip2 = imagePixelStroke[imagePixelStroke.length - 1];
 
-            const p1 = worldToCanvas(wp1.x, wp1.y);
-            const p2 = worldToCanvas(wp2.x, wp2.y);
+            const p1 = imagePixelToCanvas(ip1.x, ip1.y);
+            const p2 = imagePixelToCanvas(ip2.x, ip2.y);
 
             ctx.save();
             ctx.lineCap = 'round';
@@ -2920,12 +2942,12 @@
                     ctx.beginPath();
 
                     // 最初の点に移動
-                    const startPoint = worldToCanvas(stroke[0].x, stroke[0].y);
+                    const startPoint = imagePixelToCanvas(stroke[0].x, stroke[0].y);
                     ctx.moveTo(startPoint.x, startPoint.y);
 
                     // すべての点を描画
                     for (let i = 1; i < stroke.length; i++) {
-                        const point = worldToCanvas(stroke[i].x, stroke[i].y);
+                        const point = imagePixelToCanvas(stroke[i].x, stroke[i].y);
                         ctx.lineTo(point.x, point.y);
                     }
 
