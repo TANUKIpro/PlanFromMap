@@ -212,9 +212,9 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             return true;
         }
 
-        // 何もない場所をクリックした場合は選択解除
+        // 何もない場所をクリックした場合は選択解除して、通常の描画を許可
         deselectRectangle();
-        return true;
+        return false;  // 通常の鉛筆描画を許可
     }
 
     // パンモード：移動と回転
@@ -242,9 +242,9 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             return true;
         }
 
-        // 何もない場所をクリックした場合は選択解除
+        // 何もない場所をクリックした場合は選択解除して、通常のパンを許可
         deselectRectangle();
-        return true;
+        return false;  // 通常のパン操作を許可
     }
 
     // 消しゴムモード：削除
@@ -259,6 +259,8 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             }
             return true;
         }
+        // 四角形に当たっていない場合は通常の消しゴム操作を許可
+        return false;
     }
 
     // 測量モード：辺の長さ表示・編集
@@ -284,9 +286,9 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             return true;
         }
 
-        // 何もない場所をクリックした場合は選択解除
+        // 何もない場所をクリックした場合は選択解除して、通常の測量を許可
         deselectRectangle();
-        return true;
+        return false;  // 通常の測量操作を許可
     }
 
     return false;
