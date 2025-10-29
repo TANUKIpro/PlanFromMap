@@ -121,13 +121,27 @@ export function selectTool(toolName) {
         toolButton.classList.add('active');
     }
 
-    // 四角形ツールの場合は特別な処理
-    if (toolName === 'rectangle') {
-        // 四角形ツールをオンにする
-        if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
-            window.toggleRectangleTool(true);
-        }
+    // カーソルスタイルを変更
+    updateCursor();
+}
 
+/**
+ * 四角形ツールモードをトグルする
+ * 四角形ツールボタン専用の関数
+ * @export
+ */
+export function toggleRectangleToolMode() {
+    // 現在の四角形ツールの状態を取得
+    const currentState = mapState.rectangleToolState ? mapState.rectangleToolState.enabled : false;
+    const newState = !currentState;
+
+    // 四角形ツールをトグル
+    if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
+        window.toggleRectangleTool(newState);
+    }
+
+    // 四角形ツールがオンになった場合
+    if (newState) {
         // 四角形が1つもない場合は、中央に作成
         if (window.getAllRectangles && typeof window.getAllRectangles === 'function') {
             const rectangles = window.getAllRectangles();
@@ -158,15 +172,10 @@ export function selectTool(toolName) {
                 }
             }
         }
-    } else {
-        // 四角形ツール以外が選択された場合は、四角形ツールをオフにする
-        if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
-            window.toggleRectangleTool(false);
-        }
-    }
 
-    // カーソルスタイルを変更
-    updateCursor();
+        // 鉛筆ツールを選択（四角形の辺を編集できるようにする）
+        selectTool('pencil');
+    }
 }
 
 /**

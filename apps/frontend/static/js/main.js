@@ -72,7 +72,8 @@ import {
     showMeasureDistance,
     performBucketFill,
     canvasToImagePixel,
-    imagePixelToCanvas
+    imagePixelToCanvas,
+    toggleRectangleToolMode
 } from './modules/drawingTools.js';
 
 // メタデータ表示
@@ -182,6 +183,7 @@ window.showMeasureDistance = showMeasureDistance;
 window.performBucketFill = performBucketFill;
 window.canvasToImagePixel = canvasToImagePixel;
 window.imagePixelToCanvas = imagePixelToCanvas;
+window.toggleRectangleToolMode = toggleRectangleToolMode;
 
 // メタデータ表示
 window.toggleLayer = toggleLayer;
