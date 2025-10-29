@@ -8,57 +8,53 @@
    ======================================== */
 .drawing-tools-palette {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
+    border-radius: 0 0 12px 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
     z-index: 10;
-    min-width: 60px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-/* エキスパンド可能ヘッダー */
-.drawing-tools-header {
-    padding: 10px 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-weight: 600;
-    font-size: 0.95em;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    user-select: none;
-}
-
-.drawing-tools-header:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #63397a 100%);
-}
-
-.drawing-tools-toggle-icon {
-    font-size: 0.8em;
+    overflow: visible;
     transition: transform 0.3s ease;
 }
 
-/* 折りたたみ状態 */
-.drawing-tools-palette.collapsed .drawing-tools-body {
-    display: none;
+/* 隠れた状態 */
+.drawing-tools-palette.hidden {
+    transform: translateX(-50%) translateY(-100%);
 }
 
-.drawing-tools-palette.collapsed .drawing-tools-toggle-icon {
-    transform: rotate(-90deg);
+/* トグルボタン */
+.drawing-tools-toggle {
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 0 0 8px 8px;
+    padding: 4px 16px;
+    cursor: pointer;
+    font-size: 1.2em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s ease;
+    z-index: 11;
+}
+
+.drawing-tools-toggle:hover {
+    background: rgba(255, 255, 255, 1);
 }
 
 /* ツールボディ */
 .drawing-tools-body {
     padding: 12px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* ========================================
@@ -97,9 +93,10 @@
 }
 
 .tool-divider {
-    height: 1px;
+    width: 1px;
+    height: 40px;
     background: #e0e0e0;
-    margin: 4px 0;
+    margin: 0;
 }
 
 /* ========================================
@@ -107,21 +104,22 @@
    ======================================== */
 .color-picker-wrapper {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 12px;
     background: #f9f9f9;
     border-radius: 8px;
+    align-items: center;
 }
 
 .color-picker-label {
-    font-size: 0.75em;
+    font-size: 0.85em;
     color: #666;
-    text-align: center;
+    white-space: nowrap;
 }
 
 .color-picker-input {
-    width: 44px;
+    width: 40px;
     height: 32px;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
@@ -134,19 +132,20 @@
    ======================================== */
 .brush-size-control {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 12px;
     background: #f9f9f9;
     border-radius: 8px;
+    align-items: center;
 }
 
 .brush-size-label {
-    font-size: 0.75em;
+    font-size: 0.85em;
     color: #666;
-    text-align: center;
+    white-space: nowrap;
 }
 
 .brush-size-slider {
-    width: 100%;
+    width: 120px;
 }

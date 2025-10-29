@@ -50,10 +50,6 @@
 
                         <!-- 描画ツールパレット -->
                         <div class="drawing-tools-palette" id="drawingToolsPalette">
-                            <div class="drawing-tools-header" onclick="toggleDrawingToolsExpand()">
-                                <span>🎨 描画ツール</span>
-                                <span class="drawing-tools-toggle-icon">▾</span>
-                            </div>
                             <div class="drawing-tools-body">
                                 <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
                                     ✋
@@ -80,6 +76,9 @@
                                     <input type="range" class="brush-size-slider" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)">
                                 </div>
                             </div>
+                            <button class="drawing-tools-toggle" id="drawingToolsToggle" onclick="toggleDrawingToolsVisibility()" title="描画ツールを表示/非表示">
+                                ▼
+                            </button>
                         </div>
 
                         <!-- レイヤーパネル -->

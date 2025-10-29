@@ -30,6 +30,7 @@ import {
     deleteSelectedProfile,
     exportSelectedProfile,
     toggleDrawingToolsExpand,
+    toggleDrawingToolsVisibility,
     toggleLayersPanelExpand
 } from './ui/controls.js';
 import { setupEventListeners } from './ui/events.js';
@@ -119,6 +120,7 @@ window.exportSelectedProfile = exportSelectedProfile;
 
 // ツール・パネルの展開/折りたたみ
 window.toggleDrawingToolsExpand = toggleDrawingToolsExpand;
+window.toggleDrawingToolsVisibility = toggleDrawingToolsVisibility;
 window.toggleLayersPanelExpand = toggleLayersPanelExpand;
 
 // ファイル読み込みハンドラー

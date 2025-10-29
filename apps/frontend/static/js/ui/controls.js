@@ -12,7 +12,8 @@
  * @exports saveCurrentProfile - 現在の状態をプロファイルとして保存
  * @exports loadSelectedProfile - プロファイルをロード
  * @exports deleteSelectedProfile - プロファイルを削除
- * @exports toggleDrawingToolsExpand - 描画ツールの展開/折りたたみ
+ * @exports toggleDrawingToolsExpand - 描画ツールの展開/折りたたみ（廃止）
+ * @exports toggleDrawingToolsVisibility - 描画ツールの表示/非表示切り替え
  * @exports toggleLayersPanelExpand - レイヤーパネルの展開/折りたたみ
  */
 
@@ -327,12 +328,34 @@ export function exportSelectedProfile(profileName) {
 }
 
 /**
- * 描画ツールの展開/折りたたみ
+ * 描画ツールの展開/折りたたみ（廃止）
+ * @deprecated 新しいtoggleDrawingToolsVisibilityを使用してください
  */
 export function toggleDrawingToolsExpand() {
     const palette = document.getElementById('drawingToolsPalette');
     if (palette) {
         palette.classList.toggle('collapsed');
+    }
+}
+
+/**
+ * 描画ツールの表示/非表示切り替え
+ */
+export function toggleDrawingToolsVisibility() {
+    const palette = document.getElementById('drawingToolsPalette');
+    const toggleButton = document.getElementById('drawingToolsToggle');
+
+    if (palette && toggleButton) {
+        palette.classList.toggle('hidden');
+
+        // ボタンのアイコンを切り替え
+        if (palette.classList.contains('hidden')) {
+            toggleButton.textContent = '▼';
+            toggleButton.setAttribute('title', '描画ツールを表示');
+        } else {
+            toggleButton.textContent = '▲';
+            toggleButton.setAttribute('title', '描画ツールを非表示');
+        }
     }
 }
 
