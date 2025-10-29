@@ -690,15 +690,28 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            transition: border-color 0.2s ease;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .layer-item:hover {
             border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
 
         .layer-item.permanent {
             border-color: #ffa726;
+        }
+
+        .layer-item.selected {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: #667eea;
+            border-width: 3px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .layer-item.permanent.selected {
+            border-color: #ff9800;
         }
 
         .layer-item-header {
@@ -970,6 +983,7 @@
             // 新しいレイヤー管理システム
             layerStack: [],  // レイヤーの配列（下から上の順）
             nextLayerId: 1,
+            selectedLayerId: null,  // 選択中のレイヤーID
             // 描画ツールの状態
             drawingState: {
                 currentTool: 'pan',  // 'pan', 'pencil', 'eraser', 'measure', 'bucket'
@@ -1006,6 +1020,9 @@
 
             // メタデータレイヤーを作成（恒久的）
             createLayer('metadata', 'メタデータ', 'metadata', true);
+
+            // 画像レイヤーを初期選択
+            mapState.selectedLayerId = 'map-image';
 
             updateLayersPanel();
         }
@@ -1048,6 +1065,10 @@
             mapState.nextLayerId++;
 
             createLayer(layerId, layerName, 'drawing', false);
+
+            // 新しいレイヤーを自動選択
+            mapState.selectedLayerId = layerId;
+
             updateLayersPanel();
             redrawAllLayers();
 
@@ -1093,13 +1114,20 @@
             redrawAllLayers();
         }
 
+        // レイヤーを選択
+        function selectLayer(layerId) {
+            mapState.selectedLayerId = layerId;
+            updateLayersPanel();
+        }
+
         // レイヤーの透過率を変更
         function changeLayerOpacity(layerId, opacity) {
             const layer = mapState.layerStack.find(l => l.id === layerId);
             if (!layer) return;
 
             layer.opacity = opacity;
-            layer.canvas.style.opacity = opacity;
+            // Canvas style.opacityではなく、描画時にglobalAlphaを使用するため削除
+            // layer.canvas.style.opacity = opacity;
 
             redrawAllLayers();
         }
@@ -1116,7 +1144,11 @@
 
             reversedLayers.forEach(layer => {
                 const layerItem = document.createElement('div');
-                layerItem.className = 'layer-item' + (layer.permanent ? ' permanent' : '');
+                const isSelected = mapState.selectedLayerId === layer.id;
+                let className = 'layer-item';
+                if (layer.permanent) className += ' permanent';
+                if (isSelected) className += ' selected';
+                layerItem.className = className;
 
                 const opacityPercent = Math.round(layer.opacity * 100);
 
@@ -1124,20 +1156,26 @@
                     <div class="layer-item-header">
                         <input type="checkbox" class="layer-visibility-toggle"
                                ${layer.visible ? 'checked' : ''}
-                               onchange="toggleLayerVisibility('${layer.id}', this.checked)">
+                               onchange="event.stopPropagation(); toggleLayerVisibility('${layer.id}', this.checked)">
                         <span class="layer-name">${layer.name}</span>
                         <button class="layer-delete-button"
                                 ${layer.permanent ? 'disabled' : ''}
-                                onclick="deleteLayer('${layer.id}')">削除</button>
+                                onclick="event.stopPropagation(); deleteLayer('${layer.id}')">削除</button>
                     </div>
                     <div class="layer-opacity-control">
-                        <span class="layer-opacity-label">透過率</span>
+                        <span class="layer-opacity-label">不透明度</span>
                         <input type="range" class="layer-opacity-slider"
                                min="0" max="1" step="0.01" value="${layer.opacity}"
-                               oninput="changeLayerOpacity('${layer.id}', parseFloat(this.value)); this.nextElementSibling.textContent = Math.round(this.value * 100) + '%'">
+                               oninput="event.stopPropagation(); changeLayerOpacity('${layer.id}', parseFloat(this.value)); this.nextElementSibling.textContent = Math.round(this.value * 100) + '%'"
+                               onchange="event.stopPropagation();">
                         <span class="layer-opacity-value">${opacityPercent}%</span>
                     </div>
                 `;
+
+                // レイヤーアイテム全体をクリックで選択
+                layerItem.addEventListener('click', function(e) {
+                    selectLayer(layer.id);
+                });
 
                 panelBody.appendChild(layerItem);
             });
@@ -1182,8 +1220,12 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
+            // 透過率を適用
+            ctx.save();
+            ctx.globalAlpha = layer.opacity;
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(mapState.image, drawX, drawY, scaledWidth, scaledHeight);
+            ctx.restore();
         }
 
         // メタデータレイヤーを描画
@@ -1204,10 +1246,16 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
+            // 透過率を適用
+            layerCtx.save();
+            layerCtx.globalAlpha = layer.opacity;
+
             // メタデータオーバーレイを描画（レイヤーのctxを使用）
             if (mapState.layers.metadataOverlay) {
                 drawMetadataOverlayOnContext(layerCtx, drawX, drawY, scaledWidth, scaledHeight);
             }
+
+            layerCtx.restore();
         }
 
         // ======================
@@ -2552,7 +2600,15 @@
 
         // アクティブな描画レイヤーを取得（なければ作成）
         function getActiveDrawingLayer() {
-            // 描画レイヤーを検索
+            // 選択されているレイヤーが描画レイヤーの場合はそれを使用
+            if (mapState.selectedLayerId) {
+                const selectedLayer = mapState.layerStack.find(l => l.id === mapState.selectedLayerId);
+                if (selectedLayer && selectedLayer.type === 'drawing' && !selectedLayer.permanent) {
+                    return selectedLayer;
+                }
+            }
+
+            // 選択されていない、または描画レイヤーでない場合は描画レイヤーを検索
             let drawingLayer = mapState.layerStack.find(l => l.type === 'drawing' && !l.permanent);
 
             // 描画レイヤーがなければ作成
