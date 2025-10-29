@@ -20,11 +20,12 @@ import { mapState } from '../state/mapState.js';
 
 /**
  * キャンバス座標をマップ画像ピクセル座標に変換
+ * @export
  * @param {number} canvasX - キャンバスX座標
  * @param {number} canvasY - キャンバスY座標
  * @returns {{x: number, y: number}} 画像ピクセル座標
  */
-function canvasToImagePixel(canvasX, canvasY) {
+export function canvasToImagePixel(canvasX, canvasY) {
     if (!mapState.image) return {x: canvasX, y: canvasY};
 
     const container = document.getElementById('mapContainer');
@@ -45,11 +46,12 @@ function canvasToImagePixel(canvasX, canvasY) {
 
 /**
  * マップ画像ピクセル座標をキャンバス座標に変換
+ * @export
  * @param {number} imagePixelX - 画像ピクセルX座標
  * @param {number} imagePixelY - 画像ピクセルY座標
  * @returns {{x: number, y: number}} キャンバス座標
  */
-function imagePixelToCanvas(imagePixelX, imagePixelY) {
+export function imagePixelToCanvas(imagePixelX, imagePixelY) {
     if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
 
     const container = document.getElementById('mapContainer');

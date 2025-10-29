@@ -41,7 +41,15 @@ import {
     changeDrawingColor,
     changeBrushSize,
     toggleDrawingTools,
-    toggleLayersPanel
+    toggleLayersPanel,
+    updateCursor,
+    getActiveDrawingLayer,
+    performDrawing,
+    redrawDrawingLayer,
+    showMeasureDistance,
+    performBucketFill,
+    canvasToImagePixel,
+    imagePixelToCanvas
 } from './modules/drawingTools.js';
 
 // メタデータ表示
@@ -62,7 +70,8 @@ import {
 // 履歴管理
 import {
     undo,
-    redo
+    redo,
+    saveToHistory
 } from './modules/historyManager.js';
 
 // API通信
@@ -102,6 +111,14 @@ window.changeDrawingColor = changeDrawingColor;
 window.changeBrushSize = changeBrushSize;
 window.toggleDrawingTools = toggleDrawingTools;
 window.toggleLayersPanel = toggleLayersPanel;
+window.updateCursor = updateCursor;
+window.getActiveDrawingLayer = getActiveDrawingLayer;
+window.performDrawing = performDrawing;
+window.redrawDrawingLayer = redrawDrawingLayer;
+window.showMeasureDistance = showMeasureDistance;
+window.performBucketFill = performBucketFill;
+window.canvasToImagePixel = canvasToImagePixel;
+window.imagePixelToCanvas = imagePixelToCanvas;
 
 // メタデータ表示
 window.toggleLayer = toggleLayer;
@@ -117,6 +134,7 @@ window.zoomOut = zoomOut;
 // 履歴管理
 window.undo = undo;
 window.redo = redo;
+window.saveToHistory = saveToHistory;
 
 // API通信
 window.loadStats = loadStats;
