@@ -3,6 +3,7 @@
  * @description マップコントロール（読み込み、クリア、描画）機能を提供するモジュール
  * @requires ../state/mapState.js - マップの状態管理
  * @requires ../modules/profileManager.js - プロファイル管理
+ * @requires ./toast.js - トーストメッセージ表示
  * @exports loadImageFile - 画像ファイル読み込みダイアログを開く
  * @exports loadYAMLFile - YAMLファイル読み込みダイアログを開く
  * @exports clearMap - マップをクリアする
@@ -27,6 +28,7 @@ import {
     getProfileInfo,
     exportProfileToFile
 } from '../modules/profileManager.js';
+import { showSuccess, showError, showInfo, showWarning } from './toast.js';
 
 /**
  * 画像ファイル読み込みダイアログを開く
@@ -210,17 +212,17 @@ export function saveCurrentProfile() {
 
     const profileName = input.value.trim();
     if (!profileName) {
-        alert('プロファイル名を入力してください');
+        showWarning('プロファイル名を入力してください');
         return;
     }
 
     const success = saveProfile(profileName);
     if (success) {
-        alert('プロファイルを保存しました');
+        showSuccess('プロファイルを保存しました');
         input.value = '';
         updateProfileList();
     } else {
-        alert('プロファイルの保存に失敗しました');
+        showError('プロファイルの保存に失敗しました');
     }
 }
 
@@ -260,8 +262,17 @@ function updateProfileList() {
 
 /**
  * プロファイルをロード
+ * @param {string} profileName - プロファイル名
+ * @param {Object} options - オプション設定
+ * @param {boolean} options.showMessage - メッセージを表示するか（デフォルト: true）
+ * @param {boolean} options.closeModal - モーダルを閉じるか（デフォルト: true）
  */
-export async function loadSelectedProfile(profileName) {
+export async function loadSelectedProfile(profileName, options = {}) {
+    const {
+        showMessage = true,
+        closeModal = true
+    } = options;
+
     const success = await loadProfile(profileName);
     if (success) {
         // レイヤーを再構築
@@ -297,10 +308,16 @@ export async function loadSelectedProfile(profileName) {
             canvasStack.style.display = 'block';
         }
 
-        alert('プロファイルを読み込みました');
-        closeProfileManager();
+        if (showMessage) {
+            showSuccess('プロファイルを読み込みました');
+        }
+        if (closeModal) {
+            closeProfileManager();
+        }
     } else {
-        alert('プロファイルの読み込みに失敗しました');
+        if (showMessage) {
+            showError('プロファイルの読み込みに失敗しました');
+        }
     }
 }
 
@@ -314,10 +331,10 @@ export function deleteSelectedProfile(profileName) {
 
     const success = deleteProfile(profileName);
     if (success) {
-        alert('プロファイルを削除しました');
+        showSuccess('プロファイルを削除しました');
         updateProfileList();
     } else {
-        alert('プロファイルの削除に失敗しました');
+        showError('プロファイルの削除に失敗しました');
     }
 }
 
