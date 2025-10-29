@@ -47,6 +47,9 @@ export function initializeLayers() {
     // メタデータレイヤーを作成（恒久的）
     createLayer('metadata', 'メタデータ', 'metadata', true);
 
+    // 四角形レイヤーを作成（恒久的、特殊レイヤー）
+    createLayer('rectangles', '四角形', 'rectangle', true);
+
     // 画像レイヤーを初期選択
     mapState.selectedLayerId = 'map-image';
 
@@ -58,7 +61,7 @@ export function initializeLayers() {
  *
  * @param {string} id - レイヤーのID
  * @param {string} name - レイヤーの表示名
- * @param {string} type - レイヤータイプ（'image', 'metadata', 'drawing'）
+ * @param {string} type - レイヤータイプ（'image', 'metadata', 'drawing', 'rectangle'）
  * @param {boolean} [permanent=false] - 削除不可の恒久レイヤーかどうか
  * @returns {Object} 作成されたレイヤーオブジェクト
  *
@@ -73,7 +76,7 @@ export function createLayer(id, name, type, permanent = false) {
     const layer = {
         id: id,
         name: name,
-        type: type,  // 'image', 'metadata', 'drawing'
+        type: type,  // 'image', 'metadata', 'drawing', 'rectangle'
         permanent: permanent,
         visible: true,
         opacity: 1.0,
@@ -89,6 +92,12 @@ export function createLayer(id, name, type, permanent = false) {
     if (type === 'drawing') {
         layer.canvas.style.opacity = layer.opacity;
         layer.strokes = [];  // ストロークをワールド座標で保存
+    }
+
+    // 四角形レイヤーの場合は初期非表示
+    if (type === 'rectangle') {
+        layer.visible = false;
+        layer.canvas.style.display = 'none';
     }
 
     // キャンバスのサイズを設定
@@ -403,6 +412,11 @@ export function redrawAllLayers() {
             // ここでは外部関数を期待する
             if (typeof window.redrawDrawingLayer === 'function') {
                 window.redrawDrawingLayer(layer);
+            }
+        } else if (layer.type === 'rectangle') {
+            // 四角形レイヤーは別モジュール（rectangleRenderer.js等）で定義される関数で再描画
+            if (typeof window.redrawRectangleLayer === 'function') {
+                window.redrawRectangleLayer(layer);
             }
         }
     });

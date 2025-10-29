@@ -19,7 +19,8 @@ import {
     DRAWING_DEFAULTS,
     OVERLAY_DEFAULTS,
     HISTORY_DEFAULTS,
-    LAYER_DEFAULTS
+    LAYER_DEFAULTS,
+    RECTANGLE_DEFAULTS
 } from '../config.js';
 
 // ================
@@ -92,6 +93,21 @@ export const mapState = {
         isDrawing: false,
         currentStroke: [],
         measurePoints: []
+    },
+
+    /** 四角形ツールの状態 */
+    rectangleToolState: {
+        enabled: false,              // 四角形ツールのオン/オフ
+        rectangles: [],              // 四角形の配列
+        selectedRectangleId: null,   // 選択中の四角形ID
+        nextRectangleId: 1,          // 次の四角形ID
+        editMode: null,              // 編集モード: 'resize', 'move', 'rotate', 'measure', null
+        resizeEdge: null,            // リサイズ中の辺: 'top', 'right', 'bottom', 'left', null
+        isDragging: false,           // ドラッグ中かどうか
+        dragStartPos: null,          // ドラッグ開始位置
+        measureEdge: null,           // 測量中の辺
+        hoverRectangleId: null,      // ホバー中の四角形ID
+        hoverEdge: null              // ホバー中の辺
     },
 
     /** アンドゥ/リドゥ用の履歴 */
@@ -189,6 +205,20 @@ export function resetState() {
         isDrawing: false,
         currentStroke: [],
         measurePoints: []
+    };
+
+    mapState.rectangleToolState = {
+        enabled: false,
+        rectangles: [],
+        selectedRectangleId: null,
+        nextRectangleId: 1,
+        editMode: null,
+        resizeEdge: null,
+        isDragging: false,
+        dragStartPos: null,
+        measureEdge: null,
+        hoverRectangleId: null,
+        hoverEdge: null
     };
 
     mapState.history = {

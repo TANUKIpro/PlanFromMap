@@ -105,7 +105,7 @@ export function toggleLayersPanel() {
 /**
  * 描画ツールを選択
  * @export
- * @param {string} toolName - ツール名 ('pan', 'pencil', 'eraser', 'measure', 'bucket')
+ * @param {string} toolName - ツール名 ('pan', 'pencil', 'eraser', 'measure', 'bucket', 'rectangle')
  */
 export function selectTool(toolName) {
     mapState.drawingState.currentTool = toolName;
@@ -123,6 +123,66 @@ export function selectTool(toolName) {
 
     // カーソルスタイルを変更
     updateCursor();
+}
+
+/**
+ * 四角形ツールモードをトグルする
+ * 四角形ツールボタン専用の関数
+ * @export
+ */
+export function toggleRectangleToolMode() {
+    // 現在の四角形ツールの状態を取得
+    const currentState = mapState.rectangleToolState ? mapState.rectangleToolState.enabled : false;
+    const newState = !currentState;
+
+    // 四角形ツールをトグル
+    if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
+        window.toggleRectangleTool(newState);
+    }
+
+    // 四角形ツールがオンになった場合
+    if (newState) {
+        // 四角形が1つもない場合は、中央に作成
+        if (window.getAllRectangles && typeof window.getAllRectangles === 'function') {
+            const rectangles = window.getAllRectangles();
+            if (rectangles.length === 0 && window.createRectangle && window.getImageCenter &&
+                typeof window.createRectangle === 'function' && typeof window.getImageCenter === 'function') {
+                const center = window.getImageCenter();
+                if (center) {
+                    // 2m×2mのサイズを計算（メタデータから解像度を取得）
+                    const resolution = mapState.metadata ? mapState.metadata.resolution : 0.05; // m/pixel
+                    const widthInMeters = 2.0;   // 2m
+                    const heightInMeters = 2.0;  // 2m
+                    const widthInPixels = widthInMeters / resolution;
+                    const heightInPixels = heightInMeters / resolution;
+
+                    window.createRectangle(center.x, center.y, widthInPixels, heightInPixels);
+
+                    // 作成した四角形を選択
+                    if (window.getAllRectangles && window.selectRectangle &&
+                        typeof window.selectRectangle === 'function') {
+                        const rects = window.getAllRectangles();
+                        if (rects.length > 0) {
+                            window.selectRectangle(rects[0].id);
+                        }
+                    }
+
+                    // レイヤーを再描画
+                    if (window.getRectangleLayer && window.redrawRectangleLayer &&
+                        typeof window.getRectangleLayer === 'function' &&
+                        typeof window.redrawRectangleLayer === 'function') {
+                        const layer = window.getRectangleLayer();
+                        if (layer) {
+                            window.redrawRectangleLayer(layer);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 鉛筆ツールを選択（四角形の辺を編集できるようにする）
+        selectTool('pencil');
+    }
 }
 
 /**

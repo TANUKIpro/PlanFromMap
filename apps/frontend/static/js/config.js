@@ -74,7 +74,47 @@ export const DRAWING_DEFAULTS = {
     MAX_BRUSH_SIZE: 50,
 
     /** 利用可能なツール */
-    AVAILABLE_TOOLS: ['pan', 'pencil', 'eraser', 'measure', 'bucket']
+    AVAILABLE_TOOLS: ['pan', 'pencil', 'eraser', 'measure', 'bucket', 'rectangle']
+};
+
+// ================
+// 四角形ツール設定
+// ================
+
+/**
+ * 四角形ツールのデフォルト設定
+ * @type {Object}
+ */
+export const RECTANGLE_DEFAULTS = {
+    /** デフォルトの幅（ピクセル） */
+    DEFAULT_WIDTH: 200,
+
+    /** デフォルトの高さ（ピクセル） */
+    DEFAULT_HEIGHT: 150,
+
+    /** 最小サイズ（ピクセル） */
+    MIN_SIZE: 20,
+
+    /** 回転のスナップ角度（度） */
+    ROTATION_SNAP_ANGLE: 2,
+
+    /** ハンドルのサイズ（ピクセル） */
+    HANDLE_SIZE: 10,
+
+    /** 四角形の線の太さ */
+    STROKE_WIDTH: 2,
+
+    /** 四角形の色 */
+    STROKE_COLOR: '#667eea',
+
+    /** 選択時の色 */
+    SELECTED_COLOR: '#764ba2',
+
+    /** ハンドルの色 */
+    HANDLE_COLOR: '#ffffff',
+
+    /** ハンドルの枠線の色 */
+    HANDLE_STROKE_COLOR: '#667eea'
 };
 
 // ================
