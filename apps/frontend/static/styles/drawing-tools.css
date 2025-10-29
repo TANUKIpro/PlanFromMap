@@ -149,3 +149,78 @@
 .brush-size-slider {
     width: 120px;
 }
+
+/* ========================================
+   四角形測量入力UI (Fusion360風)
+   ======================================== */
+.edge-length-input-ui {
+    position: absolute;
+    z-index: 1000;
+    pointer-events: all;
+}
+
+.edge-length-input-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 6px 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.edge-length-input {
+    width: 90px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 14px;
+    font-family: monospace;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.edge-length-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.edge-length-input-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.edge-length-button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.edge-length-button.confirm {
+    background: #4caf50;
+    color: white;
+}
+
+.edge-length-button.confirm:hover {
+    background: #45a049;
+    transform: scale(1.05);
+}
+
+.edge-length-button.cancel {
+    background: #f44336;
+    color: white;
+}
+
+.edge-length-button.cancel:hover {
+    background: #da190b;
+    transform: scale(1.05);
+}

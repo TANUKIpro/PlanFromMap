@@ -33,20 +33,48 @@ import { RECTANGLE_DEFAULTS } from '../config.js';
 export function toggleRectangleTool(enabled) {
     mapState.rectangleToolState.enabled = enabled;
 
-    // 四角形レイヤーの表示/非表示を切り替え
+    // 四角形レイヤーの表示を管理
     const rectangleLayer = getRectangleLayer();
     if (rectangleLayer) {
-        rectangleLayer.visible = enabled;
-        rectangleLayer.canvas.style.display = enabled ? 'block' : 'none';
+        // 四角形ツールをオンにする場合は、レイヤーを表示
+        if (enabled) {
+            rectangleLayer.visible = true;
+            rectangleLayer.canvas.style.display = 'block';
+
+            // レイヤーを再描画
+            if (window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
+                window.redrawRectangleLayer(rectangleLayer);
+            }
+        } else {
+            // 四角形ツールをオフにする場合
+            // 四角形が既に存在する場合は、レイヤーは表示されたままにする
+            // ただし、選択状態は解除する
+            if (mapState.rectangleToolState.rectangles.length > 0) {
+                // 選択状態を解除
+                if (window.deselectRectangle && typeof window.deselectRectangle === 'function') {
+                    window.deselectRectangle();
+                } else {
+                    deselectRectangle();
+                }
+
+                // レイヤーは表示されたままにする
+                rectangleLayer.visible = true;
+                rectangleLayer.canvas.style.display = 'block';
+
+                // レイヤーを再描画（選択状態を解除した状態で）
+                if (window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
+            } else {
+                // 四角形が存在しない場合は、レイヤーを非表示にする
+                rectangleLayer.visible = false;
+                rectangleLayer.canvas.style.display = 'none';
+            }
+        }
 
         // レイヤーパネルを更新
         if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
             window.updateLayersPanel();
-        }
-
-        // レイヤーを再描画
-        if (enabled && window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
-            window.redrawRectangleLayer(rectangleLayer);
         }
     }
 
