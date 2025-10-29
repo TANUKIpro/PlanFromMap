@@ -1197,30 +1197,68 @@
                     <div class="layer-item-header">
                         <input type="checkbox" class="layer-visibility-toggle"
                                ${layer.visible ? 'checked' : ''}
-                               onchange="event.stopPropagation(); toggleLayerVisibility('${layer.id}', this.checked)">
-                        <span class="layer-name" ondblclick="event.stopPropagation(); renameLayer('${layer.id}')">${layer.name}</span>
+                               data-layer-id="${layer.id}">
+                        <span class="layer-name" data-layer-id="${layer.id}">${layer.name}</span>
                         <button class="layer-delete-button"
                                 ${layer.permanent ? 'disabled' : ''}
-                                onclick="event.stopPropagation(); deleteLayer('${layer.id}')">削除</button>
+                                data-layer-id="${layer.id}">削除</button>
                     </div>
                     <div class="layer-opacity-control">
                         <span class="layer-opacity-label">不透明度</span>
                         <input type="range" class="layer-opacity-slider"
                                min="0" max="1" step="0.01" value="${layer.opacity}"
-                               onmousedown="event.stopPropagation();"
-                               onmousemove="event.stopPropagation();"
-                               onmouseup="event.stopPropagation();"
-                               oninput="event.stopPropagation(); changeLayerOpacity('${layer.id}', parseFloat(this.value)); this.nextElementSibling.textContent = Math.round(this.value * 100) + '%'"
-                               onchange="event.stopPropagation();">
+                               data-layer-id="${layer.id}">
                         <span class="layer-opacity-value">${opacityPercent}%</span>
                     </div>
                 `;
+
+                // チェックボックスにイベントリスナーを追加
+                const checkbox = layerItem.querySelector('.layer-visibility-toggle');
+                if (checkbox) {
+                    checkbox.addEventListener('change', function(e) {
+                        e.stopPropagation();
+                        toggleLayerVisibility(layer.id, this.checked);
+                    });
+                }
+
+                // 不透明度スライダーにイベントリスナーを追加
+                const opacitySlider = layerItem.querySelector('.layer-opacity-slider');
+                const opacityValue = layerItem.querySelector('.layer-opacity-value');
+                if (opacitySlider && opacityValue) {
+                    opacitySlider.addEventListener('mousedown', function(e) {
+                        e.stopPropagation();
+                    });
+                    opacitySlider.addEventListener('mousemove', function(e) {
+                        e.stopPropagation();
+                    });
+                    opacitySlider.addEventListener('mouseup', function(e) {
+                        e.stopPropagation();
+                    });
+                    opacitySlider.addEventListener('input', function(e) {
+                        e.stopPropagation();
+                        changeLayerOpacity(layer.id, parseFloat(this.value));
+                        opacityValue.textContent = Math.round(this.value * 100) + '%';
+                    });
+                }
 
                 // レイヤー名をダブルクリックで編集可能にする
                 const layerNameSpan = layerItem.querySelector('.layer-name');
                 if (layerNameSpan) {
                     layerNameSpan.style.cursor = 'text';
                     layerNameSpan.title = 'ダブルクリックで名前を変更';
+                    layerNameSpan.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
+                        renameLayer(layer.id);
+                    });
+                }
+
+                // 削除ボタンにイベントリスナーを追加
+                const deleteButton = layerItem.querySelector('.layer-delete-button');
+                if (deleteButton) {
+                    deleteButton.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteLayer(layer.id);
+                    });
                 }
 
                 // レイヤーアイテム全体をクリックで選択
