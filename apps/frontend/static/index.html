@@ -1044,6 +1044,11 @@
             layer.canvas.style.display = 'block';
             layer.ctx = layer.canvas.getContext('2d');
 
+            // 描画レイヤーの場合はcanvas.style.opacityを設定
+            if (type === 'drawing') {
+                layer.canvas.style.opacity = layer.opacity;
+            }
+
             // キャンバスのサイズを設定
             const containerRect = container.getBoundingClientRect();
             layer.canvas.width = containerRect.width;
@@ -1112,12 +1117,18 @@
 
             if (visible) {
                 layer.canvas.style.display = 'block';
-                // レイヤーを再描画
-                redrawAllLayers();
+                // 画像レイヤーとメタデータレイヤーは再描画が必要
+                // 描画レイヤーは既存の内容を表示するだけ
+                if (layer.type !== 'drawing') {
+                    redrawAllLayers();
+                }
             } else {
                 layer.canvas.style.display = 'none';
-                // 非表示の場合はキャンバスをクリア
-                layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                // 描画レイヤーの場合はキャンバスをクリアしない（内容を保持）
+                // 画像レイヤーとメタデータレイヤーはクリアしても問題ない（再描画可能）
+                if (layer.type !== 'drawing') {
+                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                }
             }
         }
 
@@ -1151,10 +1162,15 @@
             if (!layer) return;
 
             layer.opacity = opacity;
-            // Canvas style.opacityではなく、描画時にglobalAlphaを使用するため削除
-            // layer.canvas.style.opacity = opacity;
 
-            redrawAllLayers();
+            // 描画レイヤーはcanvas.style.opacityで不透明度を設定
+            // （既に描画された内容に対して不透明度を適用）
+            if (layer.type === 'drawing') {
+                layer.canvas.style.opacity = opacity;
+            } else {
+                // 画像レイヤーとメタデータレイヤーは再描画時にglobalAlphaで不透明度を適用
+                redrawAllLayers();
+            }
         }
 
         // レイヤーパネルを更新
@@ -1221,15 +1237,18 @@
             mapState.layerStack.forEach(layer => {
                 if (!layer.visible) return;
 
-                // キャンバスをクリア
-                layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                // 描画レイヤー以外のみキャンバスをクリア
+                // 描画レイヤーは既に描画された内容を保持する必要がある
+                if (layer.type !== 'drawing') {
+                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                }
 
                 if (layer.type === 'image' && mapState.image) {
                     drawImageLayer(layer);
                 } else if (layer.type === 'metadata' && mapState.metadata) {
                     drawMetadataLayer(layer);
                 }
-                // 描画レイヤーは後で実装
+                // 描画レイヤーは既存の内容を保持
             });
         }
 
