@@ -6,6 +6,7 @@
  * および各レイヤータイプ（画像、メタデータ、描画）の描画処理を担当します。
  *
  * @requires ../state/mapState.js - アプリケーション状態管理
+ * @requires ./overlayRenderer.js - メタデータオーバーレイ描画
  *
  * @exports initializeLayers - レイヤーシステムの初期化
  * @exports createLayer - 新しいレイヤーの作成
@@ -22,6 +23,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import { drawMetadataOverlayOnContext } from './overlayRenderer.js';
 
 /**
  * レイヤーシステムを初期化する
@@ -477,11 +479,7 @@ export function drawMetadataLayer(layer) {
 
     // メタデータオーバーレイを描画（レイヤーのctxを使用）
     if (mapState.layers.metadataOverlay) {
-        // drawMetadataOverlayOnContextは別モジュール（metadataOverlay.js等）で定義されるべき
-        // ここでは外部関数を期待する
-        if (typeof window.drawMetadataOverlayOnContext === 'function') {
-            window.drawMetadataOverlayOnContext(layerCtx, drawX, drawY, scaledWidth, scaledHeight);
-        }
+        drawMetadataOverlayOnContext(layerCtx, drawX, drawY, scaledWidth, scaledHeight);
     }
 
     layerCtx.restore();

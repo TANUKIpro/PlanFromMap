@@ -2,6 +2,7 @@
  * @file metadataDisplay.js
  * @description メタデータ表示関連の機能を提供するモジュール
  * @requires ../state/mapState.js
+ * @requires ./layerManager.js
  * @exports displayMetadata
  * @exports toggleMetadataMinimize
  * @exports updateMetadataOverlayVisibility
@@ -11,6 +12,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import { redrawAllLayers } from './layerManager.js';
 
 /**
  * メタデータを表示
@@ -199,7 +201,25 @@ export function toggleLayer(layerKey, enabled) {
     mapState.layers[layerKey] = enabled;
     updateOverlayControls();
 
-    // drawMap() は外部で呼び出す必要がある
+    // レイヤーシステムを使用している場合は該当レイヤーの表示を切り替え
+    if (mapState.layerStack && mapState.layerStack.length > 0) {
+        if (layerKey === 'image') {
+            const imageLayer = mapState.layerStack.find(l => l.id === 'map-image');
+            if (imageLayer) {
+                imageLayer.visible = enabled;
+                imageLayer.canvas.style.display = enabled ? 'block' : 'none';
+            }
+        } else if (layerKey === 'metadataOverlay') {
+            const metadataLayer = mapState.layerStack.find(l => l.id === 'metadata');
+            if (metadataLayer) {
+                metadataLayer.visible = enabled;
+                metadataLayer.canvas.style.display = enabled ? 'block' : 'none';
+            }
+        }
+    }
+
+    // すべてのレイヤーを再描画
+    redrawAllLayers();
 }
 
 /**
@@ -221,5 +241,6 @@ export function toggleOverlayOption(optionKey, enabled) {
     mapState.overlaySettings[optionKey] = enabled;
     updateOverlayControls();
 
-    // drawMap() は外部で呼び出す必要がある
+    // すべてのレイヤーを再描画
+    redrawAllLayers();
 }
