@@ -1044,9 +1044,10 @@
             layer.canvas.style.display = 'block';
             layer.ctx = layer.canvas.getContext('2d');
 
-            // 描画レイヤーの場合はcanvas.style.opacityを設定
+            // 描画レイヤーの場合はcanvas.style.opacityを設定し、ストロークを格納する配列を追加
             if (type === 'drawing') {
                 layer.canvas.style.opacity = layer.opacity;
+                layer.strokes = [];  // ストロークをワールド座標で保存
             }
 
             // キャンバスのサイズを設定
@@ -1275,18 +1276,16 @@
             mapState.layerStack.forEach(layer => {
                 if (!layer.visible) return;
 
-                // 描画レイヤー以外のみキャンバスをクリア
-                // 描画レイヤーは既に描画された内容を保持する必要がある
-                if (layer.type !== 'drawing') {
-                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-                }
-
                 if (layer.type === 'image' && mapState.image) {
+                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
                     drawImageLayer(layer);
                 } else if (layer.type === 'metadata' && mapState.metadata) {
+                    layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
                     drawMetadataLayer(layer);
+                } else if (layer.type === 'drawing') {
+                    // 描画レイヤーはストロークデータから再描画
+                    redrawDrawingLayer(layer);
                 }
-                // 描画レイヤーは既存の内容を保持
             });
         }
 
@@ -1451,7 +1450,9 @@
                     permanent: layer.permanent,
                     visible: layer.visible,
                     opacity: layer.opacity,
-                    imageData: layer.type === 'drawing' ? layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height) : null
+                    imageData: layer.type === 'drawing' ? layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height) : null,
+                    // ストロークデータも保存（ディープコピー）
+                    strokes: layer.type === 'drawing' && layer.strokes ? JSON.parse(JSON.stringify(layer.strokes)) : null
                 }))
             };
             return state;
@@ -1468,8 +1469,15 @@
                     layer.canvas.style.display = savedLayer.visible ? 'block' : 'none';
                     layer.canvas.style.opacity = savedLayer.opacity;
 
-                    if (savedLayer.imageData && layer.type === 'drawing') {
-                        layer.ctx.putImageData(savedLayer.imageData, 0, 0);
+                    if (layer.type === 'drawing') {
+                        // ストロークデータを復元
+                        if (savedLayer.strokes) {
+                            layer.strokes = JSON.parse(JSON.stringify(savedLayer.strokes));
+                        }
+                        // イメージデータも復元（バケツ塗りつぶしなどのピクセル操作のため）
+                        if (savedLayer.imageData) {
+                            layer.ctx.putImageData(savedLayer.imageData, 0, 0);
+                        }
                     }
                 }
             });
@@ -2579,11 +2587,16 @@
 
             // 左ボタンクリック
             if (e.button === 0) {
+                // UIコントロール要素の場合はスキップ
+                if (isUIElement(e.target)) {
+                    return;
+                }
+
                 e.preventDefault();
 
                 const rect = container.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const canvasX = e.clientX - rect.left;
+                const canvasY = e.clientY - rect.top;
 
                 if (tool === 'pan') {
                     // パンツール
@@ -2592,15 +2605,16 @@
                     mapState.lastY = e.clientY;
                     container.style.cursor = 'grabbing';
                 } else if (tool === 'pencil' || tool === 'eraser') {
-                    // 鉛筆または消しゴム
+                    // 鉛筆または消しゴム - 画像ピクセル座標に変換
+                    const imagePixel = canvasToImagePixel(canvasX, canvasY);
                     mapState.drawingState.isDrawing = true;
-                    mapState.drawingState.currentStroke = [{x, y}];
+                    mapState.drawingState.currentStroke = [imagePixel];
 
                     // 履歴に保存（描画開始時）
                     saveToHistory();
                 } else if (tool === 'measure') {
-                    // 測量ツール
-                    mapState.drawingState.measurePoints.push({x, y});
+                    // 測量ツール - キャンバス座標を使用（画面上の距離を測るため）
+                    mapState.drawingState.measurePoints.push({x: canvasX, y: canvasY});
 
                     // 2点目が置かれたら距離を表示して測量を終了
                     if (mapState.drawingState.measurePoints.length === 2) {
@@ -2609,7 +2623,7 @@
                     }
                 } else if (tool === 'bucket') {
                     // バケツツール
-                    performBucketFill(x, y);
+                    performBucketFill(canvasX, canvasY);
                 }
             } else if (e.button === 1) {
                 // 中ボタンでパン
@@ -2650,11 +2664,17 @@
                 e.preventDefault();
 
                 const rect = container.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const canvasX = e.clientX - rect.left;
+                const canvasY = e.clientY - rect.top;
 
-                mapState.drawingState.currentStroke.push({x, y});
-                performDrawing(tool, mapState.drawingState.currentStroke);
+                // 画像ピクセル座標に変換
+                const imagePixel = canvasToImagePixel(canvasX, canvasY);
+                mapState.drawingState.currentStroke.push(imagePixel);
+
+                // 描画（色とブラシサイズを渡す）
+                performDrawing(tool, mapState.drawingState.currentStroke,
+                             mapState.drawingState.color,
+                             mapState.drawingState.brushSize);
             }
         });
 
@@ -2667,6 +2687,21 @@
                 }
 
                 if (mapState.drawingState.isDrawing) {
+                    const tool = mapState.drawingState.currentTool;
+
+                    // ストロークをレイヤーに保存
+                    if (mapState.drawingState.currentStroke.length > 0) {
+                        const layer = getActiveDrawingLayer();
+                        if (layer && layer.strokes) {
+                            layer.strokes.push({
+                                tool: tool,
+                                stroke: [...mapState.drawingState.currentStroke],
+                                color: mapState.drawingState.color,
+                                brushSize: mapState.drawingState.brushSize
+                            });
+                        }
+                    }
+
                     mapState.drawingState.isDrawing = false;
                     mapState.drawingState.currentStroke = [];
                 }
@@ -2681,6 +2716,21 @@
             }
 
             if (mapState.drawingState.isDrawing) {
+                const tool = mapState.drawingState.currentTool;
+
+                // ストロークをレイヤーに保存
+                if (mapState.drawingState.currentStroke.length > 0) {
+                    const layer = getActiveDrawingLayer();
+                    if (layer && layer.strokes) {
+                        layer.strokes.push({
+                            tool: tool,
+                            stroke: [...mapState.drawingState.currentStroke],
+                            color: mapState.drawingState.color,
+                            brushSize: mapState.drawingState.brushSize
+                        });
+                    }
+                }
+
                 mapState.drawingState.isDrawing = false;
                 mapState.drawingState.currentStroke = [];
             }
@@ -2689,6 +2739,101 @@
         // ======================
         // 描画ツールの実装
         // ======================
+
+        // キャンバス座標をマップ画像ピクセル座標に変換
+        function canvasToImagePixel(canvasX, canvasY) {
+            if (!mapState.image) return {x: canvasX, y: canvasY};
+
+            const scaledWidth = mapState.image.width * mapState.scale;
+            const scaledHeight = mapState.image.height * mapState.scale;
+
+            const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
+            const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
+
+            const drawX = baseX + mapState.offsetX;
+            const drawY = baseY + mapState.offsetY;
+
+            const imagePixelX = (canvasX - drawX) / mapState.scale;
+            const imagePixelY = (canvasY - drawY) / mapState.scale;
+
+            return {x: imagePixelX, y: imagePixelY};
+        }
+
+        // マップ画像ピクセル座標をキャンバス座標に変換
+        function imagePixelToCanvas(imagePixelX, imagePixelY) {
+            if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
+
+            const scaledWidth = mapState.image.width * mapState.scale;
+            const scaledHeight = mapState.image.height * mapState.scale;
+
+            const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
+            const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
+
+            const drawX = baseX + mapState.offsetX;
+            const drawY = baseY + mapState.offsetY;
+
+            const canvasX = imagePixelX * mapState.scale + drawX;
+            const canvasY = imagePixelY * mapState.scale + drawY;
+
+            return {x: canvasX, y: canvasY};
+        }
+
+        // 実世界座標（メートル）をキャンバス座標に変換
+        function worldToCanvas(worldX, worldY, drawX, drawY) {
+            if (!mapState.metadata || !Array.isArray(mapState.metadata.origin)) {
+                return null;
+            }
+            const resolution = mapState.metadata.resolution;
+            if (!resolution) return null;
+
+            const [originX, originY] = mapState.metadata.origin;
+            const pixelX = (worldX - originX) / resolution;
+            const pixelY = mapState.image.height - (worldY - originY) / resolution;
+
+            if (!isFinite(pixelX) || !isFinite(pixelY)) {
+                return null;
+            }
+
+            return {
+                x: drawX + pixelX * mapState.scale,
+                y: drawY + pixelY * mapState.scale
+            };
+        }
+
+        // UIコントロール要素かどうかをチェック
+        function isUIElement(element) {
+            if (!element) return false;
+
+            // ボタン、入力、スライダーなどのUI要素
+            if (element.tagName === 'BUTTON' ||
+                element.tagName === 'INPUT' ||
+                element.tagName === 'SELECT' ||
+                element.tagName === 'TEXTAREA' ||
+                element.tagName === 'A') {
+                return true;
+            }
+
+            // パネルやツールバーなどのクラスをチェック
+            if (element.classList) {
+                if (element.classList.contains('panel') ||
+                    element.classList.contains('tool-button') ||
+                    element.classList.contains('drawing-tools-palette') ||
+                    element.classList.contains('drawing-options') ||
+                    element.classList.contains('layer-item') ||
+                    element.classList.contains('layer-controls') ||
+                    element.id === 'layersPanel' ||
+                    element.id === 'drawingToolsPalette') {
+                    return true;
+                }
+            }
+
+            // 親要素をチェック
+            if (element.parentElement && element.parentElement !== document.body) {
+                return isUIElement(element.parentElement);
+            }
+
+            return false;
+        }
 
         // アクティブな描画レイヤーを取得（なければ作成）
         function getActiveDrawingLayer() {
@@ -2726,31 +2871,34 @@
             return drawingLayer;
         }
 
-        // 鉛筆または消しゴムで描画
-        function performDrawing(tool, stroke) {
-            if (stroke.length < 2) return;
+        // 鉛筆または消しゴムで描画（画像ピクセル座標版）
+        function performDrawing(tool, imagePixelStroke, color, brushSize) {
+            if (imagePixelStroke.length < 2) return;
 
             const layer = getActiveDrawingLayer();
             if (!layer) return;
 
             const ctx = layer.ctx;
 
-            // 最後の2点を描画
-            const p1 = stroke[stroke.length - 2];
-            const p2 = stroke[stroke.length - 1];
+            // 最後の2点をキャンバス座標に変換
+            const ip1 = imagePixelStroke[imagePixelStroke.length - 2];
+            const ip2 = imagePixelStroke[imagePixelStroke.length - 1];
+
+            const p1 = imagePixelToCanvas(ip1.x, ip1.y);
+            const p2 = imagePixelToCanvas(ip2.x, ip2.y);
 
             ctx.save();
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
             if (tool === 'pencil') {
-                ctx.strokeStyle = mapState.drawingState.color;
-                ctx.lineWidth = mapState.drawingState.brushSize;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = brushSize;
                 ctx.globalCompositeOperation = 'source-over';
             } else if (tool === 'eraser') {
                 // 消しゴムは透明にする
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = mapState.drawingState.brushSize * 2;  // 消しゴムは大きめ
+                ctx.lineWidth = brushSize * 2;  // 消しゴムは大きめ
             }
 
             ctx.beginPath();
@@ -2759,6 +2907,54 @@
             ctx.stroke();
 
             ctx.restore();
+        }
+
+        // 描画レイヤーを再描画（パン/ズーム時）
+        function redrawDrawingLayer(layer) {
+            if (!layer || layer.type !== 'drawing') return;
+
+            const ctx = layer.ctx;
+
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+
+            // ストロークがある場合は再描画
+            if (layer.strokes && layer.strokes.length > 0) {
+                // すべてのストロークを再描画
+                for (const strokeData of layer.strokes) {
+                    const {tool, stroke, color, brushSize} = strokeData;
+
+                    if (stroke.length < 2) continue;
+
+                    ctx.save();
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    if (tool === 'pencil') {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = brushSize;
+                        ctx.globalCompositeOperation = 'source-over';
+                    } else if (tool === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.lineWidth = brushSize * 2;
+                    }
+
+                    ctx.beginPath();
+
+                    // 最初の点に移動
+                    const startPoint = imagePixelToCanvas(stroke[0].x, stroke[0].y);
+                    ctx.moveTo(startPoint.x, startPoint.y);
+
+                    // すべての点を描画
+                    for (let i = 1; i < stroke.length; i++) {
+                        const point = imagePixelToCanvas(stroke[i].x, stroke[i].y);
+                        ctx.lineTo(point.x, point.y);
+                    }
+
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
         }
 
         // 測量結果を表示
