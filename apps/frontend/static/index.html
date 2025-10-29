@@ -1190,7 +1190,7 @@
         function drawMetadataLayer(layer) {
             if (!mapState.metadata || !mapState.image) return;
 
-            const ctx = layer.ctx;
+            const layerCtx = layer.ctx;
 
             // 画像のスケール後のサイズを計算
             const scaledWidth = mapState.image.width * mapState.scale;
@@ -1204,15 +1204,10 @@
             const drawX = baseX + mapState.offsetX;
             const drawY = baseY + mapState.offsetY;
 
-            // 既存のメタデータ描画関数を使用（ctxを一時的に切り替え）
-            const originalCtx = window.ctx;
-            window.ctx = ctx;
-
+            // メタデータオーバーレイを描画（レイヤーのctxを使用）
             if (mapState.layers.metadataOverlay) {
-                drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight);
+                drawMetadataOverlayOnContext(layerCtx, drawX, drawY, scaledWidth, scaledHeight);
             }
-
-            window.ctx = originalCtx;
         }
 
         // ======================
@@ -1941,6 +1936,26 @@
             }
         }
 
+        // ctxをパラメータとして受け取るメタデータオーバーレイ描画関数（レイヤーシステム用）
+        function drawMetadataOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight) {
+            const metadata = mapState.metadata;
+            if (!metadata) return;
+
+            const resolution = metadata.resolution;
+
+            if (mapState.overlaySettings.showGrid && resolution) {
+                drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution);
+            }
+
+            if (mapState.overlaySettings.showOrigin && Array.isArray(metadata.origin)) {
+                drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
+            }
+
+            if (mapState.overlaySettings.showScaleBar && resolution) {
+                drawScaleBarOnContext(targetCtx, resolution);
+            }
+        }
+
         function drawGridOverlay(drawX, drawY, scaledWidth, scaledHeight, resolution) {
             if (!resolution) return;
 
@@ -1979,6 +1994,47 @@
             }
 
             ctx.restore();
+        }
+
+        // ctxをパラメータとして受け取るグリッドオーバーレイ描画関数
+        function drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution) {
+            if (!resolution) return;
+
+            const spacingMeters = mapState.overlaySettings.gridSpacingMeters || 1;
+            if (spacingMeters <= 0) return;
+
+            const spacingPixels = spacingMeters / resolution;
+            const scaledSpacing = spacingPixels * mapState.scale;
+            if (!isFinite(scaledSpacing) || scaledSpacing < 4) {
+                return;
+            }
+
+            targetCtx.save();
+            targetCtx.strokeStyle = 'rgba(102, 126, 234, 0.35)';
+            targetCtx.lineWidth = 1;
+
+            const imageWidth = mapState.image.width;
+            const imageHeight = mapState.image.height;
+
+            for (let px = 0; px <= imageWidth; px += spacingPixels) {
+                const canvasX = drawX + px * mapState.scale;
+                if (canvasX < drawX - 1 || canvasX > drawX + scaledWidth + 1) continue;
+                targetCtx.beginPath();
+                targetCtx.moveTo(canvasX, drawY);
+                targetCtx.lineTo(canvasX, drawY + scaledHeight);
+                targetCtx.stroke();
+            }
+
+            for (let py = 0; py <= imageHeight; py += spacingPixels) {
+                const canvasY = drawY + py * mapState.scale;
+                if (canvasY < drawY - 1 || canvasY > drawY + scaledHeight + 1) continue;
+                targetCtx.beginPath();
+                targetCtx.moveTo(drawX, canvasY);
+                targetCtx.lineTo(drawX + scaledWidth, canvasY);
+                targetCtx.stroke();
+            }
+
+            targetCtx.restore();
         }
 
         function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origin) {
@@ -2056,6 +2112,82 @@
             ctx.restore();
         }
 
+        // ctxをパラメータとして受け取る原点オーバーレイ描画関数
+        function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, origin) {
+            if (!Array.isArray(origin) || origin.length < 2) return;
+            if (!mapState.metadata || mapState.metadata.resolution === undefined) return;
+
+            const originCanvas = worldToCanvas(0, 0, drawX, drawY);
+            if (!originCanvas) return;
+
+            if (
+                originCanvas.x < drawX - 1 ||
+                originCanvas.x > drawX + scaledWidth + 1 ||
+                originCanvas.y < drawY - 1 ||
+                originCanvas.y > drawY + scaledHeight + 1
+            ) {
+                // 表示領域外の場合は描画しない
+                return;
+            }
+
+            targetCtx.save();
+            targetCtx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
+            targetCtx.lineWidth = 2;
+
+            const crossSize = 10;
+            targetCtx.beginPath();
+            targetCtx.moveTo(originCanvas.x - crossSize, originCanvas.y);
+            targetCtx.lineTo(originCanvas.x + crossSize, originCanvas.y);
+            targetCtx.moveTo(originCanvas.x, originCanvas.y - crossSize);
+            targetCtx.lineTo(originCanvas.x, originCanvas.y + crossSize);
+            targetCtx.stroke();
+
+            const theta = origin.length >= 3 ? origin[2] : 0;
+            const arrowLength = 60;
+            const dirX = Math.cos(theta);
+            const dirY = -Math.sin(theta);
+            const endX = originCanvas.x + dirX * arrowLength;
+            const endY = originCanvas.y + dirY * arrowLength;
+
+            targetCtx.beginPath();
+            targetCtx.moveTo(originCanvas.x, originCanvas.y);
+            targetCtx.lineTo(endX, endY);
+            targetCtx.stroke();
+
+            const headLength = 12;
+            const leftDirX = Math.cos(theta + Math.PI / 6);
+            const leftDirY = -Math.sin(theta + Math.PI / 6);
+            const rightDirX = Math.cos(theta - Math.PI / 6);
+            const rightDirY = -Math.sin(theta - Math.PI / 6);
+
+            targetCtx.beginPath();
+            targetCtx.moveTo(endX, endY);
+            targetCtx.lineTo(endX - leftDirX * headLength, endY - leftDirY * headLength);
+            targetCtx.moveTo(endX, endY);
+            targetCtx.lineTo(endX - rightDirX * headLength, endY - rightDirY * headLength);
+            targetCtx.stroke();
+
+            const label = '原点 (0,0)';
+            targetCtx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+            const labelPadding = 4;
+            const textWidth = targetCtx.measureText(label).width;
+            const labelX = originCanvas.x + 12;
+            const labelY = originCanvas.y + 12;
+
+            targetCtx.fillStyle = 'rgba(231, 76, 60, 0.85)';
+            targetCtx.fillRect(
+                labelX - labelPadding,
+                labelY - labelPadding,
+                textWidth + labelPadding * 2,
+                18
+            );
+
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.textBaseline = 'top';
+            targetCtx.fillText(label, labelX, labelY - 1);
+            targetCtx.restore();
+        }
+
         function drawScaleBar(resolution) {
             if (!resolution) return;
 
@@ -2102,6 +2234,57 @@
             ctx.textBaseline = 'bottom';
             ctx.fillText(formatDistance(meters), x + barPx / 2, y - barHeight - 6);
             ctx.restore();
+        }
+
+        // ctxをパラメータとして受け取るスケールバー描画関数
+        function drawScaleBarOnContext(targetCtx, resolution) {
+            if (!resolution) return;
+
+            const pixelsPerMeter = (1 / resolution) * mapState.scale;
+            if (!isFinite(pixelsPerMeter) || pixelsPerMeter <= 0) return;
+
+            const desiredPx = 160;
+            let meters = getNiceNumber(desiredPx / pixelsPerMeter);
+            let barPx = meters * pixelsPerMeter;
+
+            if (barPx < 60) {
+                while (barPx < 60) {
+                    meters *= 2;
+                    barPx = meters * pixelsPerMeter;
+                    if (meters > 1e6) break;
+                }
+            } else if (barPx > 220) {
+                while (barPx > 220) {
+                    meters /= 2;
+                    barPx = meters * pixelsPerMeter;
+                    if (meters < 1e-6) break;
+                }
+            }
+
+            if (!isFinite(barPx) || barPx <= 0) return;
+
+            const margin = 20;
+            const barHeight = 12;
+            const x = margin;
+            // レイヤーシステムのキャンバス高さを取得
+            const canvasHeight = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.height : canvas.height;
+            const y = canvasHeight - margin;
+
+            targetCtx.save();
+            targetCtx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.rect(x, y - barHeight, barPx, barHeight);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+            targetCtx.textAlign = 'center';
+            targetCtx.textBaseline = 'bottom';
+            targetCtx.fillText(formatDistance(meters), x + barPx / 2, y - barHeight - 6);
+            targetCtx.restore();
         }
 
         function worldToCanvas(worldX, worldY, drawX, drawY) {
