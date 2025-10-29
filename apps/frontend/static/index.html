@@ -50,36 +50,46 @@
 
                         <!-- 描画ツールパレット -->
                         <div class="drawing-tools-palette" id="drawingToolsPalette">
-                            <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
-                                ✋
-                            </button>
-                            <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
-                                ✏️
-                            </button>
-                            <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
-                                🧹
-                            </button>
-                            <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
-                                📏
-                            </button>
-                            <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
-                                🪣
-                            </button>
-                            <div class="tool-divider"></div>
-                            <div class="color-picker-wrapper">
-                                <div class="color-picker-label">色</div>
-                                <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                            <div class="drawing-tools-body">
+                                <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
+                                    ✋
+                                </button>
+                                <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
+                                    ✏️
+                                </button>
+                                <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
+                                    🧹
+                                </button>
+                                <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
+                                    📏
+                                </button>
+                                <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
+                                    🪣
+                                </button>
+                                <div class="tool-divider"></div>
+                                <div class="color-picker-wrapper">
+                                    <div class="color-picker-label">色</div>
+                                    <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                                </div>
+                                <div class="brush-size-control">
+                                    <div class="brush-size-label">サイズ: <span id="brushSizeValue">5</span></div>
+                                    <input type="range" class="brush-size-slider" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)">
+                                </div>
                             </div>
-                            <div class="brush-size-control">
-                                <div class="brush-size-label">サイズ: <span id="brushSizeValue">5</span></div>
-                                <input type="range" class="brush-size-slider" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)">
-                            </div>
+                            <button class="drawing-tools-toggle" id="drawingToolsToggle" onclick="toggleDrawingToolsVisibility()" title="描画ツールを表示/非表示">
+                                ▼
+                            </button>
                         </div>
 
                         <!-- レイヤーパネル -->
                         <div class="layers-panel" id="layersPanel">
+                            <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
+                                ←
+                            </button>
                             <div class="layers-panel-header">
-                                <span class="layers-panel-title">レイヤー</span>
+                                <span class="layers-panel-title">
+                                    📚 レイヤー
+                                </span>
                                 <button class="layer-add-button" onclick="addNewLayer()">+ 追加</button>
                             </div>
                             <div class="layers-panel-body" id="layersPanelBody">
@@ -87,13 +97,14 @@
                             </div>
                         </div>
 
-                        <div class="metadata-overlay-panel" id="metadataOverlay" aria-hidden="true">
-                            <div class="metadata-overlay-header">
+                        <div class="metadata-overlay-panel minimized" id="metadataOverlay" aria-hidden="true">
+                            <div class="metadata-overlay-header" onclick="toggleMetadataMinimize()" data-tooltip="マップメタデータ">
+                                <span class="metadata-overlay-icon">M</span>
                                 <span class="metadata-overlay-title">📋 マップメタデータ</span>
                                 <button
                                     type="button"
                                     class="metadata-overlay-minimize"
-                                    onclick="toggleMetadataMinimize()"
+                                    onclick="event.stopPropagation(); toggleMetadataMinimize()"
                                     title="最小化"
                                 >
                                     <span class="metadata-overlay-minimize-icon">▾</span>
@@ -130,8 +141,7 @@
                     <div class="map-controls">
                         <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
                         <button class="load-button" onclick="loadYAMLFile()">📄 YAMLを読み込む</button>
-                        <button class="control-button" onclick="toggleDrawingTools()">🎨 描画ツール</button>
-                        <button class="control-button" onclick="toggleLayersPanel()">📚 レイヤー</button>
+                        <button class="control-button" onclick="showProfileManager()">💾 プロファイル</button>
                         <button class="control-button" onclick="undo()" id="undoButton" disabled>↶ 戻る</button>
                         <button class="control-button" onclick="redo()" id="redoButton" disabled>↷ 進む</button>
                         <button class="control-button" onclick="clearMap()">クリア</button>
@@ -165,6 +175,31 @@
                     >
                     <button class="query-button" onclick="executeQuery()">クエリ実行</button>
                     <div id="queryResult"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロファイル管理モーダル -->
+        <div id="profileManagerModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>💾 プロファイル管理</h2>
+                    <button class="modal-close" onclick="closeProfileManager()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-section">
+                        <h3>現在のプロファイルを保存</h3>
+                        <div class="profile-save-form">
+                            <input type="text" id="profileNameInput" placeholder="プロファイル名を入力" class="profile-input">
+                            <button onclick="saveCurrentProfile()" class="profile-button save">保存</button>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <h3>保存されたプロファイル</h3>
+                        <div id="profileList" class="profile-list">
+                            <!-- プロファイル一覧がここに表示される -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

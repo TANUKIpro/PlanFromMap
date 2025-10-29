@@ -2,13 +2,31 @@
  * @file controls.js
  * @description マップコントロール（読み込み、クリア、描画）機能を提供するモジュール
  * @requires ../state/mapState.js - マップの状態管理
+ * @requires ../modules/profileManager.js - プロファイル管理
  * @exports loadImageFile - 画像ファイル読み込みダイアログを開く
  * @exports loadYAMLFile - YAMLファイル読み込みダイアログを開く
  * @exports clearMap - マップをクリアする
  * @exports drawMap - マップを描画する
+ * @exports showProfileManager - プロファイル管理モーダルを表示
+ * @exports closeProfileManager - プロファイル管理モーダルを閉じる
+ * @exports saveCurrentProfile - 現在の状態をプロファイルとして保存
+ * @exports loadSelectedProfile - プロファイルをロード
+ * @exports deleteSelectedProfile - プロファイルを削除
+ * @exports toggleDrawingToolsExpand - 描画ツールの展開/折りたたみ（廃止）
+ * @exports toggleDrawingToolsVisibility - 描画ツールの表示/非表示切り替え
+ * @exports toggleLayersPanelExpand - レイヤーパネルの展開/折りたたみ（廃止）
+ * @exports toggleLayersPanelVisibility - レイヤーパネルの表示/非表示切り替え
  */
 
 import { mapState } from '../state/mapState.js';
+import {
+    saveProfile,
+    loadProfile,
+    deleteProfile,
+    listProfiles,
+    getProfileInfo,
+    exportProfileToFile
+} from '../modules/profileManager.js';
 
 /**
  * 画像ファイル読み込みダイアログを開く
@@ -159,5 +177,222 @@ export function drawMap() {
     // ズーム情報を更新
     if (window.updateZoomInfo && typeof window.updateZoomInfo === 'function') {
         window.updateZoomInfo();
+    }
+}
+
+/**
+ * プロファイル管理モーダルを表示
+ */
+export function showProfileManager() {
+    const modal = document.getElementById('profileManagerModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        updateProfileList();
+    }
+}
+
+/**
+ * プロファイル管理モーダルを閉じる
+ */
+export function closeProfileManager() {
+    const modal = document.getElementById('profileManagerModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * 現在の状態をプロファイルとして保存
+ */
+export function saveCurrentProfile() {
+    const input = document.getElementById('profileNameInput');
+    if (!input) return;
+
+    const profileName = input.value.trim();
+    if (!profileName) {
+        alert('プロファイル名を入力してください');
+        return;
+    }
+
+    const success = saveProfile(profileName);
+    if (success) {
+        alert('プロファイルを保存しました');
+        input.value = '';
+        updateProfileList();
+    } else {
+        alert('プロファイルの保存に失敗しました');
+    }
+}
+
+/**
+ * プロファイル一覧を更新
+ */
+function updateProfileList() {
+    const profileList = document.getElementById('profileList');
+    if (!profileList) return;
+
+    const profiles = listProfiles();
+
+    if (profiles.length === 0) {
+        profileList.innerHTML = '<p style="color: #999; text-align: center;">保存されたプロファイルがありません</p>';
+        return;
+    }
+
+    profileList.innerHTML = profiles.map(profileName => {
+        const info = getProfileInfo(profileName);
+        const date = info && info.timestamp ? new Date(info.timestamp).toLocaleString('ja-JP') : '不明';
+
+        return `
+            <div class="profile-item">
+                <div class="profile-item-info">
+                    <div class="profile-item-name">${profileName}</div>
+                    <div class="profile-item-meta">保存日時: ${date}</div>
+                </div>
+                <div class="profile-item-actions">
+                    <button class="profile-button load" onclick="loadSelectedProfile('${profileName}')">読み込み</button>
+                    <button class="profile-button export" onclick="exportSelectedProfile('${profileName}')">エクスポート</button>
+                    <button class="profile-button delete" onclick="deleteSelectedProfile('${profileName}')">削除</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * プロファイルをロード
+ */
+export async function loadSelectedProfile(profileName) {
+    const success = await loadProfile(profileName);
+    if (success) {
+        // レイヤーを再構築
+        if (window.initializeLayers && typeof window.initializeLayers === 'function') {
+            window.initializeLayers();
+        }
+
+        // すべてのレイヤーを再描画
+        if (window.redrawAllLayers && typeof window.redrawAllLayers === 'function') {
+            window.redrawAllLayers();
+        }
+
+        // メタデータ表示を更新
+        if (window.displayMetadata && typeof window.displayMetadata === 'function') {
+            window.displayMetadata(mapState.metadata);
+        }
+
+        // UIを更新
+        if (window.updateOverlayControls && typeof window.updateOverlayControls === 'function') {
+            window.updateOverlayControls();
+        }
+        if (window.updateZoomInfo && typeof window.updateZoomInfo === 'function') {
+            window.updateZoomInfo();
+        }
+
+        // マップコンテナを表示
+        const mapPlaceholder = document.getElementById('mapPlaceholder');
+        const canvasStack = document.getElementById('canvasStack');
+        if (mapPlaceholder) {
+            mapPlaceholder.style.display = 'none';
+        }
+        if (canvasStack) {
+            canvasStack.style.display = 'block';
+        }
+
+        alert('プロファイルを読み込みました');
+        closeProfileManager();
+    } else {
+        alert('プロファイルの読み込みに失敗しました');
+    }
+}
+
+/**
+ * プロファイルを削除
+ */
+export function deleteSelectedProfile(profileName) {
+    if (!confirm(`プロファイル「${profileName}」を削除しますか?`)) {
+        return;
+    }
+
+    const success = deleteProfile(profileName);
+    if (success) {
+        alert('プロファイルを削除しました');
+        updateProfileList();
+    } else {
+        alert('プロファイルの削除に失敗しました');
+    }
+}
+
+/**
+ * プロファイルをエクスポート
+ */
+export function exportSelectedProfile(profileName) {
+    exportProfileToFile(profileName);
+}
+
+/**
+ * 描画ツールの展開/折りたたみ（廃止）
+ * @deprecated 新しいtoggleDrawingToolsVisibilityを使用してください
+ */
+export function toggleDrawingToolsExpand() {
+    const palette = document.getElementById('drawingToolsPalette');
+    if (palette) {
+        palette.classList.toggle('collapsed');
+    }
+}
+
+/**
+ * 描画ツールの表示/非表示切り替え
+ */
+export function toggleDrawingToolsVisibility() {
+    const palette = document.getElementById('drawingToolsPalette');
+    const toggleButton = document.getElementById('drawingToolsToggle');
+
+    if (palette && toggleButton) {
+        palette.classList.toggle('hidden');
+
+        // ボタンのアイコンを切り替え
+        if (palette.classList.contains('hidden')) {
+            toggleButton.textContent = '▼';
+            toggleButton.setAttribute('title', '描画ツールを表示');
+        } else {
+            toggleButton.textContent = '▲';
+            toggleButton.setAttribute('title', '描画ツールを非表示');
+        }
+    }
+}
+
+/**
+ * レイヤーパネルの展開/折りたたみ（廃止）
+ * @deprecated 新しいtoggleLayersPanelVisibilityを使用してください
+ */
+export function toggleLayersPanelExpand(event) {
+    // イベントがボタンから来た場合は何もしない
+    if (event && event.target.classList.contains('layer-add-button')) {
+        return;
+    }
+
+    const panel = document.getElementById('layersPanel');
+    if (panel) {
+        panel.classList.toggle('collapsed');
+    }
+}
+
+/**
+ * レイヤーパネルの表示/非表示切り替え
+ */
+export function toggleLayersPanelVisibility() {
+    const panel = document.getElementById('layersPanel');
+    const toggleButton = document.getElementById('layersPanelToggle');
+
+    if (panel && toggleButton) {
+        panel.classList.toggle('hidden');
+
+        // ボタンのアイコンを切り替え
+        if (panel.classList.contains('hidden')) {
+            toggleButton.textContent = '→';
+            toggleButton.setAttribute('title', 'レイヤーを表示');
+        } else {
+            toggleButton.textContent = '←';
+            toggleButton.setAttribute('title', 'レイヤーを非表示');
+        }
     }
 }
