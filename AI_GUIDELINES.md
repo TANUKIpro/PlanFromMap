@@ -50,9 +50,10 @@ apps/frontend/static/
 │   ├── drawing-tools.css  # 描画ツール
 │   ├── layers-panel.css   # レイヤーパネル
 │   ├── metadata-overlay.css # メタデータオーバーレイ
+│   ├── menu-bar.css       # メニューバー
 │   └── tabs.css           # タブUI
 └── js/                    # JavaScriptモジュール
-    ├── main.js            # エントリーポイント
+    ├── main.js            # エントリーポイント（起動時の自動プロファイル読み込み）
     ├── config.js          # 設定・定数
     ├── state/
     │   └── mapState.js    # グローバル状態管理
@@ -64,6 +65,7 @@ apps/frontend/static/
     │   ├── overlayRenderer.js
     │   ├── viewportControl.js
     │   ├── historyManager.js
+    │   ├── profileManager.js   # プロファイル管理
     │   └── apiClient.js
     ├── utils/             # ユーティリティ
     │   ├── coordinates.js
@@ -73,6 +75,7 @@ apps/frontend/static/
     └── ui/                # UI制御
         ├── tabs.js
         ├── controls.js
+        ├── toast.js       # トーストメッセージ（再利用可能な通知システム）
         └── events.js
 ```
 
@@ -361,6 +364,7 @@ export function addLayer(name) {
 | **overlayRenderer.js** | オーバーレイ描画 | `drawGridOverlay`, `drawOriginOverlay` | mapState, coordinates |
 | **viewportControl.js** | ズーム/パン | `zoomIn`, `zoomOut`, `resetView` | mapState, layerManager |
 | **historyManager.js** | アンドゥ/リドゥ | `undo`, `redo`, `saveToHistory` | mapState |
+| **profileManager.js** | プロファイル管理 | `saveProfile`, `loadProfile`, `getLastProfile` | mapState, toast |
 | **apiClient.js** | API 通信 | `loadStats`, `loadOperations`, `executeQuery` | config |
 
 ### ユーティリティ
@@ -377,7 +381,8 @@ export function addLayer(name) {
 | モジュール | 責務 | 主要関数 |
 |-----------|------|---------|
 | **tabs.js** | タブ切り替え | `switchTab` |
-| **controls.js** | UI 制御 | `loadImageFile`, `clearMap` |
+| **controls.js** | UI 制御・プロファイル管理 | `loadImageFile`, `clearMap`, `loadSelectedProfile` |
+| **toast.js** | トーストメッセージ | `showSuccess`, `showError`, `showInfo`, `showWarning` |
 | **events.js** | イベント管理 | `setupEventListeners` |
 
 ---
@@ -518,6 +523,7 @@ canvas.js: 800トークン
 | 日付 | バージョン | 変更内容 |
 |------|-----------|---------|
 | 2025-10-29 | 1.0.0 | 初版作成 |
+| 2025-10-29 | 1.1.0 | トーストメッセージシステム追加、プロファイル自動読み込み機能追加 |
 
 ---
 

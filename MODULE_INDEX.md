@@ -217,6 +217,29 @@ updateState({ scale: 2.0 });
 
 **トークン目安**: 1,200トークン
 
+#### modules/profileManager.js（~400行）
+**責務**: プロファイルの保存・読み込み・管理
+
+**主要関数**:
+- `saveProfile(profileName)` - プロファイルの保存
+- `loadProfile(profileName)` - プロファイルの読み込み
+- `deleteProfile(profileName)` - プロファイルの削除
+- `listProfiles()` - プロファイル一覧の取得
+- `getLastProfile()` - 最後に使用したプロファイルの取得
+- `setLastProfile(profileName)` - 最後に使用したプロファイルの設定
+- `exportProfileToFile(profileName)` - プロファイルをファイルにエクスポート
+
+**依存**:
+- `mapState.js`
+- `toast.js`
+
+**ストレージ**:
+- LocalStorageを使用してプロファイルを保存
+- 最大プロファイルサイズ: 5MB
+- プロファイルには画像、メタデータ、レイヤー設定、描画設定などが含まれる
+
+**トークン目安**: 3,200トークン
+
 ### 3. ユーティリティ層
 
 #### utils/coordinates.js（133行）
@@ -274,20 +297,47 @@ updateState({ scale: 2.0 });
 
 **トークン目安**: 400トークン
 
-#### ui/controls.js（163行）
-**責務**: UIコントロール操作
+#### ui/controls.js（399行）
+**責務**: UIコントロール操作、プロファイル管理
 
 **主要関数**:
 - `loadImageFile()` - 画像ファイル選択ダイアログ
 - `loadYAMLFile()` - YAMLファイル選択ダイアログ
 - `clearMap()` - マップクリア
 - `drawMap()` - マップ描画
+- `showProfileManager()` - プロファイル管理モーダルを表示
+- `saveCurrentProfile()` - 現在の状態をプロファイルとして保存
+- `loadSelectedProfile(profileName, options)` - プロファイルをロード
+- `deleteSelectedProfile(profileName)` - プロファイルを削除
 
 **依存**:
 - `mapState.js`
 - `layerManager.js`
+- `profileManager.js`
+- `toast.js`
 
-**トークン目安**: 1,300トークン
+**トークン目安**: 3,200トークン
+
+#### ui/toast.js（143行）
+**責務**: トーストメッセージ表示システム
+
+**主要関数**:
+- `showToast(message, options)` - トーストメッセージを表示
+- `showSuccess(message, duration)` - 成功メッセージを表示
+- `showError(message, duration)` - エラーメッセージを表示
+- `showInfo(message, duration)` - 情報メッセージを表示
+- `showWarning(message, duration)` - 警告メッセージを表示
+
+**依存**: なし
+
+**使用例**:
+```javascript
+import { showSuccess, showError } from './toast.js';
+showSuccess('プロファイルを読み込みました');
+showError('エラーが発生しました', 2000);
+```
+
+**トークン目安**: 1,200トークン
 
 #### ui/events.js（404行）
 **責務**: イベントリスナーの統合管理
@@ -306,17 +356,23 @@ updateState({ scale: 2.0 });
 
 **トークン目安**: 3,300トークン
 
-#### main.js（98行）
+#### main.js（291行）
 **責務**: アプリケーションのエントリーポイント
 
 **機能**:
 - すべてのモジュールをインポート
-- 初期化処理
+- 初期化処理（レイヤーシステム、メニューバー、イベントリスナー）
+- 起動時の自動プロファイル読み込み
 - window オブジェクトへの関数公開（HTML onclick 互換性のため）
 
 **依存**: すべてのモジュール
 
-**トークン目安**: 800トークン
+**起動時の動作**:
+1. DOMContentLoadedでinitializeApp()を実行
+2. window.loadでonPageLoad()を実行
+3. onPageLoad()で最後に使用したプロファイルを自動読み込み
+
+**トークン目安**: 2,400トークン
 
 ### 5. CSSモジュール
 

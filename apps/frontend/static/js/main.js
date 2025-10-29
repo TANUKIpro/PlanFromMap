@@ -106,6 +106,9 @@ import {
     executeQuery
 } from './modules/apiClient.js';
 
+// プロファイル管理
+import { getLastProfile } from './modules/profileManager.js';
+
 // 四角形ツール
 import {
     toggleRectangleTool,
@@ -259,7 +262,7 @@ function initializeApp() {
 /**
  * ページ読み込み完了時の処理
  */
-function onPageLoad() {
+async function onPageLoad() {
     console.log('Page loaded, fetching initial data...');
 
     // 統計情報を読み込み
@@ -267,6 +270,24 @@ function onPageLoad() {
 
     // 操作カタログを読み込み
     loadOperations();
+
+    // 最後に使用したプロファイルを自動読み込み
+    const lastProfile = getLastProfile();
+    if (lastProfile) {
+        console.log('Auto-loading last profile:', lastProfile);
+        // メッセージ表示とモーダルを閉じる処理を有効にし、自動読み込み時にトーストメッセージを表示
+        await loadSelectedProfile(lastProfile, { showMessage: true, closeModal: true });
+    } else {
+        console.log('No last profile found');
+        // プロファイルがない場合、プレースホルダーのメッセージを更新
+        const placeholder = document.getElementById('mapPlaceholder');
+        if (placeholder) {
+            const message = placeholder.querySelector('p');
+            if (message) {
+                message.textContent = 'プロファイルがありません。ファイルメニューから画像またはYAMLを読み込んでください。';
+            }
+        }
+    }
 }
 
 // =====================================

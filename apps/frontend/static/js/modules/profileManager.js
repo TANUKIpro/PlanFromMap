@@ -7,6 +7,7 @@
  * プロファイルはLocalStorageに保存されます。
  *
  * @requires ../state/mapState.js - アプリケーション状態管理
+ * @requires ../ui/toast.js - トーストメッセージ表示
  *
  * @exports saveProfile - プロファイルの保存
  * @exports loadProfile - プロファイルの読み込み
@@ -19,6 +20,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import { showError } from '../ui/toast.js';
 
 // ================
 // 定数
@@ -184,7 +186,7 @@ export function saveProfile(profileName) {
         const profileSize = calculateProfileSize(profile);
         if (profileSize > MAX_PROFILE_SIZE) {
             console.error('saveProfile: プロファイルサイズが大きすぎます', profileSize);
-            alert('プロファイルのサイズが大きすぎます（最大5MB）。画像サイズを縮小してください。');
+            showError('プロファイルのサイズが大きすぎます（最大5MB）。画像サイズを縮小してください。', 2000);
             return false;
         }
 
@@ -207,7 +209,7 @@ export function saveProfile(profileName) {
     } catch (error) {
         console.error('saveProfile: 保存エラー', error);
         if (error.name === 'QuotaExceededError') {
-            alert('ストレージ容量が不足しています。不要なプロファイルを削除してください。');
+            showError('ストレージ容量が不足しています。不要なプロファイルを削除してください。', 2000);
         }
         return false;
     }
