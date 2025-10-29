@@ -121,3 +121,196 @@
     border-radius: 8px;
     margin-top: 10px;
 }
+
+/* ========================================
+   モーダル
+   ======================================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3em;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* ========================================
+   プロファイル管理
+   ======================================== */
+.profile-section {
+    margin-bottom: 24px;
+}
+
+.profile-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.profile-save-form {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95em;
+    transition: border-color 0.2s ease;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.profile-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.profile-button.save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.profile-button.save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.profile-button.load {
+    background: #27ae60;
+    color: white;
+}
+
+.profile-button.load:hover {
+    background: #229954;
+}
+
+.profile-button.delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.profile-button.delete:hover {
+    background: #c0392b;
+}
+
+.profile-button.export {
+    background: #3498db;
+    color: white;
+}
+
+.profile-button.export:hover {
+    background: #2980b9;
+}
+
+.profile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-item {
+    background: #f9f9f9;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.profile-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.profile-item-info {
+    flex: 1;
+}
+
+.profile-item-name {
+    font-size: 1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.profile-item-meta {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.profile-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-item-actions button {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}

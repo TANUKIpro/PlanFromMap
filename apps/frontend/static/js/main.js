@@ -18,7 +18,20 @@ import { mapState } from './state/mapState.js';
 
 // UI
 import { switchTab } from './ui/tabs.js';
-import { loadImageFile, loadYAMLFile, clearMap, drawMap } from './ui/controls.js';
+import {
+    loadImageFile,
+    loadYAMLFile,
+    clearMap,
+    drawMap,
+    showProfileManager,
+    closeProfileManager,
+    saveCurrentProfile,
+    loadSelectedProfile,
+    deleteSelectedProfile,
+    exportSelectedProfile,
+    toggleDrawingToolsExpand,
+    toggleLayersPanelExpand
+} from './ui/controls.js';
 import { setupEventListeners } from './ui/events.js';
 
 // レイヤー管理
@@ -57,7 +70,8 @@ import {
     toggleLayer,
     toggleOverlayOption,
     toggleMetadataMinimize,
-    updateOverlayControls
+    updateOverlayControls,
+    displayMetadata
 } from './modules/metadataDisplay.js';
 
 // ビューポート制御
@@ -95,6 +109,18 @@ window.loadYAMLFile = loadYAMLFile;
 window.clearMap = clearMap;
 window.drawMap = drawMap;
 
+// プロファイル管理
+window.showProfileManager = showProfileManager;
+window.closeProfileManager = closeProfileManager;
+window.saveCurrentProfile = saveCurrentProfile;
+window.loadSelectedProfile = loadSelectedProfile;
+window.deleteSelectedProfile = deleteSelectedProfile;
+window.exportSelectedProfile = exportSelectedProfile;
+
+// ツール・パネルの展開/折りたたみ
+window.toggleDrawingToolsExpand = toggleDrawingToolsExpand;
+window.toggleLayersPanelExpand = toggleLayersPanelExpand;
+
 // ファイル読み込みハンドラー
 window.handleImageFileSelect = handleImageFileSelect;
 window.handleYAMLFileSelect = handleYAMLFileSelect;
@@ -125,6 +151,7 @@ window.toggleLayer = toggleLayer;
 window.toggleOverlayOption = toggleOverlayOption;
 window.toggleMetadataMinimize = toggleMetadataMinimize;
 window.updateOverlayControls = updateOverlayControls;
+window.displayMetadata = displayMetadata;
 
 // ビューポート制御
 window.resetView = resetView;

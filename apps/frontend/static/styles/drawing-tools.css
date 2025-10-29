@@ -12,17 +12,53 @@
     right: 20px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
-    padding: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    display: none;
+    display: flex;
     flex-direction: column;
-    gap: 8px;
     z-index: 10;
     min-width: 60px;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.drawing-tools-palette.active {
+/* エキスパンド可能ヘッダー */
+.drawing-tools-header {
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.drawing-tools-header:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #63397a 100%);
+}
+
+.drawing-tools-toggle-icon {
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+/* 折りたたみ状態 */
+.drawing-tools-palette.collapsed .drawing-tools-body {
+    display: none;
+}
+
+.drawing-tools-palette.collapsed .drawing-tools-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+/* ツールボディ */
+.drawing-tools-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* ========================================

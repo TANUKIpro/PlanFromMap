@@ -22,13 +22,42 @@
     overflow: hidden;
     color: #f5f6ff;
     z-index: 5;
+    transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
 }
 
 .metadata-overlay-panel.active {
     display: flex;
 }
 
+/* アイコンモード（minimized状態） */
+.metadata-overlay-panel.minimized {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    min-width: unset;
+    max-height: unset;
+}
+
 .metadata-overlay-panel.minimized .metadata-overlay-body {
+    display: none;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-title {
+    display: none;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-header {
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    border-bottom: none;
+    cursor: pointer;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-minimize {
     display: none;
 }
 
@@ -43,12 +72,48 @@
     background: linear-gradient(120deg, rgba(102, 126, 234, 0.65), rgba(118, 75, 162, 0.45));
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     cursor: pointer;
+    position: relative;
 }
 
 .metadata-overlay-title {
     font-size: 0.95em;
     font-weight: 600;
     letter-spacing: 0.02em;
+}
+
+/* アイコン表示用 */
+.metadata-overlay-icon {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #ffffff;
+    display: none;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-icon {
+    display: block;
+}
+
+/* ツールチップ */
+.metadata-overlay-header::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(18, 22, 45, 0.95);
+    color: #f5f6ff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-header:hover::after {
+    opacity: 1;
 }
 
 .metadata-overlay-minimize {
