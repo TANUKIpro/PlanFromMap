@@ -35,6 +35,14 @@ import {
     toggleLayersPanelVisibility
 } from './ui/controls.js';
 import { setupEventListeners } from './ui/events.js';
+import {
+    toggleMenu,
+    closeAllMenus,
+    updateGridWidth,
+    toggleSnapToGrid,
+    snapToGrid,
+    initMenuBar
+} from './ui/menuBar.js';
 
 // レイヤー管理
 import {
@@ -172,6 +180,13 @@ window.loadStats = loadStats;
 window.loadOperations = loadOperations;
 window.executeQuery = executeQuery;
 
+// メニューバー
+window.toggleMenu = toggleMenu;
+window.closeAllMenus = closeAllMenus;
+window.updateGridWidth = updateGridWidth;
+window.toggleSnapToGrid = toggleSnapToGrid;
+window.snapToGrid = snapToGrid;
+
 // =====================================
 // 初期化処理
 // =====================================
@@ -184,6 +199,9 @@ function initializeApp() {
 
     // レイヤーシステムを初期化
     initializeLayers();
+
+    // メニューバーを初期化
+    initMenuBar();
 
     // イベントリスナーをセットアップ
     setupEventListeners();

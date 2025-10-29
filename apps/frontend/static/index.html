@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="styles/layers-panel.css">
     <link rel="stylesheet" href="styles/metadata-overlay.css">
     <link rel="stylesheet" href="styles/tabs.css">
+    <link rel="stylesheet" href="styles/menu-bar.css">
 </head>
 <body>
     <div class="container">
@@ -37,6 +38,65 @@
             <!-- タブコンテンツ -->
             <div id="mapViewer" class="tab-content active">
                 <div class="map-viewer-tab">
+                    <!-- メニューバー -->
+                    <div class="menu-bar">
+                        <!-- ファイルメニュー -->
+                        <div class="menu-bar__item">
+                            <button class="menu-bar__button" onclick="toggleMenu('fileMenu')">ファイル</button>
+                            <div id="fileMenu" class="menu-bar__dropdown">
+                                <button class="menu-bar__dropdown-item" onclick="loadImageFile(); closeAllMenus();">画像を読み込む...</button>
+                                <button class="menu-bar__dropdown-item" onclick="loadYAMLFile(); closeAllMenus();">YAMLを読み込む...</button>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <button class="menu-bar__dropdown-item" onclick="showProfileManager(); closeAllMenus();">プロファイル管理</button>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <button class="menu-bar__dropdown-item" onclick="clearMap(); closeAllMenus();">マップをクリア</button>
+                            </div>
+                        </div>
+
+                        <!-- 編集メニュー -->
+                        <div class="menu-bar__item">
+                            <button class="menu-bar__button" onclick="toggleMenu('editMenu')">編集</button>
+                            <div id="editMenu" class="menu-bar__dropdown">
+                                <button class="menu-bar__dropdown-item" id="menuUndoButton" onclick="undo(); closeAllMenus();" disabled>
+                                    戻る
+                                    <span class="menu-bar__shortcut">Ctrl+Z</span>
+                                </button>
+                                <button class="menu-bar__dropdown-item" id="menuRedoButton" onclick="redo(); closeAllMenus();" disabled>
+                                    進む
+                                    <span class="menu-bar__shortcut">Ctrl+Y</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 表示メニュー -->
+                        <div class="menu-bar__item">
+                            <button class="menu-bar__button" onclick="toggleMenu('viewMenu')">表示</button>
+                            <div id="viewMenu" class="menu-bar__dropdown">
+                                <button class="menu-bar__dropdown-item" onclick="resetView(); closeAllMenus();">表示リセット</button>
+                                <button class="menu-bar__dropdown-item" onclick="zoomIn(); closeAllMenus();">
+                                    拡大
+                                    <span class="menu-bar__shortcut">+</span>
+                                </button>
+                                <button class="menu-bar__dropdown-item" onclick="zoomOut(); closeAllMenus();">
+                                    縮小
+                                    <span class="menu-bar__shortcut">-</span>
+                                </button>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-label" for="gridWidthInput">グリッド幅 (cm):</label>
+                                    <input type="number" id="gridWidthInput" class="menu-bar__dropdown-input" min="1" max="1000" value="10" onchange="updateGridWidth(this.value)">
+                                </div>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="snapToGridCheckbox" onchange="toggleSnapToGrid(this.checked)">
+                                        <span id="snapToGridLabel">スナップ</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="map-canvas-container" id="mapContainer">
                         <div class="map-placeholder" id="mapPlaceholder">
                             <div style="text-align: center;">
@@ -49,7 +109,7 @@
                         <canvas id="mapCanvas" style="display: none;"></canvas>
 
                         <!-- 描画ツールパレット -->
-                        <div class="drawing-tools-palette" id="drawingToolsPalette">
+                        <div class="drawing-tools-palette hidden" id="drawingToolsPalette">
                             <div class="drawing-tools-body">
                                 <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
                                     ✋
@@ -67,6 +127,11 @@
                                     🪣
                                 </button>
                                 <div class="tool-divider"></div>
+                                <div class="tool-divider"></div>
+                                <button class="tool-button" id="rectangleTool" onclick="selectTool('rectangle')" title="四角形">
+                                    ▭
+                                </button>
+                                <div class="tool-divider"></div>
                                 <div class="color-picker-wrapper">
                                     <div class="color-picker-label">色</div>
                                     <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
@@ -82,9 +147,9 @@
                         </div>
 
                         <!-- レイヤーパネル -->
-                        <div class="layers-panel" id="layersPanel">
+                        <div class="layers-panel hidden" id="layersPanel">
                             <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
-                                ←
+                                →
                             </button>
                             <div class="layers-panel-header">
                                 <span class="layers-panel-title">
@@ -137,18 +202,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="map-controls">
-                        <button class="load-button" onclick="loadImageFile()">🖼️ 画像を読み込む</button>
-                        <button class="load-button" onclick="loadYAMLFile()">📄 YAMLを読み込む</button>
-                        <button class="control-button" onclick="showProfileManager()">💾 プロファイル</button>
-                        <button class="control-button" onclick="undo()" id="undoButton" disabled>↶ 戻る</button>
-                        <button class="control-button" onclick="redo()" id="redoButton" disabled>↷ 進む</button>
-                        <button class="control-button" onclick="clearMap()">クリア</button>
-                        <button class="control-button" onclick="resetView()">表示リセット</button>
-                        <button class="control-button" onclick="zoomIn()">拡大 (+)</button>
-                        <button class="control-button" onclick="zoomOut()">縮小 (-)</button>
-                        <span class="zoom-info" id="zoomInfo">倍率: 100%</span>
                     </div>
                 </div>
             </div>
