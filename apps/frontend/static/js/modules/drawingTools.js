@@ -149,6 +149,9 @@ export function updateCursor() {
         case 'bucket':
             container.style.cursor = 'pointer';
             break;
+        case 'rectangle':
+            container.style.cursor = 'crosshair';
+            break;
         default:
             container.style.cursor = 'default';
     }

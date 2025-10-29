@@ -165,11 +165,22 @@ export function redo() {
 export function updateUndoRedoButtons() {
     const undoButton = document.getElementById('undoButton');
     const redoButton = document.getElementById('redoButton');
+    const menuUndoButton = document.getElementById('menuUndoButton');
+    const menuRedoButton = document.getElementById('menuRedoButton');
+
+    const canUndo = mapState.history.past.length > 0;
+    const canRedo = mapState.history.future.length > 0;
 
     if (undoButton) {
-        undoButton.disabled = mapState.history.past.length === 0;
+        undoButton.disabled = !canUndo;
     }
     if (redoButton) {
-        redoButton.disabled = mapState.history.future.length === 0;
+        redoButton.disabled = !canRedo;
+    }
+    if (menuUndoButton) {
+        menuUndoButton.disabled = !canUndo;
+    }
+    if (menuRedoButton) {
+        menuRedoButton.disabled = !canRedo;
     }
 }

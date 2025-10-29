@@ -200,7 +200,13 @@ function handleMouseDown(e) {
         } else if (tool === 'pencil' || tool === 'eraser') {
             // 鉛筆または消しゴム - 画像ピクセル座標に変換
             if (window.canvasToImagePixel && typeof window.canvasToImagePixel === 'function') {
-                const imagePixel = window.canvasToImagePixel(canvasX, canvasY);
+                let imagePixel = window.canvasToImagePixel(canvasX, canvasY);
+
+                // スナップが有効な場合、座標をスナップ
+                if (window.snapToGrid && typeof window.snapToGrid === 'function') {
+                    imagePixel = window.snapToGrid(imagePixel.x, imagePixel.y);
+                }
+
                 mapState.drawingState.isDrawing = true;
                 mapState.drawingState.currentStroke = [imagePixel];
 
@@ -277,7 +283,13 @@ function handleMouseMove(e) {
 
         // 画像ピクセル座標に変換
         if (window.canvasToImagePixel && typeof window.canvasToImagePixel === 'function') {
-            const imagePixel = window.canvasToImagePixel(canvasX, canvasY);
+            let imagePixel = window.canvasToImagePixel(canvasX, canvasY);
+
+            // スナップが有効な場合、座標をスナップ
+            if (window.snapToGrid && typeof window.snapToGrid === 'function') {
+                imagePixel = window.snapToGrid(imagePixel.x, imagePixel.y);
+            }
+
             mapState.drawingState.currentStroke.push(imagePixel);
 
             // 描画（色とブラシサイズを渡す）

@@ -1,0 +1,130 @@
+/* ======================
+   メニューバー
+   ====================== */
+
+.menu-bar {
+    display: flex;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    height: 35px;
+    z-index: 100;
+}
+
+/* メニュー項目 */
+.menu-bar__item {
+    position: relative;
+}
+
+.menu-bar__button {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    height: 35px;
+    transition: background-color 0.2s;
+}
+
+.menu-bar__button:hover {
+    background: #e0e0e0;
+}
+
+.menu-bar__button.active {
+    background: #d0d0d0;
+}
+
+/* ドロップダウンメニュー */
+.menu-bar__dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    display: none;
+    z-index: 1000;
+}
+
+.menu-bar__dropdown.active {
+    display: block;
+}
+
+.menu-bar__dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    text-align: left;
+    border: none;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.menu-bar__dropdown-item:hover {
+    background: #f0f0f0;
+}
+
+.menu-bar__dropdown-item:disabled {
+    color: #999;
+    cursor: not-allowed;
+    background: white;
+}
+
+.menu-bar__dropdown-item:disabled:hover {
+    background: white;
+}
+
+/* 区切り線 */
+.menu-bar__dropdown-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+}
+
+/* サブメニュー（グリッド設定など） */
+.menu-bar__dropdown-submenu {
+    padding: 10px 16px;
+}
+
+.menu-bar__dropdown-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.menu-bar__dropdown-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.menu-bar__dropdown-input[type="number"] {
+    width: 80px;
+}
+
+/* チェックボックスアイテム */
+.menu-bar__dropdown-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-bar__dropdown-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* ショートカットキー表示 */
+.menu-bar__shortcut {
+    float: right;
+    color: #999;
+    margin-left: 24px;
+    font-size: 12px;
+}
