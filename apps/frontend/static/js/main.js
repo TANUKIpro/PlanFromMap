@@ -45,6 +45,7 @@ import {
     updateCursor,
     getActiveDrawingLayer,
     performDrawing,
+    redrawDrawingLayer,
     showMeasureDistance,
     performBucketFill,
     canvasToImagePixel,
@@ -113,6 +114,7 @@ window.toggleLayersPanel = toggleLayersPanel;
 window.updateCursor = updateCursor;
 window.getActiveDrawingLayer = getActiveDrawingLayer;
 window.performDrawing = performDrawing;
+window.redrawDrawingLayer = redrawDrawingLayer;
 window.showMeasureDistance = showMeasureDistance;
 window.performBucketFill = performBucketFill;
 window.canvasToImagePixel = canvasToImagePixel;
