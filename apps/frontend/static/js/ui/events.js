@@ -191,6 +191,16 @@ function handleMouseDown(e) {
         const canvasX = e.clientX - rect.left;
         const canvasY = e.clientY - rect.top;
 
+        // 四角形ツールが有効な場合、四角形イベントハンドラーを呼び出す
+        if (mapState.rectangleToolState && mapState.rectangleToolState.enabled) {
+            if (window.handleRectangleMouseDown && typeof window.handleRectangleMouseDown === 'function') {
+                const handled = window.handleRectangleMouseDown(canvasX, canvasY, tool);
+                if (handled) {
+                    return;
+                }
+            }
+        }
+
         if (tool === 'pan') {
             // パンツール
             mapState.isPanning = true;
@@ -248,6 +258,20 @@ function handleMouseDown(e) {
 function handleMouseMove(e) {
     const container = document.getElementById('mapContainer');
     const tool = mapState.drawingState.currentTool;
+
+    // 四角形ツールが有効な場合、四角形イベントハンドラーを呼び出す
+    if (mapState.rectangleToolState && mapState.rectangleToolState.enabled) {
+        const rect = container.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+
+        if (window.handleRectangleMouseMove && typeof window.handleRectangleMouseMove === 'function') {
+            const handled = window.handleRectangleMouseMove(canvasX, canvasY);
+            if (handled) {
+                return;
+            }
+        }
+    }
 
     // パン中
     if (mapState.isPanning) {
