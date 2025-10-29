@@ -201,6 +201,14 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
                 mapState.rectangleToolState.resizeEdge = handle;
                 mapState.rectangleToolState.isDragging = true;
                 mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+
+                // カーソルを変更
+                const container = document.getElementById('mapContainer');
+                if (handle === 'top' || handle === 'bottom') {
+                    container.style.cursor = 'ns-resize';
+                } else if (handle === 'left' || handle === 'right') {
+                    container.style.cursor = 'ew-resize';
+                }
                 return true;
             }
         }
@@ -228,6 +236,10 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
                 mapState.rectangleToolState.editMode = 'rotate';
                 mapState.rectangleToolState.isDragging = true;
                 mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+
+                // カーソルを変更
+                const container = document.getElementById('mapContainer');
+                container.style.cursor = 'grabbing';
                 return true;
             }
         }
@@ -239,6 +251,10 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             mapState.rectangleToolState.editMode = 'move';
             mapState.rectangleToolState.isDragging = true;
             mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+
+            // カーソルを変更
+            const container = document.getElementById('mapContainer');
+            container.style.cursor = 'move';
             return true;
         }
 
@@ -340,11 +356,15 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
         return true;
     }
 
-    // ホバー処理（ハンドルのハイライト）
+    // ホバー処理（ハンドルのハイライトとカーソル変更）
     const rectangles = getAllRectangles();
     const selectedRect = rectangles.find(r => r.selected);
+    const container = document.getElementById('mapContainer');
+
     if (selectedRect) {
         const handle = hitTestHandle(canvasX, canvasY, selectedRect);
+
+        // ホバー状態が変わった場合は再描画
         if (handle !== mapState.rectangleToolState.hoverEdge) {
             mapState.rectangleToolState.hoverEdge = handle;
 
@@ -352,6 +372,31 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
             const rectangleLayer = getRectangleLayer();
             if (rectangleLayer && window.redrawRectangleLayer) {
                 window.redrawRectangleLayer(rectangleLayer);
+            }
+        }
+
+        // カーソルを変更
+        if (handle) {
+            if (handle === 'top' || handle === 'bottom') {
+                container.style.cursor = 'ns-resize';  // ↕
+            } else if (handle === 'left' || handle === 'right') {
+                container.style.cursor = 'ew-resize';  // ↔
+            } else if (handle === 'rotate') {
+                container.style.cursor = 'grab';  // 回転
+            }
+            return false;  // ハンドルにホバー中でも通常のツール操作は許可
+        } else {
+            // ハンドルにホバーしていない場合は、デフォルトのカーソルに戻す
+            if (window.updateCursor && typeof window.updateCursor === 'function') {
+                window.updateCursor();
+            }
+        }
+    } else {
+        // 四角形が選択されていない場合は、デフォルトのカーソルに戻す
+        if (mapState.rectangleToolState.hoverEdge !== null) {
+            mapState.rectangleToolState.hoverEdge = null;
+            if (window.updateCursor && typeof window.updateCursor === 'function') {
+                window.updateCursor();
             }
         }
     }
@@ -375,6 +420,11 @@ export function handleRectangleMouseUp() {
         mapState.rectangleToolState.editMode = null;
         mapState.rectangleToolState.resizeEdge = null;
         mapState.rectangleToolState.dragStartPos = null;
+
+        // カーソルを元に戻す
+        if (window.updateCursor && typeof window.updateCursor === 'function') {
+            window.updateCursor();
+        }
 
         return true;
     }

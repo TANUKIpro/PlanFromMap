@@ -149,7 +149,14 @@ export function toggleRectangleToolMode() {
                 typeof window.createRectangle === 'function' && typeof window.getImageCenter === 'function') {
                 const center = window.getImageCenter();
                 if (center) {
-                    window.createRectangle(center.x, center.y);
+                    // 2m×2mのサイズを計算（メタデータから解像度を取得）
+                    const resolution = mapState.metadata ? mapState.metadata.resolution : 0.05; // m/pixel
+                    const widthInMeters = 2.0;   // 2m
+                    const heightInMeters = 2.0;  // 2m
+                    const widthInPixels = widthInMeters / resolution;
+                    const heightInPixels = heightInMeters / resolution;
+
+                    window.createRectangle(center.x, center.y, widthInPixels, heightInPixels);
 
                     // 作成した四角形を選択
                     if (window.getAllRectangles && window.selectRectangle &&
