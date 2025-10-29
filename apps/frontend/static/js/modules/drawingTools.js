@@ -105,7 +105,7 @@ export function toggleLayersPanel() {
 /**
  * 描画ツールを選択
  * @export
- * @param {string} toolName - ツール名 ('pan', 'pencil', 'eraser', 'measure', 'bucket')
+ * @param {string} toolName - ツール名 ('pan', 'pencil', 'eraser', 'measure', 'bucket', 'rectangle')
  */
 export function selectTool(toolName) {
     mapState.drawingState.currentTool = toolName;
@@ -119,6 +119,50 @@ export function selectTool(toolName) {
     const toolButton = document.getElementById(toolName + 'Tool');
     if (toolButton) {
         toolButton.classList.add('active');
+    }
+
+    // 四角形ツールの場合は特別な処理
+    if (toolName === 'rectangle') {
+        // 四角形ツールをオンにする
+        if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
+            window.toggleRectangleTool(true);
+        }
+
+        // 四角形が1つもない場合は、中央に作成
+        if (window.getAllRectangles && typeof window.getAllRectangles === 'function') {
+            const rectangles = window.getAllRectangles();
+            if (rectangles.length === 0 && window.createRectangle && window.getImageCenter &&
+                typeof window.createRectangle === 'function' && typeof window.getImageCenter === 'function') {
+                const center = window.getImageCenter();
+                if (center) {
+                    window.createRectangle(center.x, center.y);
+
+                    // 作成した四角形を選択
+                    if (window.getAllRectangles && window.selectRectangle &&
+                        typeof window.selectRectangle === 'function') {
+                        const rects = window.getAllRectangles();
+                        if (rects.length > 0) {
+                            window.selectRectangle(rects[0].id);
+                        }
+                    }
+
+                    // レイヤーを再描画
+                    if (window.getRectangleLayer && window.redrawRectangleLayer &&
+                        typeof window.getRectangleLayer === 'function' &&
+                        typeof window.redrawRectangleLayer === 'function') {
+                        const layer = window.getRectangleLayer();
+                        if (layer) {
+                            window.redrawRectangleLayer(layer);
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // 四角形ツール以外が選択された場合は、四角形ツールをオフにする
+        if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
+            window.toggleRectangleTool(false);
+        }
     }
 
     // カーソルスタイルを変更

@@ -308,6 +308,17 @@ function handleMouseMove(e) {
 function handleMouseUp(e) {
     const container = document.getElementById('mapContainer');
 
+    // 四角形ツールが有効な場合、四角形イベントハンドラーを呼び出す
+    if (mapState.rectangleToolState && mapState.rectangleToolState.enabled) {
+        if (window.handleRectangleMouseUp && typeof window.handleRectangleMouseUp === 'function') {
+            const handled = window.handleRectangleMouseUp();
+            if (handled) {
+                return;
+            }
+        }
+    }
+
+
     if (e.button === 0 || e.button === 1) {
         if (mapState.isPanning) {
             mapState.isPanning = false;

@@ -105,6 +105,31 @@ import {
     executeQuery
 } from './modules/apiClient.js';
 
+// 四角形ツール
+import {
+    toggleRectangleTool,
+    createRectangle,
+    deleteRectangle,
+    selectRectangle,
+    deselectRectangle,
+    getRectangleById,
+    getSelectedRectangle,
+    getRectangleLayer,
+    updateRectangle,
+    getAllRectangles,
+    getImageCenter
+} from './modules/rectangleManager.js';
+
+import {
+    redrawRectangleLayer
+} from './modules/rectangleRenderer.js';
+
+import {
+    handleRectangleMouseDown,
+    handleRectangleMouseMove,
+    handleRectangleMouseUp
+} from './modules/rectangleInteraction.js';
+
 // =====================================
 // グローバルスコープへの公開
 // （HTML内のonclick/onchange属性との互換性のため）
@@ -186,6 +211,23 @@ window.closeAllMenus = closeAllMenus;
 window.updateGridWidth = updateGridWidth;
 window.toggleSnapToGrid = toggleSnapToGrid;
 window.snapToGrid = snapToGrid;
+
+// 四角形ツール
+window.toggleRectangleTool = toggleRectangleTool;
+window.createRectangle = createRectangle;
+window.deleteRectangle = deleteRectangle;
+window.selectRectangle = selectRectangle;
+window.deselectRectangle = deselectRectangle;
+window.getRectangleById = getRectangleById;
+window.getSelectedRectangle = getSelectedRectangle;
+window.getRectangleLayer = getRectangleLayer;
+window.updateRectangle = updateRectangle;
+window.getAllRectangles = getAllRectangles;
+window.getImageCenter = getImageCenter;
+window.redrawRectangleLayer = redrawRectangleLayer;
+window.handleRectangleMouseDown = handleRectangleMouseDown;
+window.handleRectangleMouseMove = handleRectangleMouseMove;
+window.handleRectangleMouseUp = handleRectangleMouseUp;
 
 // =====================================
 // 初期化処理
