@@ -2,6 +2,8 @@
  * @file fileLoader.js
  * @description ファイル読み込み関連の機能を提供するモジュール
  * @requires ../state/mapState.js
+ * @requires ./layerManager.js
+ * @requires ./metadataDisplay.js
  * @exports handleImageFileSelect
  * @exports handleYAMLFileSelect
  * @exports loadStandardImageFile
@@ -12,6 +14,8 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import { initializeLayers, redrawAllLayers } from './layerManager.js';
+import { displayMetadata, updateOverlayControls } from './metadataDisplay.js';
 
 /**
  * PGMフォーマットをパース（P5形式とP2形式に対応）
@@ -177,7 +181,14 @@ export function loadStandardImageFile(file) {
             canvasStack.style.display = 'block';
             canvas.style.display = 'none';  // 古いcanvasは非表示に
 
-            // initializeLayers(), updateOverlayControls(), redrawAllLayers() は外部で呼び出す必要がある
+            // レイヤーシステムを初期化
+            initializeLayers();
+
+            // オーバーレイコントロールを更新
+            updateOverlayControls();
+
+            // すべてのレイヤーを再描画
+            redrawAllLayers();
         };
         img.src = e.target.result;
     };
@@ -200,7 +211,14 @@ export function loadYAMLMetadataFile(file) {
             mapState.metadata = metadata;
             mapState.layers.metadataOverlay = true;
 
-            // displayMetadata(), updateOverlayControls(), redrawAllLayers() は外部で呼び出す必要がある
+            // メタデータを表示
+            displayMetadata(metadata);
+
+            // オーバーレイコントロールを更新
+            updateOverlayControls();
+
+            // すべてのレイヤーを再描画（メタデータオーバーレイを含む）
+            redrawAllLayers();
         } catch (error) {
             console.error('YAMLファイルの読み込みに失敗:', error);
             alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
@@ -248,7 +266,14 @@ export function loadPGMImageFile(file) {
                 canvasStack.style.display = 'block';
                 canvas.style.display = 'none';  // 古いcanvasは非表示に
 
-                // initializeLayers(), updateOverlayControls(), redrawAllLayers() は外部で呼び出す必要がある
+                // レイヤーシステムを初期化
+                initializeLayers();
+
+                // オーバーレイコントロールを更新
+                updateOverlayControls();
+
+                // すべてのレイヤーを再描画
+                redrawAllLayers();
             };
         } catch (error) {
             console.error('PGMファイルの読み込みに失敗:', error);
