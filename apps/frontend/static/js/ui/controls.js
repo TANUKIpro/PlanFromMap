@@ -14,7 +14,8 @@
  * @exports deleteSelectedProfile - プロファイルを削除
  * @exports toggleDrawingToolsExpand - 描画ツールの展開/折りたたみ（廃止）
  * @exports toggleDrawingToolsVisibility - 描画ツールの表示/非表示切り替え
- * @exports toggleLayersPanelExpand - レイヤーパネルの展開/折りたたみ
+ * @exports toggleLayersPanelExpand - レイヤーパネルの展開/折りたたみ（廃止）
+ * @exports toggleLayersPanelVisibility - レイヤーパネルの表示/非表示切り替え
  */
 
 import { mapState } from '../state/mapState.js';
@@ -360,7 +361,8 @@ export function toggleDrawingToolsVisibility() {
 }
 
 /**
- * レイヤーパネルの展開/折りたたみ
+ * レイヤーパネルの展開/折りたたみ（廃止）
+ * @deprecated 新しいtoggleLayersPanelVisibilityを使用してください
  */
 export function toggleLayersPanelExpand(event) {
     // イベントがボタンから来た場合は何もしない
@@ -371,5 +373,26 @@ export function toggleLayersPanelExpand(event) {
     const panel = document.getElementById('layersPanel');
     if (panel) {
         panel.classList.toggle('collapsed');
+    }
+}
+
+/**
+ * レイヤーパネルの表示/非表示切り替え
+ */
+export function toggleLayersPanelVisibility() {
+    const panel = document.getElementById('layersPanel');
+    const toggleButton = document.getElementById('layersPanelToggle');
+
+    if (panel && toggleButton) {
+        panel.classList.toggle('hidden');
+
+        // ボタンのアイコンを切り替え
+        if (panel.classList.contains('hidden')) {
+            toggleButton.textContent = '→';
+            toggleButton.setAttribute('title', 'レイヤーを表示');
+        } else {
+            toggleButton.textContent = '←';
+            toggleButton.setAttribute('title', 'レイヤーを非表示');
+        }
     }
 }

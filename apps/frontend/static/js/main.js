@@ -31,7 +31,8 @@ import {
     exportSelectedProfile,
     toggleDrawingToolsExpand,
     toggleDrawingToolsVisibility,
-    toggleLayersPanelExpand
+    toggleLayersPanelExpand,
+    toggleLayersPanelVisibility
 } from './ui/controls.js';
 import { setupEventListeners } from './ui/events.js';
 
@@ -122,6 +123,7 @@ window.exportSelectedProfile = exportSelectedProfile;
 window.toggleDrawingToolsExpand = toggleDrawingToolsExpand;
 window.toggleDrawingToolsVisibility = toggleDrawingToolsVisibility;
 window.toggleLayersPanelExpand = toggleLayersPanelExpand;
+window.toggleLayersPanelVisibility = toggleLayersPanelVisibility;
 
 // ファイル読み込みハンドラー
 window.handleImageFileSelect = handleImageFileSelect;

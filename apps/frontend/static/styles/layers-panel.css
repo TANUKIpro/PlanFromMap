@@ -9,20 +9,46 @@
 .layers-panel {
     position: absolute;
     bottom: 20px;
-    right: 20px;
+    right: 0;
     width: 280px;
     max-height: 400px;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
+    border-radius: 12px 0 0 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
     z-index: 10;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    overflow: visible;
+    transition: transform 0.3s ease;
 }
 
-/* 折りたたみ状態 */
+/* 隠れた状態 */
+.layers-panel.hidden {
+    transform: translateX(100%);
+}
+
+/* トグルボタン */
+.layers-panel-toggle {
+    position: absolute;
+    left: -32px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 8px 0 0 8px;
+    padding: 16px 4px;
+    cursor: pointer;
+    font-size: 1.2em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s ease;
+    z-index: 11;
+}
+
+.layers-panel-toggle:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+/* 折りたたみ状態（廃止） */
 .layers-panel.collapsed .layers-panel-body {
     display: none;
 }
@@ -42,12 +68,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
     user-select: none;
-}
-
-.layers-panel-header:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #63397a 100%);
 }
 
 .layers-panel-title {

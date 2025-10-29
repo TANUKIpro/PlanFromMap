@@ -83,12 +83,14 @@
 
                         <!-- レイヤーパネル -->
                         <div class="layers-panel" id="layersPanel">
-                            <div class="layers-panel-header" onclick="toggleLayersPanelExpand(event)">
+                            <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
+                                ←
+                            </button>
+                            <div class="layers-panel-header">
                                 <span class="layers-panel-title">
                                     📚 レイヤー
-                                    <span class="layers-panel-toggle-icon">▾</span>
                                 </span>
-                                <button class="layer-add-button" onclick="event.stopPropagation(); addNewLayer()">+ 追加</button>
+                                <button class="layer-add-button" onclick="addNewLayer()">+ 追加</button>
                             </div>
                             <div class="layers-panel-body" id="layersPanelBody">
                                 <!-- レイヤーアイテムがここに動的に追加される -->
