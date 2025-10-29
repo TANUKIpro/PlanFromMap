@@ -1,0 +1,127 @@
+/**
+ * map-viewer.css
+ * マップビューア専用スタイル
+ */
+
+/* ========================================
+   マップビューア
+   ======================================== */
+.map-viewer {
+    background: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* ========================================
+   マップキャンバスコンテナ
+   ======================================== */
+.map-canvas-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+}
+
+.map-canvas-container.panning {
+    cursor: grabbing;
+}
+
+#mapCanvas {
+    display: block;
+    image-rendering: pixelated;
+}
+
+/* ========================================
+   マッププレースホルダー
+   ======================================== */
+.map-placeholder {
+    color: #999;
+    text-align: center;
+    padding: 40px;
+}
+
+/* ========================================
+   マップコントロール
+   ======================================== */
+.map-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.zoom-info {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: auto;
+}
+
+/* ========================================
+   レイヤーコントロール
+   ======================================== */
+.layer-controls {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    background: #f1f1fb;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.layer-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+    color: #555;
+    background: white;
+    border-radius: 6px;
+    padding: 6px 10px;
+    border: 1px solid #e0e0ff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.layer-toggle.disabled {
+    opacity: 0.5;
+}
+
+.layer-toggle input {
+    accent-color: #667eea;
+}
+
+/* ========================================
+   キャンバススタック
+   ======================================== */
+.canvas-stack {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.canvas-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    image-rendering: pixelated;
+}
