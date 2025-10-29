@@ -1109,15 +1109,40 @@
             if (!layer) return;
 
             layer.visible = visible;
-            layer.canvas.style.display = visible ? 'block' : 'none';
 
-            redrawAllLayers();
+            if (visible) {
+                layer.canvas.style.display = 'block';
+                // レイヤーを再描画
+                redrawAllLayers();
+            } else {
+                layer.canvas.style.display = 'none';
+                // 非表示の場合はキャンバスをクリア
+                layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+            }
         }
 
         // レイヤーを選択
         function selectLayer(layerId) {
             mapState.selectedLayerId = layerId;
             updateLayersPanel();
+        }
+
+        // レイヤー名を変更
+        function renameLayer(layerId) {
+            const layer = mapState.layerStack.find(l => l.id === layerId);
+            if (!layer) return;
+
+            // permanentレイヤーは名前変更不可
+            if (layer.permanent) {
+                alert('このレイヤーの名前は変更できません');
+                return;
+            }
+
+            const newName = prompt('新しいレイヤー名を入力してください:', layer.name);
+            if (newName && newName.trim() !== '') {
+                layer.name = newName.trim();
+                updateLayersPanel();
+            }
         }
 
         // レイヤーの透過率を変更
@@ -1157,7 +1182,7 @@
                         <input type="checkbox" class="layer-visibility-toggle"
                                ${layer.visible ? 'checked' : ''}
                                onchange="event.stopPropagation(); toggleLayerVisibility('${layer.id}', this.checked)">
-                        <span class="layer-name">${layer.name}</span>
+                        <span class="layer-name" ondblclick="event.stopPropagation(); renameLayer('${layer.id}')">${layer.name}</span>
                         <button class="layer-delete-button"
                                 ${layer.permanent ? 'disabled' : ''}
                                 onclick="event.stopPropagation(); deleteLayer('${layer.id}')">削除</button>
@@ -1166,11 +1191,21 @@
                         <span class="layer-opacity-label">不透明度</span>
                         <input type="range" class="layer-opacity-slider"
                                min="0" max="1" step="0.01" value="${layer.opacity}"
+                               onmousedown="event.stopPropagation();"
+                               onmousemove="event.stopPropagation();"
+                               onmouseup="event.stopPropagation();"
                                oninput="event.stopPropagation(); changeLayerOpacity('${layer.id}', parseFloat(this.value)); this.nextElementSibling.textContent = Math.round(this.value * 100) + '%'"
                                onchange="event.stopPropagation();">
                         <span class="layer-opacity-value">${opacityPercent}%</span>
                     </div>
                 `;
+
+                // レイヤー名をダブルクリックで編集可能にする
+                const layerNameSpan = layerItem.querySelector('.layer-name');
+                if (layerNameSpan) {
+                    layerNameSpan.style.cursor = 'text';
+                    layerNameSpan.title = 'ダブルクリックで名前を変更';
+                }
 
                 // レイヤーアイテム全体をクリックで選択
                 layerItem.addEventListener('click', function(e) {
@@ -2603,18 +2638,32 @@
             // 選択されているレイヤーが描画レイヤーの場合はそれを使用
             if (mapState.selectedLayerId) {
                 const selectedLayer = mapState.layerStack.find(l => l.id === mapState.selectedLayerId);
-                if (selectedLayer && selectedLayer.type === 'drawing' && !selectedLayer.permanent) {
+                if (selectedLayer && selectedLayer.type === 'drawing' && selectedLayer.visible) {
                     return selectedLayer;
                 }
             }
 
-            // 選択されていない、または描画レイヤーでない場合は描画レイヤーを検索
-            let drawingLayer = mapState.layerStack.find(l => l.type === 'drawing' && !l.permanent);
+            // 選択されていない、または描画レイヤーでない場合は、表示中の描画レイヤーを検索
+            let drawingLayer = mapState.layerStack.find(l => l.type === 'drawing' && l.visible);
+
+            // 表示中の描画レイヤーがなければ、非表示も含めて検索
+            if (!drawingLayer) {
+                drawingLayer = mapState.layerStack.find(l => l.type === 'drawing');
+                // 見つかったら表示する
+                if (drawingLayer) {
+                    drawingLayer.visible = true;
+                    drawingLayer.canvas.style.display = 'block';
+                    updateLayersPanel();
+                }
+            }
 
             // 描画レイヤーがなければ作成
             if (!drawingLayer) {
                 addNewLayer();
                 drawingLayer = mapState.layerStack[mapState.layerStack.length - 1];
+                // 新しく作成したレイヤーを選択
+                mapState.selectedLayerId = drawingLayer.id;
+                updateLayersPanel();
             }
 
             return drawingLayer;
