@@ -450,22 +450,27 @@ function handleResize(rectangle, dx, dy) {
     const localDx = dx * cos + dy * sin;
     const localDy = -dx * sin + dy * cos;
 
+    // 最小サイズをcm単位から画像ピクセル単位に変換
+    const resolution = mapState.metadata ? mapState.metadata.resolution : 0.05; // m/pixel
+    const minSizeInMeters = RECTANGLE_DEFAULTS.MIN_SIZE_CM / 100; // cm → m
+    const minSizeInPixels = minSizeInMeters / resolution;
+
     let newWidth = rectangle.width;
     let newHeight = rectangle.height;
     let centerDx = 0;
     let centerDy = 0;
 
     if (edge === 'top') {
-        newHeight = Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, rectangle.height - localDy);
+        newHeight = Math.max(minSizeInPixels, rectangle.height - localDy);
         centerDy = -(newHeight - rectangle.height) / 2;
     } else if (edge === 'right') {
-        newWidth = Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, rectangle.width + localDx);
+        newWidth = Math.max(minSizeInPixels, rectangle.width + localDx);
         centerDx = (newWidth - rectangle.width) / 2;
     } else if (edge === 'bottom') {
-        newHeight = Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, rectangle.height + localDy);
+        newHeight = Math.max(minSizeInPixels, rectangle.height + localDy);
         centerDy = (newHeight - rectangle.height) / 2;
     } else if (edge === 'left') {
-        newWidth = Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, rectangle.width - localDx);
+        newWidth = Math.max(minSizeInPixels, rectangle.width - localDx);
         centerDx = -(newWidth - rectangle.width) / 2;
     }
 
@@ -602,17 +607,25 @@ function promptEdgeLength(rectangle, edge) {
         return;
     }
 
+    // 最小サイズチェック
+    if (newLengthInCm < RECTANGLE_DEFAULTS.MIN_SIZE_CM) {
+        alert(`辺の長さは${RECTANGLE_DEFAULTS.MIN_SIZE_CM}cm以上にしてください`);
+        mapState.rectangleToolState.editMode = null;
+        mapState.rectangleToolState.measureEdge = null;
+        return;
+    }
+
     // cm → ピクセルに変換
     const newLengthInPixels = (newLengthInCm / 100) / resolution;
 
     // 四角形を更新
     if (edge === 'top' || edge === 'bottom') {
         updateRectangle(rectangle.id, {
-            width: Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, newLengthInPixels)
+            width: newLengthInPixels
         });
     } else {
         updateRectangle(rectangle.id, {
-            height: Math.max(RECTANGLE_DEFAULTS.MIN_SIZE, newLengthInPixels)
+            height: newLengthInPixels
         });
     }
 

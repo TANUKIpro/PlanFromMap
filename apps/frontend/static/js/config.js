@@ -92,8 +92,8 @@ export const RECTANGLE_DEFAULTS = {
     /** デフォルトの高さ（ピクセル） */
     DEFAULT_HEIGHT: 150,
 
-    /** 最小サイズ（ピクセル） */
-    MIN_SIZE: 20,
+    /** 最小サイズ（cm単位） - 実際の長さで制限 */
+    MIN_SIZE_CM: 5,
 
     /** 回転のスナップ角度（度） */
     ROTATION_SNAP_ANGLE: 2,
