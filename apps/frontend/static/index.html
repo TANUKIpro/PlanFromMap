@@ -84,7 +84,7 @@
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <div class="menu-bar__dropdown-submenu">
                                     <label class="menu-bar__dropdown-label" for="gridWidthInput">グリッド幅 (cm):</label>
-                                    <input type="number" id="gridWidthInput" class="menu-bar__dropdown-input" min="1" max="1000" value="100" onchange="updateGridWidth(this.value)">
+                                    <input type="number" id="gridWidthInput" class="menu-bar__dropdown-input" min="1" max="1000" value="10" onchange="updateGridWidth(this.value)">
                                 </div>
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <div class="menu-bar__dropdown-submenu">
@@ -109,7 +109,7 @@
                         <canvas id="mapCanvas" style="display: none;"></canvas>
 
                         <!-- 描画ツールパレット -->
-                        <div class="drawing-tools-palette" id="drawingToolsPalette">
+                        <div class="drawing-tools-palette hidden" id="drawingToolsPalette">
                             <div class="drawing-tools-body">
                                 <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
                                     ✋
@@ -147,9 +147,9 @@
                         </div>
 
                         <!-- レイヤーパネル -->
-                        <div class="layers-panel" id="layersPanel">
+                        <div class="layers-panel hidden" id="layersPanel">
                             <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
-                                ←
+                                →
                             </button>
                             <div class="layers-panel-header">
                                 <span class="layers-panel-title">

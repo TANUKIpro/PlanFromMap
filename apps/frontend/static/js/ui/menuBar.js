@@ -130,7 +130,7 @@ export function snapToGrid(x, y) {
  */
 export function initMenuBar() {
     // グリッド幅のデフォルト値を設定
-    mapState.gridWidthInMeters = 1.0; // 1m = 100cm
+    mapState.gridWidthInMeters = 0.1; // 0.1m = 10cm
     mapState.snapToGrid = false;
 
     // メニュー外をクリックしたら閉じる
