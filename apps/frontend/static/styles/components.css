@@ -1,0 +1,123 @@
+/**
+ * components.css
+ * 共通コンポーネント（ボタン、入力フィールド、stat-box、loading など）
+ */
+
+/* ========================================
+   Stat Box
+   ======================================== */
+.stat-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-box h3 {
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.stat-box p {
+    opacity: 0.9;
+}
+
+/* ========================================
+   入力フィールド
+   ======================================== */
+.query-input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+/* ========================================
+   ボタン
+   ======================================== */
+.query-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.query-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.control-button {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.control-button:hover {
+    background: #5568d3;
+}
+
+.load-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.load-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ========================================
+   結果表示
+   ======================================== */
+.query-result {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+/* ========================================
+   ステータス表示
+   ======================================== */
+.loading {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+}
+
+.error {
+    color: #e74c3c;
+    padding: 15px;
+    background: #ffe6e6;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.success {
+    color: #27ae60;
+    padding: 15px;
+    background: #e6f7ed;
+    border-radius: 8px;
+    margin-top: 10px;
+}

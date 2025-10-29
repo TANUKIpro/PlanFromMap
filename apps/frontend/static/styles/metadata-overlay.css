@@ -1,0 +1,188 @@
+/**
+ * metadata-overlay.css
+ * メタデータオーバーレイ専用スタイル
+ */
+
+/* ========================================
+   メタデータオーバーレイパネル
+   ======================================== */
+.metadata-overlay-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: clamp(220px, 28vw, 320px);
+    max-height: 70%;
+    display: none;
+    flex-direction: column;
+    background: rgba(18, 22, 45, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+    color: #f5f6ff;
+    z-index: 5;
+}
+
+.metadata-overlay-panel.active {
+    display: flex;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-body {
+    display: none;
+}
+
+/* ========================================
+   メタデータオーバーレイヘッダー
+   ======================================== */
+.metadata-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: linear-gradient(120deg, rgba(102, 126, 234, 0.65), rgba(118, 75, 162, 0.45));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+}
+
+.metadata-overlay-title {
+    font-size: 0.95em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.metadata-overlay-minimize {
+    appearance: none;
+    border: none;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.metadata-overlay-minimize:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.metadata-overlay-minimize-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.metadata-overlay-panel.minimized .metadata-overlay-minimize-icon {
+    transform: rotate(-90deg);
+}
+
+/* ========================================
+   メタデータオーバーレイボディ
+   ======================================== */
+.metadata-overlay-body {
+    padding: 12px 14px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.metadata-overlay-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.metadata-overlay-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+}
+
+/* ========================================
+   メタデータセクション
+   ======================================== */
+.metadata-overlay-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metadata-overlay-section-title {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.metadata-overlay-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ========================================
+   メタデータアイテム
+   ======================================== */
+.metadata-overlay-item {
+    background: rgba(30, 34, 66, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metadata-overlay-item label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.metadata-overlay-item value {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #ffffff;
+    word-break: break-word;
+}
+
+/* ========================================
+   メタデータオプション
+   ======================================== */
+.metadata-overlay-options.inactive {
+    opacity: 0.6;
+}
+
+.metadata-overlay-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metadata-overlay-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(30, 34, 66, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.9em;
+    color: #f5f6ff;
+    cursor: pointer;
+}
+
+.metadata-overlay-toggle.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.metadata-overlay-toggle span {
+    flex: 1;
+}
+
+.metadata-overlay-toggle input {
+    accent-color: #8895ff;
+    cursor: pointer;
+}
