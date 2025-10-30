@@ -105,27 +105,53 @@
 /* ========================================
    カラーピッカー
    ======================================== */
-.color-picker-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
-    background: #f9f9f9;
-    border-radius: 8px;
+
+/* カラーアイコンボタン */
+.color-icon-button {
+    position: relative;
+    padding: 4px;
+}
+
+.color-icon-display {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* カラーピッカーポップアップ */
+.color-picker-popup {
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    z-index: 1000;
+    min-width: 180px;
+}
+
+.color-picker-popup.hidden {
+    display: none;
 }
 
 .color-picker-header {
     display: flex;
     gap: 4px;
+    margin-bottom: 8px;
 }
 
 .color-mode-button {
     flex: 1;
-    padding: 4px 8px;
-    font-size: 0.8em;
+    padding: 6px 12px;
+    font-size: 0.85em;
     border: 1px solid #e0e0e0;
     background: white;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -147,13 +173,13 @@
 /* パレットモード */
 .color-palette {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
 }
 
 .palette-color {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
     cursor: pointer;
@@ -162,7 +188,7 @@
 }
 
 .palette-color:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -177,7 +203,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 8px;
+    padding: 12px;
 }
 
 .color-rgb.hidden {
@@ -185,12 +211,12 @@
 }
 
 .color-picker-input {
-    width: 60px;
-    height: 40px;
+    width: 80px;
+    height: 50px;
     border: 2px solid #e0e0e0;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    padding: 2px;
+    padding: 4px;
 }
 
 /* 旧スタイル（後方互換性のため残す） */
