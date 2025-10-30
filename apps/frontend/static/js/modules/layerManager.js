@@ -118,8 +118,10 @@ export function createLayer(id, name, type, permanent = false, parentId = null, 
     // canvasStackに追加
     canvasStack.appendChild(layer.canvas);
 
-    // レイヤースタックに追加
-    mapState.layerStack.push(layer);
+    // レイヤースタックに追加（子レイヤーは親のchildren配列にのみ追加されるため、スタックには追加しない）
+    if (type !== 'rectangle-child') {
+        mapState.layerStack.push(layer);
+    }
 
     return layer;
 }
