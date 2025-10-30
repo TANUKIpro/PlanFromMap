@@ -179,6 +179,11 @@ export function saveProfile(profileName) {
             drawingState: {
                 color: mapState.drawingState.color,
                 brushSize: mapState.drawingState.brushSize
+            },
+            rectangleToolState: {
+                enabled: mapState.rectangleToolState.enabled,
+                rectangles: mapState.rectangleToolState.rectangles,
+                nextRectangleId: mapState.rectangleToolState.nextRectangleId
             }
         };
 
@@ -275,6 +280,16 @@ export async function loadProfile(profileName) {
         if (profile.drawingState) {
             mapState.drawingState.color = profile.drawingState.color || '#FF0000';
             mapState.drawingState.brushSize = profile.drawingState.brushSize || 5;
+        }
+
+        // 四角形ツール設定を復元
+        if (profile.rectangleToolState) {
+            mapState.rectangleToolState.enabled = profile.rectangleToolState.enabled || false;
+            mapState.rectangleToolState.rectangles = profile.rectangleToolState.rectangles || [];
+            mapState.rectangleToolState.nextRectangleId = profile.rectangleToolState.nextRectangleId || 1;
+            // 選択状態はクリア
+            mapState.rectangleToolState.selectedRectangleId = null;
+            mapState.rectangleToolState.rectangles.forEach(r => r.selected = false);
         }
 
         // レイヤースタックを復元（別途処理が必要）

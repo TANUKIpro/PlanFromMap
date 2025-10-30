@@ -99,14 +99,18 @@ export function toggleRectangleTool(enabled) {
  * @param {number} [width] - 幅（画像ピクセル）、省略時はデフォルト値
  * @param {number} [height] - 高さ（画像ピクセル）、省略時はデフォルト値
  * @param {number} [rotation=0] - 回転角度（度）
+ * @param {string} [color] - 四角形の色、省略時は現在の描画色
  * @returns {Object} 作成された四角形オブジェクト
  *
  * @example
  * const rect = createRectangle(500, 300);
  */
-export function createRectangle(x, y, width, height, rotation = 0) {
+export function createRectangle(x, y, width, height, rotation = 0, color = null) {
     const id = 'rect-' + mapState.rectangleToolState.nextRectangleId;
     mapState.rectangleToolState.nextRectangleId++;
+
+    // 色が指定されていない場合は、現在の描画色を使用
+    const rectangleColor = color || mapState.drawingState.color || RECTANGLE_DEFAULTS.STROKE_COLOR;
 
     const rectangle = {
         id: id,
@@ -115,6 +119,7 @@ export function createRectangle(x, y, width, height, rotation = 0) {
         width: width || RECTANGLE_DEFAULTS.DEFAULT_WIDTH,
         height: height || RECTANGLE_DEFAULTS.DEFAULT_HEIGHT,
         rotation: rotation,  // 回転角度（度）
+        color: rectangleColor,  // 四角形の色
         selected: false
     };
 

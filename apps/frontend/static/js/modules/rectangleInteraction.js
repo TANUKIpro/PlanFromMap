@@ -189,43 +189,43 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
 
     const rectangles = getAllRectangles();
 
-    // 鉛筆モード：辺のリサイズ
+    // 鉛筆モード：新規四角形作成
     if (currentTool === 'pencil') {
-        // 選択中の四角形があれば、ハンドルをテスト
+        // 選択中の四角形がある場合は、まず選択解除
         const selectedRect = rectangles.find(r => r.selected);
         if (selectedRect) {
+            // ハンドルをクリックした場合は何もしない
             const handle = hitTestHandle(canvasX, canvasY, selectedRect);
-            if (handle && handle !== 'rotate') {
-                // リサイズ開始
-                mapState.rectangleToolState.editMode = 'resize';
-                mapState.rectangleToolState.resizeEdge = handle;
-                mapState.rectangleToolState.isDragging = true;
-                mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
-
-                // カーソルを変更
-                const container = document.getElementById('mapContainer');
-                if (handle === 'top' || handle === 'bottom') {
-                    container.style.cursor = 'ns-resize';
-                } else if (handle === 'left' || handle === 'right') {
-                    container.style.cursor = 'ew-resize';
-                }
-                return true;
+            if (handle) {
+                return false;
             }
         }
 
-        // 四角形をクリックして選択
+        // 四角形をクリックした場合は選択
         const hitRect = hitTestRectangle(canvasX, canvasY);
         if (hitRect) {
             selectRectangle(hitRect.id);
             return true;
         }
 
-        // 何もない場所をクリックした場合は選択解除して、通常の描画を許可
+        // 何もない場所をクリックした場合は、新規四角形作成を開始
         deselectRectangle();
-        return false;  // 通常の鉛筆描画を許可
+        mapState.rectangleToolState.editMode = 'create';
+        mapState.rectangleToolState.isDragging = true;
+        mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+        mapState.rectangleToolState.createStartPos = canvasToImagePixel(canvasX, canvasY);
+
+        // 仮の四角形を作成（サイズ0で開始）
+        const startPos = mapState.rectangleToolState.createStartPos;
+        if (window.createRectangle && typeof window.createRectangle === 'function') {
+            const tempRect = window.createRectangle(startPos.x, startPos.y, 0, 0);
+            mapState.rectangleToolState.creatingRectangleId = tempRect.id;
+        }
+
+        return true;
     }
 
-    // パンモード：移動と回転
+    // パンモード：移動、回転、辺のリサイズ
     if (currentTool === 'pan') {
         // 選択中の四角形があれば、ハンドルをテスト
         const selectedRect = rectangles.find(r => r.selected);
@@ -240,6 +240,21 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
                 // カーソルを変更
                 const container = document.getElementById('mapContainer');
                 container.style.cursor = 'grabbing';
+                return true;
+            } else if (handle && handle !== 'rotate') {
+                // 辺のリサイズ開始
+                mapState.rectangleToolState.editMode = 'resize';
+                mapState.rectangleToolState.resizeEdge = handle;
+                mapState.rectangleToolState.isDragging = true;
+                mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+
+                // カーソルを変更
+                const container = document.getElementById('mapContainer');
+                if (handle === 'top' || handle === 'bottom') {
+                    container.style.cursor = 'ns-resize';
+                } else if (handle === 'left' || handle === 'right') {
+                    container.style.cursor = 'ew-resize';
+                }
                 return true;
             }
         }
@@ -327,6 +342,41 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
 
     // ドラッグ中の処理
     if (mapState.rectangleToolState.isDragging) {
+        // 新規作成モード
+        if (mapState.rectangleToolState.editMode === 'create') {
+            const startPos = mapState.rectangleToolState.createStartPos;
+            const creatingRect = getRectangleById(mapState.rectangleToolState.creatingRectangleId);
+
+            if (creatingRect) {
+                // 対角線の2点から四角形のパラメータを計算
+                const minX = Math.min(startPos.x, currentPos.x);
+                const minY = Math.min(startPos.y, currentPos.y);
+                const maxX = Math.max(startPos.x, currentPos.x);
+                const maxY = Math.max(startPos.y, currentPos.y);
+
+                const width = maxX - minX;
+                const height = maxY - minY;
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+
+                // 四角形を更新
+                updateRectangle(creatingRect.id, {
+                    x: centerX,
+                    y: centerY,
+                    width: width,
+                    height: height
+                });
+
+                // レイヤーを再描画
+                const rectangleLayer = getRectangleLayer();
+                if (rectangleLayer && window.redrawRectangleLayer) {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
+            }
+
+            return true;
+        }
+
         const selectedRect = getRectangleById(mapState.rectangleToolState.selectedRectangleId);
         if (!selectedRect) return false;
 
@@ -416,6 +466,35 @@ export function handleRectangleMouseUp() {
     if (!mapState.rectangleToolState.enabled) return false;
 
     if (mapState.rectangleToolState.isDragging) {
+        // 新規作成モード完了
+        if (mapState.rectangleToolState.editMode === 'create') {
+            const creatingRect = getRectangleById(mapState.rectangleToolState.creatingRectangleId);
+
+            if (creatingRect) {
+                // 最小サイズをチェック（cm単位から画像ピクセル単位に変換）
+                const resolution = mapState.metadata ? mapState.metadata.resolution : 0.05; // m/pixel
+                const minSizeInMeters = RECTANGLE_DEFAULTS.MIN_SIZE_CM / 100; // cm → m
+                const minSizeInPixels = minSizeInMeters / resolution;
+
+                // サイズが小さすぎる場合は削除
+                if (creatingRect.width < minSizeInPixels || creatingRect.height < minSizeInPixels) {
+                    deleteRectangle(creatingRect.id);
+                } else {
+                    // 新しく作成した四角形を選択
+                    selectRectangle(creatingRect.id);
+                }
+
+                // レイヤーを再描画
+                const rectangleLayer = getRectangleLayer();
+                if (rectangleLayer && window.redrawRectangleLayer) {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
+            }
+
+            mapState.rectangleToolState.creatingRectangleId = null;
+            mapState.rectangleToolState.createStartPos = null;
+        }
+
         mapState.rectangleToolState.isDragging = false;
         mapState.rectangleToolState.editMode = null;
         mapState.rectangleToolState.resizeEdge = null;
