@@ -122,16 +122,37 @@ function canvasToBase64(canvas) {
  * @returns {Array} シリアライズされたレイヤースタック
  */
 function serializeLayerStack(layerStack) {
-    return layerStack.map(layer => ({
-        id: layer.id,
-        name: layer.name,
-        type: layer.type,
-        permanent: layer.permanent,
-        visible: layer.visible,
-        opacity: layer.opacity,
-        canvasData: layer.type === 'drawing' ? canvasToBase64(layer.canvas) : null,
-        strokes: layer.strokes || []
-    }));
+    return layerStack.map(layer => {
+        const serialized = {
+            id: layer.id,
+            name: layer.name,
+            type: layer.type,
+            permanent: layer.permanent,
+            visible: layer.visible,
+            opacity: layer.opacity,
+            canvasData: layer.type === 'drawing' ? canvasToBase64(layer.canvas) : null,
+            strokes: layer.strokes || [],
+            collapsed: layer.collapsed || false,
+            parentId: layer.parentId || null,
+            rectangleId: layer.rectangleId || null
+        };
+
+        // 子レイヤーもシリアライズ
+        if (layer.children && layer.children.length > 0) {
+            serialized.children = layer.children.map(childLayer => ({
+                id: childLayer.id,
+                name: childLayer.name,
+                type: childLayer.type,
+                permanent: childLayer.permanent,
+                visible: childLayer.visible,
+                opacity: childLayer.opacity,
+                parentId: childLayer.parentId,
+                rectangleId: childLayer.rectangleId
+            }));
+        }
+
+        return serialized;
+    });
 }
 
 /**

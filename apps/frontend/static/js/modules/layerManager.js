@@ -68,7 +68,7 @@ export function initializeLayers() {
  * @example
  * const layer = createLayer('layer-1', 'レイヤー 1', 'drawing', false);
  */
-export function createLayer(id, name, type, permanent = false) {
+export function createLayer(id, name, type, permanent = false, parentId = null, rectangleId = null) {
     const container = document.getElementById('mapContainer');
     const canvasStack = document.getElementById('canvasStack');
     if (!container || !canvasStack) return null;
@@ -76,12 +76,16 @@ export function createLayer(id, name, type, permanent = false) {
     const layer = {
         id: id,
         name: name,
-        type: type,  // 'image', 'metadata', 'drawing', 'rectangle'
+        type: type,  // 'image', 'metadata', 'drawing', 'rectangle', 'rectangle-child'
         permanent: permanent,
         visible: true,
         opacity: 1.0,
         canvas: document.createElement('canvas'),
-        ctx: null
+        ctx: null,
+        children: [],  // 子レイヤー
+        collapsed: false,  // 折りたたみ状態
+        parentId: parentId,  // 親レイヤーのID
+        rectangleId: rectangleId  // 対応する四角形のID(子レイヤーの場合)
     };
 
     layer.canvas.className = 'canvas-layer';
@@ -96,6 +100,12 @@ export function createLayer(id, name, type, permanent = false) {
 
     // 四角形レイヤーの場合は初期非表示
     if (type === 'rectangle') {
+        layer.visible = false;
+        layer.canvas.style.display = 'none';
+    }
+
+    // 四角形の子レイヤーの場合は非表示(親の四角形レイヤーのキャンバスに描画されるため)
+    if (type === 'rectangle-child') {
         layer.visible = false;
         layer.canvas.style.display = 'none';
     }
@@ -142,6 +152,98 @@ export function addNewLayer() {
         // toggleLayersPanel()を呼び出す代わりに、直接activeクラスを追加
         panel.classList.add('active');
     }
+}
+
+/**
+ * 四角形レイヤーに子レイヤーを追加する
+ *
+ * @param {string} rectangleId - 対応する四角形のID
+ * @param {string} [name] - レイヤー名（省略時は自動生成）
+ * @returns {Object|null} 作成された子レイヤーオブジェクト
+ *
+ * @example
+ * addRectangleChildLayer('rect-1', '四角形 1');
+ */
+export function addRectangleChildLayer(rectangleId, name = null) {
+    // 四角形レイヤーを取得
+    const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+    if (!rectangleLayer) {
+        console.error('addRectangleChildLayer: 四角形レイヤーが見つかりません');
+        return null;
+    }
+
+    // 子レイヤー名を生成
+    const childLayerName = name || `四角形 ${rectangleLayer.children.length + 1}`;
+    const childLayerId = `${rectangleLayer.id}-child-${rectangleId}`;
+
+    // 既に存在する場合は何もしない
+    const existingChild = rectangleLayer.children.find(c => c.id === childLayerId);
+    if (existingChild) {
+        return existingChild;
+    }
+
+    // 子レイヤーを作成
+    const childLayer = createLayer(
+        childLayerId,
+        childLayerName,
+        'rectangle-child',
+        false,
+        rectangleLayer.id,
+        rectangleId
+    );
+
+    // 親レイヤーの children 配列に追加
+    rectangleLayer.children.push(childLayer);
+
+    return childLayer;
+}
+
+/**
+ * 四角形の子レイヤーを削除する
+ *
+ * @param {string} rectangleId - 削除する四角形のID
+ * @returns {boolean} 削除に成功した場合はtrue
+ *
+ * @example
+ * deleteRectangleChildLayer('rect-1');
+ */
+export function deleteRectangleChildLayer(rectangleId) {
+    // 四角形レイヤーを取得
+    const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+    if (!rectangleLayer) return false;
+
+    // 子レイヤーを検索
+    const childIndex = rectangleLayer.children.findIndex(c => c.rectangleId === rectangleId);
+    if (childIndex === -1) return false;
+
+    const childLayer = rectangleLayer.children[childIndex];
+
+    // キャンバスを削除
+    const canvasStack = document.getElementById('canvasStack');
+    if (canvasStack && childLayer.canvas) {
+        canvasStack.removeChild(childLayer.canvas);
+    }
+
+    // 親レイヤーの children 配列から削除
+    rectangleLayer.children.splice(childIndex, 1);
+
+    return true;
+}
+
+/**
+ * 四角形レイヤーの折りたたみ状態を切り替える
+ *
+ * @returns {void}
+ *
+ * @example
+ * toggleRectangleLayerCollapse();
+ */
+export function toggleRectangleLayerCollapse() {
+    const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+    if (!rectangleLayer) return;
+
+    rectangleLayer.collapsed = !rectangleLayer.collapsed;
+    updateLayersPanel();
 }
 
 /**
@@ -301,90 +403,173 @@ export function updateLayersPanel() {
     const reversedLayers = [...mapState.layerStack].reverse();
 
     reversedLayers.forEach(layer => {
-        const layerItem = document.createElement('div');
-        const isSelected = mapState.selectedLayerId === layer.id;
-        let className = 'layer-item';
-        if (layer.permanent) className += ' permanent';
-        if (isSelected) className += ' selected';
-        layerItem.className = className;
-
-        const opacityPercent = Math.round(layer.opacity * 100);
-
-        layerItem.innerHTML = `
-            <div class="layer-item-header">
-                <input type="checkbox" class="layer-visibility-toggle"
-                       ${layer.visible ? 'checked' : ''}
-                       data-layer-id="${layer.id}">
-                <span class="layer-name" data-layer-id="${layer.id}">${layer.name}</span>
-                <button class="layer-delete-button"
-                        ${layer.permanent ? 'disabled' : ''}
-                        data-layer-id="${layer.id}">削除</button>
-            </div>
-            <div class="layer-opacity-control">
-                <span class="layer-opacity-label">不透明度</span>
-                <input type="range" class="layer-opacity-slider"
-                       min="0" max="1" step="0.01" value="${layer.opacity}"
-                       data-layer-id="${layer.id}">
-                <span class="layer-opacity-value">${opacityPercent}%</span>
-            </div>
-        `;
-
-        // チェックボックスにイベントリスナーを追加
-        const checkbox = layerItem.querySelector('.layer-visibility-toggle');
-        if (checkbox) {
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                toggleLayerVisibility(layer.id, this.checked);
-            });
-        }
-
-        // 不透明度スライダーにイベントリスナーを追加
-        const opacitySlider = layerItem.querySelector('.layer-opacity-slider');
-        const opacityValue = layerItem.querySelector('.layer-opacity-value');
-        if (opacitySlider && opacityValue) {
-            opacitySlider.addEventListener('mousedown', function(e) {
-                e.stopPropagation();
-            });
-            opacitySlider.addEventListener('mousemove', function(e) {
-                e.stopPropagation();
-            });
-            opacitySlider.addEventListener('mouseup', function(e) {
-                e.stopPropagation();
-            });
-            opacitySlider.addEventListener('input', function(e) {
-                e.stopPropagation();
-                changeLayerOpacity(layer.id, parseFloat(this.value));
-                opacityValue.textContent = Math.round(this.value * 100) + '%';
-            });
-        }
-
-        // レイヤー名をダブルクリックで編集可能にする
-        const layerNameSpan = layerItem.querySelector('.layer-name');
-        if (layerNameSpan) {
-            layerNameSpan.style.cursor = 'text';
-            layerNameSpan.title = 'ダブルクリックで名前を変更';
-            layerNameSpan.addEventListener('dblclick', function(e) {
-                e.stopPropagation();
-                renameLayer(layer.id);
-            });
-        }
-
-        // 削除ボタンにイベントリスナーを追加
-        const deleteButton = layerItem.querySelector('.layer-delete-button');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                deleteLayer(layer.id);
-            });
-        }
-
-        // レイヤーアイテム全体をクリックで選択
-        layerItem.addEventListener('click', function(e) {
-            selectLayer(layer.id);
-        });
-
-        panelBody.appendChild(layerItem);
+        // 親レイヤーを描画
+        renderLayerItem(layer, panelBody, 0);
     });
+}
+
+/**
+ * レイヤーアイテムを描画する（再帰的に子レイヤーも描画）
+ *
+ * @private
+ * @param {Object} layer - レイヤーオブジェクト
+ * @param {HTMLElement} container - 追加先のコンテナ
+ * @param {number} depth - ネストの深さ
+ * @returns {void}
+ */
+function renderLayerItem(layer, container, depth) {
+    const layerItem = document.createElement('div');
+    const isSelected = mapState.selectedLayerId === layer.id;
+    let className = 'layer-item';
+    if (layer.permanent) className += ' permanent';
+    if (isSelected) className += ' selected';
+    if (depth > 0) className += ' child-layer';
+    layerItem.className = className;
+
+    // インデント用のスタイル
+    const indentStyle = depth > 0 ? `style="margin-left: ${depth * 20}px;"` : '';
+
+    const opacityPercent = Math.round(layer.opacity * 100);
+
+    // 四角形レイヤーの場合、折りたたみボタンを表示
+    const hasChildren = layer.type === 'rectangle' && layer.children && layer.children.length > 0;
+    const collapseButton = hasChildren
+        ? `<button class="layer-collapse-button" data-layer-id="${layer.id}">
+               ${layer.collapsed ? '▷' : '▽'}
+           </button>`
+        : '';
+
+    // 四角形レイヤー(親)の場合は不透明度バーを表示しない
+    const showOpacityControl = layer.type !== 'rectangle';
+
+    layerItem.innerHTML = `
+        <div class="layer-item-header" ${indentStyle}>
+            ${collapseButton}
+            <input type="checkbox" class="layer-visibility-toggle"
+                   ${layer.visible ? 'checked' : ''}
+                   data-layer-id="${layer.id}">
+            <span class="layer-name" data-layer-id="${layer.id}">${layer.name}</span>
+            <button class="layer-delete-button"
+                    ${layer.permanent ? 'disabled' : ''}
+                    data-layer-id="${layer.id}">削除</button>
+        </div>
+        ${showOpacityControl ? `
+        <div class="layer-opacity-control">
+            <span class="layer-opacity-label">不透明度</span>
+            <input type="range" class="layer-opacity-slider"
+                   min="0" max="1" step="0.01" value="${layer.opacity}"
+                   data-layer-id="${layer.id}">
+            <span class="layer-opacity-value">${opacityPercent}%</span>
+        </div>
+        ` : ''}
+    `;
+
+    // 折りたたみボタンにイベントリスナーを追加
+    const collapseBtn = layerItem.querySelector('.layer-collapse-button');
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleRectangleLayerCollapse();
+        });
+    }
+
+    // チェックボックスにイベントリスナーを追加
+    const checkbox = layerItem.querySelector('.layer-visibility-toggle');
+    if (checkbox) {
+        checkbox.addEventListener('change', function(e) {
+            e.stopPropagation();
+            toggleLayerVisibility(layer.id, this.checked);
+        });
+    }
+
+    // 不透明度スライダーにイベントリスナーを追加
+    const opacitySlider = layerItem.querySelector('.layer-opacity-slider');
+    const opacityValue = layerItem.querySelector('.layer-opacity-value');
+    if (opacitySlider && opacityValue) {
+        opacitySlider.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+        });
+        opacitySlider.addEventListener('mousemove', function(e) {
+            e.stopPropagation();
+        });
+        opacitySlider.addEventListener('mouseup', function(e) {
+            e.stopPropagation();
+        });
+        opacitySlider.addEventListener('input', function(e) {
+            e.stopPropagation();
+            changeLayerOpacity(layer.id, parseFloat(this.value));
+            opacityValue.textContent = Math.round(this.value * 100) + '%';
+        });
+    }
+
+    // レイヤー名をダブルクリックで編集可能にする
+    const layerNameSpan = layerItem.querySelector('.layer-name');
+    if (layerNameSpan) {
+        layerNameSpan.style.cursor = 'text';
+        layerNameSpan.title = 'ダブルクリックで名前を変更';
+        layerNameSpan.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            renameLayer(layer.id);
+        });
+    }
+
+    // 削除ボタンにイベントリスナーを追加
+    const deleteButton = layerItem.querySelector('.layer-delete-button');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteLayer(layer.id);
+        });
+    }
+
+    // レイヤーアイテム全体をクリックで選択
+    layerItem.addEventListener('click', function(e) {
+        selectLayerAndRectangle(layer);
+    });
+
+    container.appendChild(layerItem);
+
+    // 子レイヤーを描画（折りたたまれていない場合）
+    if (hasChildren && !layer.collapsed) {
+        layer.children.forEach(childLayer => {
+            renderLayerItem(childLayer, container, depth + 1);
+        });
+    }
+}
+
+/**
+ * レイヤーを選択し、四角形の子レイヤーの場合は対応する四角形も選択する
+ *
+ * @private
+ * @param {Object} layer - 選択するレイヤー
+ * @returns {void}
+ */
+function selectLayerAndRectangle(layer) {
+    selectLayer(layer.id);
+
+    // 四角形の子レイヤーの場合は、対応する四角形を選択
+    if (layer.type === 'rectangle-child' && layer.rectangleId) {
+        // 四角形ツールを有効化
+        if (window.toggleRectangleTool && typeof window.toggleRectangleTool === 'function') {
+            window.toggleRectangleTool(true);
+        }
+
+        // 対応する四角形を選択
+        if (window.selectRectangle && typeof window.selectRectangle === 'function') {
+            window.selectRectangle(layer.rectangleId);
+        }
+
+        // 四角形レイヤーを再描画
+        const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+        if (rectangleLayer && window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
+            window.redrawRectangleLayer(rectangleLayer);
+        }
+
+        // パンモードに切り替え
+        if (window.selectTool && typeof window.selectTool === 'function') {
+            window.selectTool('pan');
+        }
+    }
 }
 
 /**

@@ -162,6 +162,33 @@
     gap: 8px;
 }
 
+/* 子レイヤーのスタイル */
+.layer-item.child-layer {
+    margin-left: 20px;
+    border-left: 2px solid #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+/* 折りたたみボタン */
+.layer-collapse-button {
+    background: none;
+    border: none;
+    color: #667eea;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.layer-collapse-button:hover {
+    transform: scale(1.2);
+}
+
 .layer-visibility-toggle {
     width: 20px;
     height: 20px;
