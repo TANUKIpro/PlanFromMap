@@ -26,7 +26,10 @@ import {
     deleteProfile,
     listProfiles,
     getProfileInfo,
-    exportProfileToFile
+    exportProfileToFile,
+    getCurrentProfile,
+    saveCurrentProfile as saveCurrentProfileInternal,
+    saveProfileAs
 } from '../modules/profileManager.js';
 import { showSuccess, showError, showInfo, showWarning } from './toast.js';
 
@@ -412,4 +415,56 @@ export function toggleLayersPanelVisibility() {
             toggleButton.setAttribute('title', 'レイヤーを非表示');
         }
     }
+}
+
+/**
+ * 現在のプロファイルに上書き保存する
+ * @export
+ */
+export function quickSave() {
+    const currentProfile = getCurrentProfile();
+
+    if (!currentProfile) {
+        showWarning('プロファイルが選択されていません。「名前を付けて保存」を使用してください。', 2000);
+        return false;
+    }
+
+    const success = saveCurrentProfileInternal();
+
+    if (success) {
+        showSuccess(`プロファイル「${currentProfile}」を保存しました`, 1500);
+    } else {
+        showError('プロファイルの保存に失敗しました', 2000);
+    }
+
+    return success;
+}
+
+/**
+ * 名前を付けてプロファイルを保存する
+ * @export
+ */
+export function saveAs() {
+    const currentProfile = getCurrentProfile();
+    const defaultName = currentProfile ? `${currentProfile}_コピー` : '新しいプロファイル';
+
+    const newName = prompt('プロファイル名を入力してください:', defaultName);
+
+    if (!newName || newName.trim() === '') {
+        return false;
+    }
+
+    const success = saveProfileAs(newName.trim());
+
+    if (success) {
+        showSuccess(`プロファイル「${newName.trim()}」を保存しました`, 1500);
+        // プロファイル管理モーダルが開いている場合はリストを更新
+        if (document.getElementById('profileManagerModal').style.display !== 'none') {
+            updateProfileList();
+        }
+    } else {
+        showError('プロファイルの保存に失敗しました', 2000);
+    }
+
+    return success;
 }

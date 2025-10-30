@@ -47,6 +47,12 @@
                                 <button class="menu-bar__dropdown-item" onclick="loadImageFile(); closeAllMenus();">画像を読み込む...</button>
                                 <button class="menu-bar__dropdown-item" onclick="loadYAMLFile(); closeAllMenus();">YAMLを読み込む...</button>
                                 <div class="menu-bar__dropdown-divider"></div>
+                                <button class="menu-bar__dropdown-item" onclick="quickSave(); closeAllMenus();">
+                                    保存
+                                    <span class="menu-bar__shortcut">Ctrl+S</span>
+                                </button>
+                                <button class="menu-bar__dropdown-item" onclick="saveAs(); closeAllMenus();">名前を付けて保存...</button>
+                                <div class="menu-bar__dropdown-divider"></div>
                                 <button class="menu-bar__dropdown-item" onclick="showProfileManager(); closeAllMenus();">プロファイル管理</button>
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <button class="menu-bar__dropdown-item" onclick="clearMap(); closeAllMenus();">マップをクリア</button>

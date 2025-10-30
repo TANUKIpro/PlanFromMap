@@ -104,8 +104,15 @@ function handleResize() {
  * キーボードショートカットハンドラー
  */
 function handleKeydown(e) {
+    // Ctrl+S (Save)
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        if (window.quickSave && typeof window.quickSave === 'function') {
+            window.quickSave();
+        }
+    }
     // Ctrl+Z (Undo)
-    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+    else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         if (window.undo && typeof window.undo === 'function') {
             window.undo();
