@@ -260,25 +260,61 @@ export function deleteLayer(layerId) {
     const canvasStack = document.getElementById('canvasStack');
     if (!canvasStack) return;
 
-    const layerIndex = mapState.layerStack.findIndex(l => l.id === layerId);
-    if (layerIndex === -1) return;
+    // レイヤーを検索（親レイヤーまたは子レイヤー）
+    let layer = mapState.layerStack.find(l => l.id === layerId);
+    let isChildLayer = false;
+    let parentLayer = null;
 
-    const layer = mapState.layerStack[layerIndex];
+    // 親レイヤーのスタックに見つからない場合、子レイヤーを検索
+    if (!layer) {
+        for (const l of mapState.layerStack) {
+            if (l.children && l.children.length > 0) {
+                layer = l.children.find(c => c.id === layerId);
+                if (layer) {
+                    isChildLayer = true;
+                    parentLayer = l;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!layer) return;
+
     if (layer.permanent) {
         alert('このレイヤーは削除できません');
         return;
     }
 
-    // 履歴に追加（外部のhistoryManager.jsのsaveToHistory()を呼び出す必要がある）
-    // ここでは履歴管理は外部モジュールに任せるため、イベントを発行するか、
-    // 呼び出し側で対応してもらう
-    // 後で統合時に対応が必要
+    // 子レイヤーの場合、対応する四角形を削除
+    if (isChildLayer && layer.rectangleId) {
+        if (window.deleteRectangle && typeof window.deleteRectangle === 'function') {
+            window.deleteRectangle(layer.rectangleId);
+        }
 
-    // キャンバスを削除
-    canvasStack.removeChild(layer.canvas);
+        // 親レイヤーのchildren配列から削除
+        if (parentLayer) {
+            const childIndex = parentLayer.children.findIndex(c => c.id === layerId);
+            if (childIndex !== -1) {
+                parentLayer.children.splice(childIndex, 1);
+            }
+        }
 
-    // レイヤースタックから削除
-    mapState.layerStack.splice(layerIndex, 1);
+        // キャンバスを削除
+        if (layer.canvas && layer.canvas.parentNode) {
+            canvasStack.removeChild(layer.canvas);
+        }
+    } else {
+        // 親レイヤーの場合
+        const layerIndex = mapState.layerStack.findIndex(l => l.id === layerId);
+        if (layerIndex !== -1) {
+            // キャンバスを削除
+            canvasStack.removeChild(layer.canvas);
+
+            // レイヤースタックから削除
+            mapState.layerStack.splice(layerIndex, 1);
+        }
+    }
 
     updateLayersPanel();
     redrawAllLayers();
@@ -406,6 +442,71 @@ export function updateLayersPanel() {
         // 親レイヤーを描画
         renderLayerItem(layer, panelBody, 0);
     });
+
+    // グローバル不透明度バーを初期化
+    initializeGlobalOpacityControl();
+}
+
+/**
+ * グローバル不透明度コントロールを初期化する
+ *
+ * @private
+ * @returns {void}
+ */
+function initializeGlobalOpacityControl() {
+    const globalOpacitySlider = document.getElementById('globalOpacitySlider');
+    const globalOpacityValue = document.getElementById('globalOpacityValue');
+
+    if (!globalOpacitySlider || !globalOpacityValue) return;
+
+    // 選択されたレイヤーの不透明度を反映
+    const selectedLayer = getSelectedLayer();
+    if (selectedLayer) {
+        globalOpacitySlider.value = selectedLayer.opacity;
+        globalOpacityValue.textContent = Math.round(selectedLayer.opacity * 100) + '%';
+    } else {
+        globalOpacitySlider.value = 1.0;
+        globalOpacityValue.textContent = '100%';
+    }
+
+    // イベントリスナーをリセット（重複を避けるため）
+    const newSlider = globalOpacitySlider.cloneNode(true);
+    globalOpacitySlider.parentNode.replaceChild(newSlider, globalOpacitySlider);
+
+    // 新しいスライダーにイベントリスナーを追加
+    const updatedSlider = document.getElementById('globalOpacitySlider');
+    const updatedValue = document.getElementById('globalOpacityValue');
+
+    updatedSlider.addEventListener('input', function(e) {
+        const selectedLayer = getSelectedLayer();
+        if (selectedLayer) {
+            changeLayerOpacity(selectedLayer.id, parseFloat(this.value));
+            updatedValue.textContent = Math.round(this.value * 100) + '%';
+        }
+    });
+}
+
+/**
+ * 選択されたレイヤーを取得する
+ *
+ * @private
+ * @returns {Object|null} 選択されたレイヤー、なければnull
+ */
+function getSelectedLayer() {
+    // 親レイヤースタックから検索
+    let selectedLayer = mapState.layerStack.find(l => l.id === mapState.selectedLayerId);
+
+    // 見つからない場合は子レイヤーを検索
+    if (!selectedLayer) {
+        for (const layer of mapState.layerStack) {
+            if (layer.children && layer.children.length > 0) {
+                selectedLayer = layer.children.find(c => c.id === mapState.selectedLayerId);
+                if (selectedLayer) break;
+            }
+        }
+    }
+
+    return selectedLayer || null;
 }
 
 /**
@@ -439,9 +540,6 @@ function renderLayerItem(layer, container, depth) {
            </button>`
         : '';
 
-    // 四角形レイヤー(親)の場合は不透明度バーを表示しない
-    const showOpacityControl = layer.type !== 'rectangle';
-
     layerItem.innerHTML = `
         <div class="layer-item-header" ${indentStyle}>
             ${collapseButton}
@@ -453,15 +551,6 @@ function renderLayerItem(layer, container, depth) {
                     ${layer.permanent ? 'disabled' : ''}
                     data-layer-id="${layer.id}">削除</button>
         </div>
-        ${showOpacityControl ? `
-        <div class="layer-opacity-control">
-            <span class="layer-opacity-label">不透明度</span>
-            <input type="range" class="layer-opacity-slider"
-                   min="0" max="1" step="0.01" value="${layer.opacity}"
-                   data-layer-id="${layer.id}">
-            <span class="layer-opacity-value">${opacityPercent}%</span>
-        </div>
-        ` : ''}
     `;
 
     // 折りたたみボタンにイベントリスナーを追加
@@ -479,26 +568,6 @@ function renderLayerItem(layer, container, depth) {
         checkbox.addEventListener('change', function(e) {
             e.stopPropagation();
             toggleLayerVisibility(layer.id, this.checked);
-        });
-    }
-
-    // 不透明度スライダーにイベントリスナーを追加
-    const opacitySlider = layerItem.querySelector('.layer-opacity-slider');
-    const opacityValue = layerItem.querySelector('.layer-opacity-value');
-    if (opacitySlider && opacityValue) {
-        opacitySlider.addEventListener('mousedown', function(e) {
-            e.stopPropagation();
-        });
-        opacitySlider.addEventListener('mousemove', function(e) {
-            e.stopPropagation();
-        });
-        opacitySlider.addEventListener('mouseup', function(e) {
-            e.stopPropagation();
-        });
-        opacitySlider.addEventListener('input', function(e) {
-            e.stopPropagation();
-            changeLayerOpacity(layer.id, parseFloat(this.value));
-            opacityValue.textContent = Math.round(this.value * 100) + '%';
         });
     }
 

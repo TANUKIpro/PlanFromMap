@@ -249,3 +249,38 @@
     min-width: 35px;
     text-align: right;
 }
+
+/* ========================================
+   レイヤーパネルフッター
+   ======================================== */
+.layers-panel-footer {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+.global-opacity-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.global-opacity-label {
+    font-size: 0.8em;
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.global-opacity-slider {
+    flex: 1;
+    accent-color: #667eea;
+}
+
+.global-opacity-value {
+    font-size: 0.8em;
+    color: #667eea;
+    font-weight: 600;
+    min-width: 45px;
+    text-align: right;
+}
