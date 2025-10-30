@@ -543,9 +543,9 @@ function renderLayerItem(layer, container, depth) {
     layerItem.innerHTML = `
         <div class="layer-item-header" ${indentStyle}>
             ${collapseButton}
-            <input type="checkbox" class="layer-visibility-toggle"
-                   ${layer.visible ? 'checked' : ''}
-                   data-layer-id="${layer.id}">
+            <button class="layer-visibility-toggle" data-layer-id="${layer.id}" data-visible="${layer.visible}">
+                <img src="icons/${layer.visible ? 'eye-open.svg' : 'eye-close.svg'}" alt="${layer.visible ? '表示' : '非表示'}" class="visibility-icon">
+            </button>
             <span class="layer-name" data-layer-id="${layer.id}">${layer.name}</span>
             <button class="layer-delete-button"
                     ${layer.permanent ? 'disabled' : ''}
@@ -562,12 +562,21 @@ function renderLayerItem(layer, container, depth) {
         });
     }
 
-    // チェックボックスにイベントリスナーを追加
-    const checkbox = layerItem.querySelector('.layer-visibility-toggle');
-    if (checkbox) {
-        checkbox.addEventListener('change', function(e) {
+    // 可視性トグルボタンにイベントリスナーを追加
+    const visibilityToggle = layerItem.querySelector('.layer-visibility-toggle');
+    if (visibilityToggle) {
+        visibilityToggle.addEventListener('click', function(e) {
             e.stopPropagation();
-            toggleLayerVisibility(layer.id, this.checked);
+            const currentVisible = this.dataset.visible === 'true';
+            const newVisible = !currentVisible;
+            toggleLayerVisibility(layer.id, newVisible);
+            // ボタンの状態を更新
+            this.dataset.visible = newVisible;
+            const icon = this.querySelector('.visibility-icon');
+            if (icon) {
+                icon.src = `icons/${newVisible ? 'eye-open.svg' : 'eye-close.svg'}`;
+                icon.alt = newVisible ? '表示' : '非表示';
+            }
         });
     }
 
