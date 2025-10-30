@@ -224,6 +224,18 @@ export function updateCursor() {
  */
 export function changeDrawingColor(color) {
     mapState.drawingState.color = color;
+
+    // カラーアイコンの表示色を更新
+    const colorIconDisplay = document.getElementById('colorIconDisplay');
+    if (colorIconDisplay) {
+        colorIconDisplay.style.backgroundColor = color;
+    }
+
+    // RGBピッカーの色も同期
+    const colorPicker = document.getElementById('colorPicker');
+    if (colorPicker) {
+        colorPicker.value = color;
+    }
 }
 
 /**
@@ -236,6 +248,102 @@ export function changeBrushSize(size) {
     const brushSizeValue = document.getElementById('brushSizeValue');
     if (brushSizeValue) {
         brushSizeValue.textContent = size;
+    }
+}
+
+/**
+ * カラーピッカーポップアップの表示/非表示を切り替え
+ * @export
+ */
+export function toggleColorPicker() {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup) {
+        popup.classList.toggle('hidden');
+    }
+}
+
+/**
+ * カラーピッカーポップアップを閉じる
+ * @export
+ */
+export function closeColorPicker() {
+    const popup = document.getElementById('colorPickerPopup');
+    if (popup) {
+        popup.classList.add('hidden');
+    }
+}
+
+/**
+ * カラーピッカーのグローバルクリックハンドラーをセットアップ
+ * @export
+ */
+export function setupColorPickerClickHandler() {
+    document.addEventListener('click', (e) => {
+        const popup = document.getElementById('colorPickerPopup');
+        const colorIconButton = document.getElementById('colorIconButton');
+
+        if (!popup || !colorIconButton) return;
+
+        // ポップアップが表示されている場合のみ
+        if (!popup.classList.contains('hidden')) {
+            // クリックされた要素がポップアップ内またはカラーアイコンボタンでない場合
+            if (!popup.contains(e.target) && !colorIconButton.contains(e.target)) {
+                closeColorPicker();
+            }
+        }
+    });
+}
+
+/**
+ * カラーモードを切り替え（パレット/RGB）
+ * @export
+ * @param {string} mode - モード ('palette' または 'rgb')
+ */
+export function switchColorMode(mode) {
+    const paletteMode = document.getElementById('paletteMode');
+    const rgbMode = document.getElementById('rgbMode');
+    const colorPalette = document.getElementById('colorPalette');
+    const colorRGB = document.getElementById('colorRGB');
+
+    if (mode === 'palette') {
+        // パレットモードに切り替え
+        paletteMode.classList.add('active');
+        rgbMode.classList.remove('active');
+        colorPalette.classList.remove('hidden');
+        colorRGB.classList.add('hidden');
+    } else if (mode === 'rgb') {
+        // RGBモードに切り替え
+        paletteMode.classList.remove('active');
+        rgbMode.classList.add('active');
+        colorPalette.classList.add('hidden');
+        colorRGB.classList.remove('hidden');
+    }
+}
+
+/**
+ * パレットから色を選択
+ * @export
+ * @param {string} color - HEX色コード
+ */
+export function selectPaletteColor(color) {
+    // 描画色を変更
+    changeDrawingColor(color);
+
+    // すべてのパレット色のactiveクラスを削除
+    document.querySelectorAll('.palette-color').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // 選択された色にactiveクラスを追加
+    const selectedColor = document.querySelector(`.palette-color[data-color="${color}"]`);
+    if (selectedColor) {
+        selectedColor.classList.add('active');
+    }
+
+    // RGBピッカーの色も同期
+    const colorPicker = document.getElementById('colorPicker');
+    if (colorPicker) {
+        colorPicker.value = color;
     }
 }
 

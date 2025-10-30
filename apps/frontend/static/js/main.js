@@ -75,7 +75,12 @@ import {
     performBucketFill,
     canvasToImagePixel,
     imagePixelToCanvas,
-    toggleRectangleToolMode
+    toggleRectangleToolMode,
+    switchColorMode,
+    selectPaletteColor,
+    toggleColorPicker,
+    closeColorPicker,
+    setupColorPickerClickHandler
 } from './modules/drawingTools.js';
 
 // メタデータ表示
@@ -191,6 +196,10 @@ window.performBucketFill = performBucketFill;
 window.canvasToImagePixel = canvasToImagePixel;
 window.imagePixelToCanvas = imagePixelToCanvas;
 window.toggleRectangleToolMode = toggleRectangleToolMode;
+window.switchColorMode = switchColorMode;
+window.selectPaletteColor = selectPaletteColor;
+window.toggleColorPicker = toggleColorPicker;
+window.closeColorPicker = closeColorPicker;
 
 // メタデータ表示
 window.toggleLayer = toggleLayer;
@@ -256,6 +265,9 @@ function initializeApp() {
 
     // イベントリスナーをセットアップ
     setupEventListeners();
+
+    // カラーピッカーのクリックハンドラーをセットアップ
+    setupColorPickerClickHandler();
 
     // オーバーレイコントロールを更新
     updateOverlayControls();

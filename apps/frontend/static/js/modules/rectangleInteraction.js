@@ -225,7 +225,7 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
         return true;
     }
 
-    // パンモード：移動、回転、辺のリサイズ
+    // パンモード：移動、回転、辺のリサイズ、選択
     if (currentTool === 'pan') {
         // 選択中の四角形があれば、ハンドルをテスト
         const selectedRect = rectangles.find(r => r.selected);
@@ -236,6 +236,7 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
                 mapState.rectangleToolState.editMode = 'rotate';
                 mapState.rectangleToolState.isDragging = true;
                 mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+                mapState.rectangleToolState.mouseDownPos = canvasToImagePixel(canvasX, canvasY);
 
                 // カーソルを変更
                 const container = document.getElementById('mapContainer');
@@ -247,6 +248,7 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
                 mapState.rectangleToolState.resizeEdge = handle;
                 mapState.rectangleToolState.isDragging = true;
                 mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+                mapState.rectangleToolState.mouseDownPos = canvasToImagePixel(canvasX, canvasY);
 
                 // カーソルを変更
                 const container = document.getElementById('mapContainer');
@@ -259,22 +261,34 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
             }
         }
 
-        // 四角形をクリックして移動
+        // 四角形をクリック - マウスダウン時点では移動モードに入らず、ドラッグ開始を待つ
         const hitRect = hitTestRectangle(canvasX, canvasY);
         if (hitRect) {
-            selectRectangle(hitRect.id);
-            mapState.rectangleToolState.editMode = 'move';
-            mapState.rectangleToolState.isDragging = true;
-            mapState.rectangleToolState.dragStartPos = canvasToImagePixel(canvasX, canvasY);
+            // マウスダウン位置を記録（クリックかドラッグかを判定するため）
+            mapState.rectangleToolState.mouseDownPos = canvasToImagePixel(canvasX, canvasY);
+            mapState.rectangleToolState.mouseDownRectangleId = hitRect.id;
+            mapState.rectangleToolState.isDragging = false;
+            mapState.rectangleToolState.editMode = null;
 
-            // カーソルを変更
-            const container = document.getElementById('mapContainer');
-            container.style.cursor = 'move';
+            // すでに選択されている四角形の場合は、選択を維持
+            // 未選択の四角形の場合は、マウスアップ時に選択
+            if (!hitRect.selected) {
+                mapState.rectangleToolState.needsSelection = true;
+            } else {
+                mapState.rectangleToolState.needsSelection = false;
+            }
+
             return true;
         }
 
-        // 何もない場所をクリックした場合は選択解除して、通常のパンを許可
-        deselectRectangle();
+        // 何もない場所をクリックした場合は選択解除
+        // レイヤーを再描画
+        const rectangleLayer = getRectangleLayer();
+        if (rectangleLayer && window.redrawRectangleLayer) {
+            deselectRectangle();
+            window.redrawRectangleLayer(rectangleLayer);
+        }
+
         return false;  // 通常のパン操作を許可
     }
 
@@ -339,6 +353,43 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
     if (!mapState.rectangleToolState.enabled) return false;
 
     const currentPos = canvasToImagePixel(canvasX, canvasY);
+
+    // マウスダウン後、まだドラッグモードに入っていない場合
+    // 一定距離以上移動したらドラッグモードに入る
+    if (mapState.rectangleToolState.mouseDownPos &&
+        !mapState.rectangleToolState.isDragging &&
+        mapState.rectangleToolState.mouseDownRectangleId) {
+
+        const dx = currentPos.x - mapState.rectangleToolState.mouseDownPos.x;
+        const dy = currentPos.y - mapState.rectangleToolState.mouseDownPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // 3ピクセル以上移動したらドラッグモードに入る
+        const dragThreshold = 3 / mapState.scale; // 画像ピクセル単位
+
+        if (distance > dragThreshold) {
+            // ドラッグ開始：移動モードに入る
+            const rectId = mapState.rectangleToolState.mouseDownRectangleId;
+            selectRectangle(rectId);
+
+            mapState.rectangleToolState.editMode = 'move';
+            mapState.rectangleToolState.isDragging = true;
+            mapState.rectangleToolState.dragStartPos = mapState.rectangleToolState.mouseDownPos;
+            mapState.rectangleToolState.needsSelection = false;
+
+            // カーソルを変更
+            const container = document.getElementById('mapContainer');
+            container.style.cursor = 'move';
+
+            // レイヤーを再描画
+            const rectangleLayer = getRectangleLayer();
+            if (rectangleLayer && window.redrawRectangleLayer) {
+                window.redrawRectangleLayer(rectangleLayer);
+            }
+        }
+
+        return true;
+    }
 
     // ドラッグ中の処理
     if (mapState.rectangleToolState.isDragging) {
@@ -465,6 +516,40 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
 export function handleRectangleMouseUp() {
     if (!mapState.rectangleToolState.enabled) return false;
 
+    // クリック（ドラッグしなかった）場合の選択処理
+    if (mapState.rectangleToolState.mouseDownRectangleId &&
+        !mapState.rectangleToolState.isDragging &&
+        mapState.rectangleToolState.needsSelection) {
+
+        // 四角形を選択
+        selectRectangle(mapState.rectangleToolState.mouseDownRectangleId);
+
+        // レイヤーを再描画
+        const rectangleLayer = getRectangleLayer();
+        if (rectangleLayer && window.redrawRectangleLayer) {
+            window.redrawRectangleLayer(rectangleLayer);
+        }
+
+        // 状態をクリア
+        mapState.rectangleToolState.mouseDownPos = null;
+        mapState.rectangleToolState.mouseDownRectangleId = null;
+        mapState.rectangleToolState.needsSelection = false;
+
+        return true;
+    }
+
+    // クリック後のクリーンアップ（選択済みの四角形をクリックした場合）
+    if (mapState.rectangleToolState.mouseDownRectangleId &&
+        !mapState.rectangleToolState.isDragging) {
+
+        // 状態をクリア
+        mapState.rectangleToolState.mouseDownPos = null;
+        mapState.rectangleToolState.mouseDownRectangleId = null;
+        mapState.rectangleToolState.needsSelection = false;
+
+        return true;
+    }
+
     if (mapState.rectangleToolState.isDragging) {
         // 新規作成モード完了
         if (mapState.rectangleToolState.editMode === 'create') {
@@ -499,6 +584,9 @@ export function handleRectangleMouseUp() {
         mapState.rectangleToolState.editMode = null;
         mapState.rectangleToolState.resizeEdge = null;
         mapState.rectangleToolState.dragStartPos = null;
+        mapState.rectangleToolState.mouseDownPos = null;
+        mapState.rectangleToolState.mouseDownRectangleId = null;
+        mapState.rectangleToolState.needsSelection = false;
 
         // カーソルを元に戻す
         if (window.updateCursor && typeof window.updateCursor === 'function') {
