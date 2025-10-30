@@ -283,6 +283,27 @@ export async function loadSelectedProfile(profileName, options = {}) {
             window.initializeLayers();
         }
 
+        // 四角形データが存在する場合、四角形レイヤーを表示
+        if (mapState.rectangleToolState && mapState.rectangleToolState.rectangles && mapState.rectangleToolState.rectangles.length > 0) {
+            // 四角形レイヤーを取得
+            const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+            if (rectangleLayer) {
+                // レイヤーを表示
+                rectangleLayer.visible = true;
+                rectangleLayer.canvas.style.display = 'block';
+
+                // 四角形レイヤーを再描画
+                if (window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
+
+                // レイヤーパネルを更新
+                if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+                    window.updateLayersPanel();
+                }
+            }
+        }
+
         // すべてのレイヤーを再描画
         if (window.redrawAllLayers && typeof window.redrawAllLayers === 'function') {
             window.redrawAllLayers();
