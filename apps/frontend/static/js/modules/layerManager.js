@@ -549,7 +549,9 @@ function renderLayerItem(layer, container, depth) {
             <span class="layer-name" data-layer-id="${layer.id}">${layer.name}</span>
             <button class="layer-delete-button"
                     ${layer.permanent ? 'disabled' : ''}
-                    data-layer-id="${layer.id}">削除</button>
+                    data-layer-id="${layer.id}">
+                <img src="icons/trash.svg" alt="削除" class="delete-icon">
+            </button>
         </div>
     `;
 

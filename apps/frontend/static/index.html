@@ -116,19 +116,19 @@
                         <div class="drawing-tools-palette hidden" id="drawingToolsPalette">
                             <div class="drawing-tools-body">
                                 <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
-                                    ✋
+                                    <img src="icons/finger-circle.svg" alt="パン" class="tool-icon">
                                 </button>
                                 <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
-                                    ✏️
+                                    <img src="icons/pen-1.svg" alt="鉛筆" class="tool-icon">
                                 </button>
                                 <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
-                                    🧹
+                                    <img src="icons/eraser.svg" alt="消しゴム" class="tool-icon">
                                 </button>
                                 <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
-                                    📏
+                                    <img src="icons/ruler.svg" alt="測量" class="tool-icon">
                                 </button>
                                 <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
-                                    🪣
+                                    <img src="icons/bucket.svg" alt="塗りつぶし" class="tool-icon">
                                 </button>
                                 <div class="tool-divider"></div>
                                 <div class="tool-divider"></div>
@@ -173,14 +173,14 @@
                                 </div>
                             </div>
                             <button class="drawing-tools-toggle" id="drawingToolsToggle" onclick="toggleDrawingToolsVisibility()" title="描画ツールを表示/非表示">
-                                ▼
+                                <img src="icons/arrow-left.svg" alt="折りたたむ" class="toggle-arrow-icon">
                             </button>
                         </div>
 
                         <!-- レイヤーパネル -->
                         <div class="layers-panel hidden" id="layersPanel">
                             <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
-                                →
+                                <img src="icons/arrow-right.svg" alt="展開" class="toggle-arrow-icon">
                             </button>
                             <div class="layers-panel-header">
                                 <span class="layers-panel-title">
@@ -215,7 +215,9 @@
 
                         <div class="metadata-overlay-panel minimized" id="metadataOverlay" aria-hidden="true">
                             <div class="metadata-overlay-header" onclick="toggleMetadataMinimize()" data-tooltip="マップメタデータ">
-                                <span class="metadata-overlay-icon">M</span>
+                                <span class="metadata-overlay-icon">
+                                    <img src="icons/map.svg" alt="マップ" class="metadata-icon">
+                                </span>
                                 <span class="metadata-overlay-title">📋 マップメタデータ</span>
                                 <button
                                     type="button"

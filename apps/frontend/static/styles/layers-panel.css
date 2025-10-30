@@ -42,10 +42,19 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: background 0.2s ease;
     z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .layers-panel-toggle:hover {
     background: rgba(255, 255, 255, 1);
+}
+
+.layers-panel-toggle .toggle-arrow-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 /* 折りたたみ状態（廃止） */
@@ -223,11 +232,14 @@
     background: #e74c3c;
     border: none;
     color: white;
-    padding: 4px 8px;
+    padding: 6px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.75em;
     transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .layer-delete-button:hover {
@@ -237,6 +249,13 @@
 .layer-delete-button:disabled {
     background: #ccc;
     cursor: not-allowed;
+}
+
+.delete-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    filter: brightness(0) invert(1);
 }
 
 /* ========================================

@@ -432,12 +432,17 @@ export function toggleDrawingToolsVisibility() {
         palette.classList.toggle('hidden');
 
         // ボタンのアイコンを切り替え
-        if (palette.classList.contains('hidden')) {
-            toggleButton.textContent = '▼';
-            toggleButton.setAttribute('title', '描画ツールを表示');
-        } else {
-            toggleButton.textContent = '▲';
-            toggleButton.setAttribute('title', '描画ツールを非表示');
+        const icon = toggleButton.querySelector('.toggle-arrow-icon');
+        if (icon) {
+            if (palette.classList.contains('hidden')) {
+                icon.src = 'icons/arrow-right.svg';
+                icon.alt = '展開';
+                toggleButton.setAttribute('title', '描画ツールを表示');
+            } else {
+                icon.src = 'icons/arrow-left.svg';
+                icon.alt = '折りたたむ';
+                toggleButton.setAttribute('title', '描画ツールを非表示');
+            }
         }
     }
 }
@@ -469,12 +474,17 @@ export function toggleLayersPanelVisibility() {
         panel.classList.toggle('hidden');
 
         // ボタンのアイコンを切り替え
-        if (panel.classList.contains('hidden')) {
-            toggleButton.textContent = '→';
-            toggleButton.setAttribute('title', 'レイヤーを表示');
-        } else {
-            toggleButton.textContent = '←';
-            toggleButton.setAttribute('title', 'レイヤーを非表示');
+        const icon = toggleButton.querySelector('.toggle-arrow-icon');
+        if (icon) {
+            if (panel.classList.contains('hidden')) {
+                icon.src = 'icons/arrow-right.svg';
+                icon.alt = '展開';
+                toggleButton.setAttribute('title', 'レイヤーを表示');
+            } else {
+                icon.src = 'icons/arrow-left.svg';
+                icon.alt = '折りたたむ';
+                toggleButton.setAttribute('title', 'レイヤーを非表示');
+            }
         }
     }
 }
