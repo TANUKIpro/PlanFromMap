@@ -290,6 +290,16 @@ export function deleteLayer(layerId) {
 
     // 子レイヤーの場合、対応する四角形を削除
     if (isChildLayer && layer.rectangleId) {
+        // 削除確認ダイアログを表示
+        if (!confirm('この四角形レイヤーを削除してもよろしいですか？')) {
+            return;
+        }
+
+        // 削除前に履歴を保存
+        if (typeof window.saveToHistory === 'function') {
+            window.saveToHistory();
+        }
+
         if (window.deleteRectangle && typeof window.deleteRectangle === 'function') {
             window.deleteRectangle(layer.rectangleId);
         }
@@ -418,6 +428,7 @@ export function selectLayer(layerId) {
 /**
  * レイヤー名を変更する
  * 恒久レイヤーの名前は変更できません
+ * 子レイヤー（四角形の子要素）は名前変更可能です
  *
  * @param {string} layerId - 対象レイヤーのID
  * @returns {void}
@@ -426,15 +437,38 @@ export function selectLayer(layerId) {
  * renameLayer('layer-1');
  */
 export function renameLayer(layerId) {
-    const layer = mapState.layerStack.find(l => l.id === layerId);
+    // 親レイヤースタックから検索
+    let layer = mapState.layerStack.find(l => l.id === layerId);
+    let isChildLayer = false;
+
+    // 親レイヤーに見つからない場合は子レイヤーを検索
+    if (!layer) {
+        for (const parentLayer of mapState.layerStack) {
+            if (parentLayer.children && parentLayer.children.length > 0) {
+                layer = parentLayer.children.find(c => c.id === layerId);
+                if (layer) {
+                    isChildLayer = true;
+                    break;
+                }
+            }
+        }
+    }
+
     if (!layer) return;
 
-    // permanentレイヤーは名前変更不可
-    if (layer.permanent) {
+    // 親レイヤーの場合、permanentレイヤーは名前変更不可
+    if (!isChildLayer && layer.permanent) {
         alert('このレイヤーの名前は変更できません');
         return;
     }
 
+    // 親レイヤーで四角形レイヤーの場合は名前変更不可
+    if (!isChildLayer && layer.type === 'rectangle') {
+        alert('このレイヤーの名前は変更できません');
+        return;
+    }
+
+    // 子レイヤーの場合は名前変更可能
     const newName = prompt('新しいレイヤー名を入力してください:', layer.name);
     if (newName && newName.trim() !== '') {
         layer.name = newName.trim();

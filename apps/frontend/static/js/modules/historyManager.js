@@ -43,7 +43,7 @@ export function saveToHistory() {
 
 /**
  * 現在の状態をキャプチャする
- * レイヤーの画像データ、ストローク、プロパティを保存します
+ * レイヤーの画像データ、ストローク、プロパティ、四角形の状態を保存します
  *
  * @returns {Object} キャプチャされた状態オブジェクト
  *
@@ -61,15 +61,27 @@ export function captureState() {
             opacity: layer.opacity,
             imageData: layer.type === 'drawing' ? layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height) : null,
             // ストロークデータも保存（ディープコピー）
-            strokes: layer.type === 'drawing' && layer.strokes ? JSON.parse(JSON.stringify(layer.strokes)) : null
-        }))
+            strokes: layer.type === 'drawing' && layer.strokes ? JSON.parse(JSON.stringify(layer.strokes)) : null,
+            // 子レイヤーの情報も保存
+            children: layer.children ? layer.children.map(child => ({
+                id: child.id,
+                name: child.name,
+                type: child.type,
+                visible: child.visible,
+                rectangleId: child.rectangleId
+            })) : []
+        })),
+        // 四角形の状態を保存
+        rectangles: mapState.rectangleToolState && mapState.rectangleToolState.rectangles
+            ? JSON.parse(JSON.stringify(mapState.rectangleToolState.rectangles))
+            : []
     };
     return state;
 }
 
 /**
  * 状態を復元する
- * 保存された状態からレイヤーの内容を復元します
+ * 保存された状態からレイヤーの内容と四角形を復元します
  *
  * @param {Object} state - 復元する状態オブジェクト
  * @returns {void}
@@ -82,6 +94,7 @@ export function restoreState(state) {
     state.layers.forEach(savedLayer => {
         const layer = mapState.layerStack.find(l => l.id === savedLayer.id);
         if (layer) {
+            layer.name = savedLayer.name;
             layer.visible = savedLayer.visible;
             layer.opacity = savedLayer.opacity;
             layer.canvas.style.display = savedLayer.visible ? 'block' : 'none';
@@ -97,8 +110,36 @@ export function restoreState(state) {
                     layer.ctx.putImageData(savedLayer.imageData, 0, 0);
                 }
             }
+
+            // 子レイヤーを復元
+            if (savedLayer.children && savedLayer.children.length > 0) {
+                // 既存の子レイヤーをすべて削除
+                if (layer.children) {
+                    layer.children.forEach(child => {
+                        if (child.canvas && child.canvas.parentNode) {
+                            child.canvas.parentNode.removeChild(child.canvas);
+                        }
+                    });
+                }
+                layer.children = [];
+
+                // 保存された子レイヤーを復元
+                savedLayer.children.forEach(savedChild => {
+                    if (window.addRectangleChildLayer && typeof window.addRectangleChildLayer === 'function') {
+                        const childLayer = window.addRectangleChildLayer(savedChild.rectangleId, savedChild.name);
+                        if (childLayer) {
+                            childLayer.visible = savedChild.visible;
+                        }
+                    }
+                });
+            }
         }
     });
+
+    // 四角形を復元
+    if (state.rectangles && mapState.rectangleToolState) {
+        mapState.rectangleToolState.rectangles = JSON.parse(JSON.stringify(state.rectangles));
+    }
 
     // レイヤーパネルを更新（外部関数を期待）
     if (typeof window.updateLayersPanel === 'function') {
@@ -108,6 +149,14 @@ export function restoreState(state) {
     // すべてのレイヤーを再描画（外部関数を期待）
     if (typeof window.redrawAllLayers === 'function') {
         window.redrawAllLayers();
+    }
+
+    // 四角形レイヤーを再描画
+    if (mapState.rectangleToolState && typeof window.getRectangleLayer === 'function' && typeof window.redrawRectangleLayer === 'function') {
+        const rectangleLayer = window.getRectangleLayer();
+        if (rectangleLayer) {
+            window.redrawRectangleLayer(rectangleLayer);
+        }
     }
 }
 

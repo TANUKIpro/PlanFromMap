@@ -100,12 +100,13 @@ export function toggleRectangleTool(enabled) {
  * @param {number} [height] - 高さ（画像ピクセル）、省略時はデフォルト値
  * @param {number} [rotation=0] - 回転角度（度）
  * @param {string} [color] - 四角形の色、省略時は現在の描画色
+ * @param {boolean} [skipHistory=false] - 履歴保存をスキップする場合はtrue
  * @returns {Object} 作成された四角形オブジェクト
  *
  * @example
  * const rect = createRectangle(500, 300);
  */
-export function createRectangle(x, y, width, height, rotation = 0, color = null) {
+export function createRectangle(x, y, width, height, rotation = 0, color = null, skipHistory = false) {
     const id = 'rect-' + mapState.rectangleToolState.nextRectangleId;
     mapState.rectangleToolState.nextRectangleId++;
 

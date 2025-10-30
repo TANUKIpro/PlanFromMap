@@ -175,7 +175,7 @@ export const OVERLAY_DEFAULTS = {
  */
 export const HISTORY_DEFAULTS = {
     /** 最大履歴数 */
-    MAX_HISTORY: 50
+    MAX_HISTORY: 20
 };
 
 // ================
