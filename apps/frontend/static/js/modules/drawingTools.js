@@ -180,8 +180,8 @@ export function toggleRectangleToolMode() {
             }
         }
 
-        // 鉛筆ツールを選択（四角形の辺を編集できるようにする）
-        selectTool('pencil');
+        // パンツールを選択（四角形の移動・回転ができるようにする）
+        selectTool('pan');
     }
 }
 

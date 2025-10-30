@@ -569,7 +569,70 @@ export function snapRotationAngle(angle) {
 }
 
 /**
- * 辺の長さを入力するプロンプトを表示
+ * 画像ピクセル座標をキャンバス座標に変換
+ *
+ * @param {number} imagePixelX - 画像ピクセルX座標
+ * @param {number} imagePixelY - 画像ピクセルY座標
+ * @returns {{x: number, y: number}} キャンバス座標
+ */
+function imagePixelToCanvas(imagePixelX, imagePixelY) {
+    if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
+
+    const container = document.getElementById('mapContainer');
+    const scaledWidth = mapState.image.width * mapState.scale;
+    const scaledHeight = mapState.image.height * mapState.scale;
+
+    const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
+    const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
+
+    const drawX = baseX + mapState.offsetX;
+    const drawY = baseY + mapState.offsetY;
+
+    const canvasX = imagePixelX * mapState.scale + drawX;
+    const canvasY = imagePixelY * mapState.scale + drawY;
+
+    return {x: canvasX, y: canvasY};
+}
+
+/**
+ * 辺の中心位置を計算（キャンバス座標）
+ *
+ * @param {Object} rectangle - 四角形オブジェクト
+ * @param {string} edge - 辺の種類（'top', 'right', 'bottom', 'left'）
+ * @returns {{x: number, y: number}} 辺の中心位置（キャンバス座標）
+ */
+function getEdgeMidpoint(rectangle, edge) {
+    const rad = (rectangle.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    let localX = 0;
+    let localY = 0;
+
+    if (edge === 'top') {
+        localX = 0;
+        localY = -rectangle.height / 2;
+    } else if (edge === 'right') {
+        localX = rectangle.width / 2;
+        localY = 0;
+    } else if (edge === 'bottom') {
+        localX = 0;
+        localY = rectangle.height / 2;
+    } else if (edge === 'left') {
+        localX = -rectangle.width / 2;
+        localY = 0;
+    }
+
+    // ローカル座標をグローバル座標に変換
+    const globalX = rectangle.x + localX * cos - localY * sin;
+    const globalY = rectangle.y + localX * sin + localY * cos;
+
+    // 画像ピクセル座標をキャンバス座標に変換
+    return imagePixelToCanvas(globalX, globalY);
+}
+
+/**
+ * 辺の長さを入力するUIを表示（Fusion360風）
  *
  * @param {Object} rectangle - 四角形オブジェクト
  * @param {string} edge - 辺の種類（'top', 'right', 'bottom', 'left'）
@@ -589,52 +652,121 @@ function promptEdgeLength(rectangle, edge) {
 
     const currentLengthInCm = currentLengthInPixels * resolution * 100;
 
-    // ユーザーに新しい長さを入力してもらう
-    const newLengthStr = prompt(`辺の長さ (cm) を入力してください:`, currentLengthInCm.toFixed(1));
+    // 辺の中心位置を計算
+    const edgeMidpoint = getEdgeMidpoint(rectangle, edge);
 
-    if (newLengthStr === null || newLengthStr === '') {
-        // キャンセルまたは空入力の場合は何もしない
+    // UIを表示
+    showEdgeLengthInputUI(edgeMidpoint.x, edgeMidpoint.y, currentLengthInCm, (newLengthInCm) => {
+        // 確定時のコールバック
+        if (newLengthInCm === null) {
+            // キャンセル
+            mapState.rectangleToolState.editMode = null;
+            mapState.rectangleToolState.measureEdge = null;
+            return;
+        }
+
+        // 最小サイズチェック
+        if (newLengthInCm < RECTANGLE_DEFAULTS.MIN_SIZE_CM) {
+            alert(`辺の長さは${RECTANGLE_DEFAULTS.MIN_SIZE_CM}cm以上にしてください`);
+            mapState.rectangleToolState.editMode = null;
+            mapState.rectangleToolState.measureEdge = null;
+            return;
+        }
+
+        // cm → ピクセルに変換
+        const newLengthInPixels = (newLengthInCm / 100) / resolution;
+
+        // 四角形を更新
+        if (edge === 'top' || edge === 'bottom') {
+            updateRectangle(rectangle.id, {
+                width: newLengthInPixels
+            });
+        } else {
+            updateRectangle(rectangle.id, {
+                height: newLengthInPixels
+            });
+        }
+
+        // レイヤーを再描画
+        const rectangleLayer = getRectangleLayer();
+        if (rectangleLayer && window.redrawRectangleLayer) {
+            window.redrawRectangleLayer(rectangleLayer);
+        }
+
         mapState.rectangleToolState.editMode = null;
         mapState.rectangleToolState.measureEdge = null;
+    });
+}
+
+/**
+ * 辺の長さ入力UIを表示
+ *
+ * @param {number} x - 表示位置X（キャンバス座標）
+ * @param {number} y - 表示位置Y（キャンバス座標）
+ * @param {number} currentValue - 現在の値（cm）
+ * @param {Function} callback - 確定時のコールバック関数
+ * @returns {void}
+ */
+function showEdgeLengthInputUI(x, y, currentValue, callback) {
+    const ui = document.getElementById('edgeLengthInputUI');
+    const input = document.getElementById('edgeLengthInput');
+    const confirmBtn = document.getElementById('edgeLengthConfirm');
+    const cancelBtn = document.getElementById('edgeLengthCancel');
+
+    if (!ui || !input || !confirmBtn || !cancelBtn) {
+        console.error('Edge length input UI elements not found');
         return;
     }
 
-    const newLengthInCm = parseFloat(newLengthStr);
-    if (isNaN(newLengthInCm) || newLengthInCm <= 0) {
-        alert('無効な長さです');
-        mapState.rectangleToolState.editMode = null;
-        mapState.rectangleToolState.measureEdge = null;
-        return;
-    }
+    // UIの位置を設定（辺の中心より少し下にオフセット）
+    ui.style.left = `${x}px`;
+    ui.style.top = `${y + 30}px`;
+    ui.style.display = 'block';
 
-    // 最小サイズチェック
-    if (newLengthInCm < RECTANGLE_DEFAULTS.MIN_SIZE_CM) {
-        alert(`辺の長さは${RECTANGLE_DEFAULTS.MIN_SIZE_CM}cm以上にしてください`);
-        mapState.rectangleToolState.editMode = null;
-        mapState.rectangleToolState.measureEdge = null;
-        return;
-    }
+    // 入力フィールドに現在の値を設定
+    input.value = currentValue.toFixed(1);
+    input.focus();
+    input.select();
 
-    // cm → ピクセルに変換
-    const newLengthInPixels = (newLengthInCm / 100) / resolution;
+    // 既存のイベントリスナーを削除
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
-    // 四角形を更新
-    if (edge === 'top' || edge === 'bottom') {
-        updateRectangle(rectangle.id, {
-            width: newLengthInPixels
-        });
-    } else {
-        updateRectangle(rectangle.id, {
-            height: newLengthInPixels
-        });
-    }
+    // 確定処理
+    const confirm = () => {
+        const newValue = parseFloat(input.value);
+        ui.style.display = 'none';
 
-    // レイヤーを再描画
-    const rectangleLayer = getRectangleLayer();
-    if (rectangleLayer && window.redrawRectangleLayer) {
-        window.redrawRectangleLayer(rectangleLayer);
-    }
+        if (isNaN(newValue) || newValue <= 0) {
+            alert('無効な長さです');
+            callback(null);
+            return;
+        }
 
-    mapState.rectangleToolState.editMode = null;
-    mapState.rectangleToolState.measureEdge = null;
+        callback(newValue);
+    };
+
+    // キャンセル処理
+    const cancel = () => {
+        ui.style.display = 'none';
+        callback(null);
+    };
+
+    // イベントリスナーを追加
+    newConfirmBtn.addEventListener('click', confirm);
+    newCancelBtn.addEventListener('click', cancel);
+
+    // Enterキーで確定、Escapeキーでキャンセル
+    const keyHandler = (e) => {
+        if (e.key === 'Enter') {
+            confirm();
+            input.removeEventListener('keydown', keyHandler);
+        } else if (e.key === 'Escape') {
+            cancel();
+            input.removeEventListener('keydown', keyHandler);
+        }
+    };
+    input.addEventListener('keydown', keyHandler);
 }

@@ -160,6 +160,17 @@
                             </div>
                         </div>
 
+                        <!-- 四角形測量入力UI -->
+                        <div class="edge-length-input-ui" id="edgeLengthInputUI" style="display: none;">
+                            <div class="edge-length-input-container">
+                                <input type="number" id="edgeLengthInput" class="edge-length-input" step="0.1" min="0.1" placeholder="長さ (cm)">
+                                <div class="edge-length-input-buttons">
+                                    <button id="edgeLengthConfirm" class="edge-length-button confirm">✓</button>
+                                    <button id="edgeLengthCancel" class="edge-length-button cancel">✕</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="metadata-overlay-panel minimized" id="metadataOverlay" aria-hidden="true">
                             <div class="metadata-overlay-header" onclick="toggleMetadataMinimize()" data-tooltip="マップメタデータ">
                                 <span class="metadata-overlay-icon">M</span>
