@@ -32,7 +32,9 @@ import {
     toggleDrawingToolsExpand,
     toggleDrawingToolsVisibility,
     toggleLayersPanelExpand,
-    toggleLayersPanelVisibility
+    toggleLayersPanelVisibility,
+    quickSave,
+    saveAs
 } from './ui/controls.js';
 import { setupEventListeners } from './ui/events.js';
 import {
@@ -155,6 +157,8 @@ window.saveCurrentProfile = saveCurrentProfile;
 window.loadSelectedProfile = loadSelectedProfile;
 window.deleteSelectedProfile = deleteSelectedProfile;
 window.exportSelectedProfile = exportSelectedProfile;
+window.quickSave = quickSave;
+window.saveAs = saveAs;
 
 // ツール・パネルの展開/折りたたみ
 window.toggleDrawingToolsExpand = toggleDrawingToolsExpand;

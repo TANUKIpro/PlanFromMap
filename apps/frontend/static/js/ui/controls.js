@@ -26,7 +26,10 @@ import {
     deleteProfile,
     listProfiles,
     getProfileInfo,
-    exportProfileToFile
+    exportProfileToFile,
+    getCurrentProfile,
+    saveCurrentProfile as saveCurrentProfileInternal,
+    saveProfileAs
 } from '../modules/profileManager.js';
 import { showSuccess, showError, showInfo, showWarning } from './toast.js';
 
@@ -280,6 +283,34 @@ export async function loadSelectedProfile(profileName, options = {}) {
             window.initializeLayers();
         }
 
+        // 四角形ツールのUI状態を確実にオフにする
+        const rectangleToolButton = document.getElementById('rectangleTool');
+        if (rectangleToolButton) {
+            rectangleToolButton.style.backgroundColor = '';
+            rectangleToolButton.style.opacity = '';
+        }
+
+        // 四角形データが存在する場合、四角形レイヤーを表示（ツール自体はオフ）
+        if (mapState.rectangleToolState && mapState.rectangleToolState.rectangles && mapState.rectangleToolState.rectangles.length > 0) {
+            // 四角形レイヤーを取得
+            const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+            if (rectangleLayer) {
+                // レイヤーを表示
+                rectangleLayer.visible = true;
+                rectangleLayer.canvas.style.display = 'block';
+
+                // 四角形レイヤーを再描画
+                if (window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
+
+                // レイヤーパネルを更新
+                if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+                    window.updateLayersPanel();
+                }
+            }
+        }
+
         // すべてのレイヤーを再描画
         if (window.redrawAllLayers && typeof window.redrawAllLayers === 'function') {
             window.redrawAllLayers();
@@ -412,4 +443,56 @@ export function toggleLayersPanelVisibility() {
             toggleButton.setAttribute('title', 'レイヤーを非表示');
         }
     }
+}
+
+/**
+ * 現在のプロファイルに上書き保存する
+ * @export
+ */
+export function quickSave() {
+    const currentProfile = getCurrentProfile();
+
+    if (!currentProfile) {
+        showWarning('プロファイルが選択されていません。「名前を付けて保存」を使用してください。', 2000);
+        return false;
+    }
+
+    const success = saveCurrentProfileInternal();
+
+    if (success) {
+        showSuccess(`プロファイル「${currentProfile}」を保存しました`, 1500);
+    } else {
+        showError('プロファイルの保存に失敗しました', 2000);
+    }
+
+    return success;
+}
+
+/**
+ * 名前を付けてプロファイルを保存する
+ * @export
+ */
+export function saveAs() {
+    const currentProfile = getCurrentProfile();
+    const defaultName = currentProfile ? `${currentProfile}_コピー` : '新しいプロファイル';
+
+    const newName = prompt('プロファイル名を入力してください:', defaultName);
+
+    if (!newName || newName.trim() === '') {
+        return false;
+    }
+
+    const success = saveProfileAs(newName.trim());
+
+    if (success) {
+        showSuccess(`プロファイル「${newName.trim()}」を保存しました`, 1500);
+        // プロファイル管理モーダルが開いている場合はリストを更新
+        if (document.getElementById('profileManagerModal').style.display !== 'none') {
+            updateProfileList();
+        }
+    } else {
+        showError('プロファイルの保存に失敗しました', 2000);
+    }
+
+    return success;
 }

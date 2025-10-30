@@ -38,6 +38,16 @@ const LAST_PROFILE_KEY = 'map_last_profile';
 /** プロファイルの最大サイズ（バイト） */
 const MAX_PROFILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+/** 現在のプロファイルのキー */
+const CURRENT_PROFILE_KEY = 'map_current_profile';
+
+// ================
+// 状態管理
+// ================
+
+/** 現在参照しているプロファイル名 */
+let currentProfileName = null;
+
 // ================
 // ユーティリティ関数
 // ================
@@ -179,6 +189,11 @@ export function saveProfile(profileName) {
             drawingState: {
                 color: mapState.drawingState.color,
                 brushSize: mapState.drawingState.brushSize
+            },
+            rectangleToolState: {
+                enabled: mapState.rectangleToolState.enabled,
+                rectangles: mapState.rectangleToolState.rectangles,
+                nextRectangleId: mapState.rectangleToolState.nextRectangleId
             }
         };
 
@@ -203,6 +218,10 @@ export function saveProfile(profileName) {
 
         // 最後に使用したプロファイルとして設定
         setLastProfile(trimmedName);
+
+        // 現在のプロファイルとして設定
+        currentProfileName = trimmedName;
+        localStorage.setItem(CURRENT_PROFILE_KEY, trimmedName);
 
         console.log('saveProfile: プロファイル保存成功', trimmedName);
         return true;
@@ -277,12 +296,27 @@ export async function loadProfile(profileName) {
             mapState.drawingState.brushSize = profile.drawingState.brushSize || 5;
         }
 
+        // 四角形ツール設定を復元
+        if (profile.rectangleToolState) {
+            // 四角形データは復元するが、ツール自体は常にオフにする
+            mapState.rectangleToolState.enabled = false;
+            mapState.rectangleToolState.rectangles = profile.rectangleToolState.rectangles || [];
+            mapState.rectangleToolState.nextRectangleId = profile.rectangleToolState.nextRectangleId || 1;
+            // 選択状態はクリア
+            mapState.rectangleToolState.selectedRectangleId = null;
+            mapState.rectangleToolState.rectangles.forEach(r => r.selected = false);
+        }
+
         // レイヤースタックを復元（別途処理が必要）
         // この関数は状態のみを復元し、実際のレイヤー再構築は呼び出し側で行う
         mapState._profileLayerStack = profile.layerStack || [];
 
         // 最後に使用したプロファイルとして設定
         setLastProfile(profileName.trim());
+
+        // 現在のプロファイルとして設定
+        currentProfileName = profileName.trim();
+        localStorage.setItem(CURRENT_PROFILE_KEY, profileName.trim());
 
         console.log('loadProfile: プロファイル読み込み成功', profileName);
         return true;
@@ -513,4 +547,55 @@ export function getProfileInfo(profileName) {
         console.error('getProfileInfo: エラー', error);
         return null;
     }
+}
+
+/**
+ * 現在参照しているプロファイル名を取得する
+ *
+ * @export
+ * @returns {string|null} 現在のプロファイル名、なければnull
+ *
+ * @example
+ * const currentProfile = getCurrentProfile();
+ */
+export function getCurrentProfile() {
+    // メモリ上にない場合はLocalStorageから復元
+    if (!currentProfileName) {
+        currentProfileName = localStorage.getItem(CURRENT_PROFILE_KEY);
+    }
+    return currentProfileName;
+}
+
+/**
+ * 現在参照しているプロファイルに上書き保存する
+ *
+ * @export
+ * @returns {boolean} 保存に成功したかどうか
+ *
+ * @example
+ * saveCurrentProfile();
+ */
+export function saveCurrentProfile() {
+    const current = getCurrentProfile();
+
+    if (!current) {
+        console.warn('saveCurrentProfile: 現在のプロファイルが設定されていません');
+        return false;
+    }
+
+    return saveProfile(current);
+}
+
+/**
+ * 名前を付けてプロファイルを保存する
+ *
+ * @export
+ * @param {string} newProfileName - 新しいプロファイル名
+ * @returns {boolean} 保存に成功したかどうか
+ *
+ * @example
+ * saveProfileAs('新しいマップ');
+ */
+export function saveProfileAs(newProfileName) {
+    return saveProfile(newProfileName);
 }

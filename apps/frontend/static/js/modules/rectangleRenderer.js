@@ -91,7 +91,7 @@ export function drawRectangle(ctx, rectangle) {
     ctx.rotate((rectangle.rotation * Math.PI) / 180);
 
     // 四角形の色を設定
-    const color = rectangle.selected ? RECTANGLE_DEFAULTS.SELECTED_COLOR : RECTANGLE_DEFAULTS.STROKE_COLOR;
+    const color = rectangle.selected ? RECTANGLE_DEFAULTS.SELECTED_COLOR : (rectangle.color || RECTANGLE_DEFAULTS.STROKE_COLOR);
     ctx.strokeStyle = color;
     ctx.lineWidth = RECTANGLE_DEFAULTS.STROKE_WIDTH;
 
