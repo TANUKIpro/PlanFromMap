@@ -240,6 +240,59 @@ export function changeBrushSize(size) {
 }
 
 /**
+ * カラーモードを切り替え（パレット/RGB）
+ * @export
+ * @param {string} mode - モード ('palette' または 'rgb')
+ */
+export function switchColorMode(mode) {
+    const paletteMode = document.getElementById('paletteMode');
+    const rgbMode = document.getElementById('rgbMode');
+    const colorPalette = document.getElementById('colorPalette');
+    const colorRGB = document.getElementById('colorRGB');
+
+    if (mode === 'palette') {
+        // パレットモードに切り替え
+        paletteMode.classList.add('active');
+        rgbMode.classList.remove('active');
+        colorPalette.classList.remove('hidden');
+        colorRGB.classList.add('hidden');
+    } else if (mode === 'rgb') {
+        // RGBモードに切り替え
+        paletteMode.classList.remove('active');
+        rgbMode.classList.add('active');
+        colorPalette.classList.add('hidden');
+        colorRGB.classList.remove('hidden');
+    }
+}
+
+/**
+ * パレットから色を選択
+ * @export
+ * @param {string} color - HEX色コード
+ */
+export function selectPaletteColor(color) {
+    // 描画色を変更
+    mapState.drawingState.color = color;
+
+    // すべてのパレット色のactiveクラスを削除
+    document.querySelectorAll('.palette-color').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // 選択された色にactiveクラスを追加
+    const selectedColor = document.querySelector(`.palette-color[data-color="${color}"]`);
+    if (selectedColor) {
+        selectedColor.classList.add('active');
+    }
+
+    // RGBピッカーの色も同期
+    const colorPicker = document.getElementById('colorPicker');
+    if (colorPicker) {
+        colorPicker.value = color;
+    }
+}
+
+/**
  * UIコントロール要素かどうかをチェック
  * @export
  * @param {HTMLElement} element - チェックする要素

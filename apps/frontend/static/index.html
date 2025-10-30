@@ -136,9 +136,30 @@
                                     ▭
                                 </button>
                                 <div class="tool-divider"></div>
-                                <div class="color-picker-wrapper">
-                                    <div class="color-picker-label">色</div>
-                                    <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                                <div class="color-picker-container">
+                                    <div class="color-picker-header">
+                                        <button class="color-mode-button active" id="paletteMode" onclick="switchColorMode('palette')">パレット</button>
+                                        <button class="color-mode-button" id="rgbMode" onclick="switchColorMode('rgb')">RGB</button>
+                                    </div>
+                                    <div class="color-picker-content">
+                                        <!-- パレットモード -->
+                                        <div class="color-palette" id="colorPalette">
+                                            <button class="palette-color active" data-color="#FF0000" style="background-color: #FF0000;" onclick="selectPaletteColor('#FF0000')" title="赤"></button>
+                                            <button class="palette-color" data-color="#00FF00" style="background-color: #00FF00;" onclick="selectPaletteColor('#00FF00')" title="緑"></button>
+                                            <button class="palette-color" data-color="#0000FF" style="background-color: #0000FF;" onclick="selectPaletteColor('#0000FF')" title="青"></button>
+                                            <button class="palette-color" data-color="#FFFF00" style="background-color: #FFFF00;" onclick="selectPaletteColor('#FFFF00')" title="黄"></button>
+                                            <button class="palette-color" data-color="#FF00FF" style="background-color: #FF00FF;" onclick="selectPaletteColor('#FF00FF')" title="マゼンタ"></button>
+                                            <button class="palette-color" data-color="#00FFFF" style="background-color: #00FFFF;" onclick="selectPaletteColor('#00FFFF')" title="シアン"></button>
+                                            <button class="palette-color" data-color="#FFA500" style="background-color: #FFA500;" onclick="selectPaletteColor('#FFA500')" title="オレンジ"></button>
+                                            <button class="palette-color" data-color="#800080" style="background-color: #800080;" onclick="selectPaletteColor('#800080')" title="紫"></button>
+                                            <button class="palette-color" data-color="#000000" style="background-color: #000000;" onclick="selectPaletteColor('#000000')" title="黒"></button>
+                                            <button class="palette-color" data-color="#FFFFFF" style="background-color: #FFFFFF;" onclick="selectPaletteColor('#FFFFFF')" title="白"></button>
+                                        </div>
+                                        <!-- RGBモード -->
+                                        <div class="color-rgb hidden" id="colorRGB">
+                                            <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="brush-size-control">
                                     <div class="brush-size-label">サイズ: <span id="brushSizeValue">5</span></div>

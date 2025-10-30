@@ -8,14 +8,14 @@
    ======================================== */
 .drawing-tools-palette {
     position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 0 12px 12px 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     z-index: 10;
     overflow: visible;
     transition: transform 0.3s ease;
@@ -23,24 +23,25 @@
 
 /* 隠れた状態 */
 .drawing-tools-palette.hidden {
-    transform: translateX(-50%) translateY(-100%);
+    transform: translateY(-50%) translateX(-100%);
 }
 
 /* トグルボタン */
 .drawing-tools-toggle {
     position: absolute;
-    bottom: -32px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    right: -32px;
+    transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.95);
     border: none;
-    border-radius: 0 0 8px 8px;
-    padding: 4px 16px;
+    border-radius: 0 8px 8px 0;
+    padding: 16px 4px;
     cursor: pointer;
     font-size: 1.2em;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     transition: background 0.2s ease;
     z-index: 11;
+    writing-mode: vertical-rl;
 }
 
 .drawing-tools-toggle:hover {
@@ -51,10 +52,12 @@
 .drawing-tools-body {
     padding: 12px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
 }
 
 /* ========================================
@@ -93,8 +96,8 @@
 }
 
 .tool-divider {
-    width: 1px;
-    height: 40px;
+    width: 40px;
+    height: 1px;
     background: #e0e0e0;
     margin: 0;
 }
@@ -102,6 +105,95 @@
 /* ========================================
    カラーピッカー
    ======================================== */
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.color-picker-header {
+    display: flex;
+    gap: 4px;
+}
+
+.color-mode-button {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-mode-button:hover {
+    background: #f5f5f5;
+}
+
+.color-mode-button.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.color-picker-content {
+    position: relative;
+}
+
+/* パレットモード */
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.palette-color {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.palette-color:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.palette-color.active {
+    border-color: #667eea;
+    border-width: 3px;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+}
+
+/* RGBモード */
+.color-rgb {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+}
+
+.color-rgb.hidden {
+    display: none;
+}
+
+.color-picker-input {
+    width: 60px;
+    height: 40px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px;
+}
+
+/* 旧スタイル（後方互換性のため残す） */
 .color-picker-wrapper {
     display: flex;
     flex-direction: row;
@@ -116,15 +208,6 @@
     font-size: 0.85em;
     color: #666;
     white-space: nowrap;
-}
-
-.color-picker-input {
-    width: 40px;
-    height: 32px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    cursor: pointer;
-    padding: 2px;
 }
 
 /* ========================================
