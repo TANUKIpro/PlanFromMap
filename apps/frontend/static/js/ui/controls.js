@@ -299,6 +299,40 @@ export async function loadSelectedProfile(profileName, options = {}) {
                 rectangleLayer.visible = true;
                 rectangleLayer.canvas.style.display = 'block';
 
+                // プロファイルに保存されている子レイヤー情報を復元
+                if (mapState._profileLayerStack) {
+                    const savedRectangleLayer = mapState._profileLayerStack.find(l => l.type === 'rectangle');
+                    if (savedRectangleLayer && savedRectangleLayer.children) {
+                        // 既存の子レイヤーをクリア
+                        rectangleLayer.children = [];
+
+                        // 保存されていた子レイヤーを復元
+                        savedRectangleLayer.children.forEach(savedChild => {
+                            if (window.addRectangleChildLayer && typeof window.addRectangleChildLayer === 'function') {
+                                const childLayer = window.addRectangleChildLayer(savedChild.rectangleId, savedChild.name);
+                                if (childLayer) {
+                                    // 他の属性も復元
+                                    childLayer.visible = savedChild.visible;
+                                    childLayer.opacity = savedChild.opacity;
+                                }
+                            }
+                        });
+
+                        // 折りたたみ状態も復元
+                        if (savedRectangleLayer.collapsed !== undefined) {
+                            rectangleLayer.collapsed = savedRectangleLayer.collapsed;
+                        }
+                    } else {
+                        // プロファイルに子レイヤー情報がない場合（古いプロファイル）、
+                        // 各四角形に対して子レイヤーを作成
+                        mapState.rectangleToolState.rectangles.forEach(rect => {
+                            if (window.addRectangleChildLayer && typeof window.addRectangleChildLayer === 'function') {
+                                window.addRectangleChildLayer(rect.id);
+                            }
+                        });
+                    }
+                }
+
                 // 四角形レイヤーを再描画
                 if (window.redrawRectangleLayer && typeof window.redrawRectangleLayer === 'function') {
                     window.redrawRectangleLayer(rectangleLayer);

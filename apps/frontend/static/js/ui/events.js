@@ -42,6 +42,15 @@ export function setupEventListeners() {
         }, { passive: false });
     }
 
+    // レイヤーパネルのスクロールがマップに影響しないようにする
+    const layersPanelBody = document.getElementById('layersPanelBody');
+    if (layersPanelBody) {
+        layersPanelBody.addEventListener('wheel', function(e) {
+            // レイヤーパネル内でスクロール中の場合、イベントの伝播を止める
+            e.stopPropagation();
+        }, { passive: false });
+    }
+
     // クエリ入力のEnterキー処理
     const queryInput = document.getElementById('queryInput');
     if (queryInput) {

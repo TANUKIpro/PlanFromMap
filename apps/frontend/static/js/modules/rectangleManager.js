@@ -125,6 +125,16 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null)
 
     mapState.rectangleToolState.rectangles.push(rectangle);
 
+    // 対応する子レイヤーを作成
+    if (window.addRectangleChildLayer && typeof window.addRectangleChildLayer === 'function') {
+        window.addRectangleChildLayer(id);
+    }
+
+    // レイヤーパネルを更新
+    if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+        window.updateLayersPanel();
+    }
+
     return rectangle;
 }
 
@@ -146,6 +156,16 @@ export function deleteRectangle(rectangleId) {
     // 選択中の四角形が削除された場合は選択を解除
     if (mapState.rectangleToolState.selectedRectangleId === rectangleId) {
         mapState.rectangleToolState.selectedRectangleId = null;
+    }
+
+    // 対応する子レイヤーを削除
+    if (window.deleteRectangleChildLayer && typeof window.deleteRectangleChildLayer === 'function') {
+        window.deleteRectangleChildLayer(rectangleId);
+    }
+
+    // レイヤーパネルを更新
+    if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+        window.updateLayersPanel();
     }
 
     return true;

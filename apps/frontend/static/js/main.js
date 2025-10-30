@@ -51,7 +51,10 @@ import {
     addNewLayer,
     initializeLayers,
     updateLayersPanel,
-    redrawAllLayers
+    redrawAllLayers,
+    addRectangleChildLayer,
+    deleteRectangleChildLayer,
+    toggleRectangleLayerCollapse
 } from './modules/layerManager.js';
 
 // ファイル読み込み
@@ -180,6 +183,9 @@ window.addNewLayer = addNewLayer;
 window.initializeLayers = initializeLayers;
 window.updateLayersPanel = updateLayersPanel;
 window.redrawAllLayers = redrawAllLayers;
+window.addRectangleChildLayer = addRectangleChildLayer;
+window.deleteRectangleChildLayer = deleteRectangleChildLayer;
+window.toggleRectangleLayerCollapse = toggleRectangleLayerCollapse;
 
 // 描画ツール
 window.selectTool = selectTool;
