@@ -283,7 +283,14 @@ export async function loadSelectedProfile(profileName, options = {}) {
             window.initializeLayers();
         }
 
-        // 四角形データが存在する場合、四角形レイヤーを表示
+        // 四角形ツールのUI状態を確実にオフにする
+        const rectangleToolButton = document.getElementById('rectangleTool');
+        if (rectangleToolButton) {
+            rectangleToolButton.style.backgroundColor = '';
+            rectangleToolButton.style.opacity = '';
+        }
+
+        // 四角形データが存在する場合、四角形レイヤーを表示（ツール自体はオフ）
         if (mapState.rectangleToolState && mapState.rectangleToolState.rectangles && mapState.rectangleToolState.rectangles.length > 0) {
             // 四角形レイヤーを取得
             const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');

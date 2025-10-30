@@ -298,7 +298,8 @@ export async function loadProfile(profileName) {
 
         // 四角形ツール設定を復元
         if (profile.rectangleToolState) {
-            mapState.rectangleToolState.enabled = profile.rectangleToolState.enabled || false;
+            // 四角形データは復元するが、ツール自体は常にオフにする
+            mapState.rectangleToolState.enabled = false;
             mapState.rectangleToolState.rectangles = profile.rectangleToolState.rectangles || [];
             mapState.rectangleToolState.nextRectangleId = profile.rectangleToolState.nextRectangleId || 1;
             // 選択状態はクリア
