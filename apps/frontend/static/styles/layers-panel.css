@@ -42,10 +42,19 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: background 0.2s ease;
     z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .layers-panel-toggle:hover {
     background: rgba(255, 255, 255, 1);
+}
+
+.layers-panel-toggle .toggle-arrow-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 /* 折りたたみ状態（廃止） */
@@ -86,16 +95,24 @@
 .layer-add-button {
     background: rgba(255, 255, 255, 0.2);
     border: none;
-    color: white;
-    padding: 4px 12px;
+    padding: 6px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.85em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background 0.2s ease;
 }
 
 .layer-add-button:hover {
     background: rgba(255, 255, 255, 0.3);
+}
+
+.layer-add-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    filter: brightness(0) invert(1);
 }
 
 /* ========================================
@@ -134,23 +151,15 @@
 }
 
 .layer-item:hover {
-    border-color: #667eea;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-}
-
-.layer-item.permanent {
-    border-color: #ffa726;
+    border-color: #cccccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .layer-item.selected {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border-color: #667eea;
-    border-width: 3px;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.layer-item.permanent.selected {
+    background: #f5f5f5;
     border-color: #ff9800;
+    border-width: 2px;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
 }
 
 /* ========================================
@@ -190,10 +199,26 @@
 }
 
 .layer-visibility-toggle {
+    background: none;
+    border: none;
+    padding: 0;
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #667eea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.layer-visibility-toggle:hover {
+    opacity: 0.7;
+}
+
+.visibility-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .layer-name {
@@ -207,11 +232,14 @@
     background: #e74c3c;
     border: none;
     color: white;
-    padding: 4px 8px;
+    padding: 6px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.75em;
     transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .layer-delete-button:hover {
@@ -221,6 +249,13 @@
 .layer-delete-button:disabled {
     background: #ccc;
     cursor: not-allowed;
+}
+
+.delete-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    filter: brightness(0) invert(1);
 }
 
 /* ========================================
@@ -262,14 +297,8 @@
 .global-opacity-control {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.global-opacity-label {
-    font-size: 0.8em;
-    color: #333;
-    font-weight: 500;
-    white-space: nowrap;
+    justify-content: center;
+    gap: 12px;
 }
 
 .global-opacity-slider {
@@ -278,9 +307,9 @@
 }
 
 .global-opacity-value {
-    font-size: 0.8em;
+    font-size: 1.1em;
     color: #667eea;
     font-weight: 600;
-    min-width: 45px;
-    text-align: right;
+    min-width: 50px;
+    text-align: center;
 }

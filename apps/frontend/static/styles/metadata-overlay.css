@@ -90,7 +90,16 @@
 }
 
 .metadata-overlay-panel.minimized .metadata-overlay-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metadata-icon {
+    width: 24px;
+    height: 24px;
     display: block;
+    filter: brightness(0) invert(1);
 }
 
 /* ツールチップ */
