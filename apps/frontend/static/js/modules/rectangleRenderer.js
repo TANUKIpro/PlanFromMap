@@ -61,10 +61,22 @@ export function redrawRectangleLayer(layer) {
     // キャンバスをクリア
     ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
 
-    // すべての四角形を描画
+    // 親レイヤーが非表示の場合は何も描画しない
+    if (!layer.visible) {
+        return;
+    }
+
+    // すべての四角形を描画（子レイヤーの表示状態を考慮）
     const rectangles = getAllRectangles();
     rectangles.forEach(rectangle => {
-        drawRectangle(ctx, rectangle);
+        // 子レイヤーを検索
+        const childLayer = layer.children.find(c => c.rectangleId === rectangle.id);
+
+        // 子レイヤーが存在し、かつ表示状態の場合のみ描画
+        // 親レイヤーが表示されていても、子レイヤーが非表示の場合は描画しない
+        if (childLayer && childLayer.visible) {
+            drawRectangle(ctx, rectangle);
+        }
     });
 }
 

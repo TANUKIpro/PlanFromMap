@@ -333,11 +333,57 @@ export function deleteLayer(layerId) {
  * toggleLayerVisibility('layer-1', true);
  */
 export function toggleLayerVisibility(layerId, visible) {
-    const layer = mapState.layerStack.find(l => l.id === layerId);
+    // 親レイヤースタックから検索
+    let layer = mapState.layerStack.find(l => l.id === layerId);
+    let isChildLayer = false;
+
+    // 親レイヤーに見つからない場合は子レイヤーを検索
+    if (!layer) {
+        for (const parentLayer of mapState.layerStack) {
+            if (parentLayer.children && parentLayer.children.length > 0) {
+                layer = parentLayer.children.find(c => c.id === layerId);
+                if (layer) {
+                    isChildLayer = true;
+                    break;
+                }
+            }
+        }
+    }
+
     if (!layer) return;
 
     layer.visible = visible;
 
+    // 子レイヤー（四角形の子要素）の場合
+    if (isChildLayer && layer.type === 'rectangle-child') {
+        // 対応する四角形レイヤーを再描画（子レイヤーの表示状態を反映）
+        const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+        if (rectangleLayer && rectangleLayer.visible) {
+            // 四角形レイヤーの再描画関数を呼び出す
+            if (typeof window.redrawRectangleLayer === 'function') {
+                window.redrawRectangleLayer(rectangleLayer);
+            }
+        }
+        return;
+    }
+
+    // 親レイヤー（四角形レイヤー本体）の場合
+    if (layer.type === 'rectangle') {
+        if (visible) {
+            layer.canvas.style.display = 'block';
+            // 四角形レイヤーを再描画（親の表示状態を反映）
+            if (typeof window.redrawRectangleLayer === 'function') {
+                window.redrawRectangleLayer(layer);
+            }
+        } else {
+            layer.canvas.style.display = 'none';
+            // キャンバスをクリア
+            layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        }
+        return;
+    }
+
+    // その他のレイヤー（画像、メタデータ、描画レイヤー）
     if (visible) {
         layer.canvas.style.display = 'block';
         // 画像レイヤーとメタデータレイヤーは再描画が必要
