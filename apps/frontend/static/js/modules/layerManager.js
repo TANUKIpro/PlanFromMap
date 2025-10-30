@@ -439,8 +439,18 @@ export function updateLayersPanel() {
     const reversedLayers = [...mapState.layerStack].reverse();
 
     reversedLayers.forEach(layer => {
-        // 親レイヤーを描画
-        renderLayerItem(layer, panelBody, 0);
+        // 四角形の親レイヤーは表示しない（子レイヤーのみ表示）
+        if (layer.type === 'rectangle') {
+            // 子レイヤーのみを描画
+            if (layer.children && layer.children.length > 0) {
+                layer.children.forEach(childLayer => {
+                    renderLayerItem(childLayer, panelBody, 0);
+                });
+            }
+        } else {
+            // その他のレイヤーは通常通り描画
+            renderLayerItem(layer, panelBody, 0);
+        }
     });
 
     // グローバル不透明度バーを初期化
