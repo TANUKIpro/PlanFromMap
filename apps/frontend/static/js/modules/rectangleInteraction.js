@@ -296,11 +296,20 @@ export function handleRectangleMouseDown(canvasX, canvasY, currentTool) {
     if (currentTool === 'eraser') {
         const hitRect = hitTestRectangle(canvasX, canvasY);
         if (hitRect) {
-            deleteRectangle(hitRect.id);
-            // レイヤーを再描画
-            const rectangleLayer = getRectangleLayer();
-            if (rectangleLayer && window.redrawRectangleLayer) {
-                window.redrawRectangleLayer(rectangleLayer);
+            // 削除確認ダイアログを表示
+            if (confirm('この四角形を削除してもよろしいですか？')) {
+                // 削除前に履歴を保存
+                if (typeof window.saveToHistory === 'function') {
+                    window.saveToHistory();
+                }
+
+                deleteRectangle(hitRect.id);
+
+                // レイヤーを再描画
+                const rectangleLayer = getRectangleLayer();
+                if (rectangleLayer && window.redrawRectangleLayer) {
+                    window.redrawRectangleLayer(rectangleLayer);
+                }
             }
             return true;
         }
@@ -551,6 +560,8 @@ export function handleRectangleMouseUp() {
     }
 
     if (mapState.rectangleToolState.isDragging) {
+        let shouldSaveHistory = false;
+
         // 新規作成モード完了
         if (mapState.rectangleToolState.editMode === 'create') {
             const creatingRect = getRectangleById(mapState.rectangleToolState.creatingRectangleId);
@@ -567,6 +578,7 @@ export function handleRectangleMouseUp() {
                 } else {
                     // 新しく作成した四角形を選択
                     selectRectangle(creatingRect.id);
+                    shouldSaveHistory = true;
                 }
 
                 // レイヤーを再描画
@@ -578,6 +590,16 @@ export function handleRectangleMouseUp() {
 
             mapState.rectangleToolState.creatingRectangleId = null;
             mapState.rectangleToolState.createStartPos = null;
+        } else if (mapState.rectangleToolState.editMode === 'move' ||
+                   mapState.rectangleToolState.editMode === 'resize' ||
+                   mapState.rectangleToolState.editMode === 'rotate') {
+            // 移動、リサイズ、回転が完了した場合は履歴を保存
+            shouldSaveHistory = true;
+        }
+
+        // 履歴を保存
+        if (shouldSaveHistory && typeof window.saveToHistory === 'function') {
+            window.saveToHistory();
         }
 
         mapState.rectangleToolState.isDragging = false;
