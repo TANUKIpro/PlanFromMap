@@ -1,38 +1,29 @@
-# 🗺️ Semantic Map Platform for HSR
+# Semantic Map Platform for HSR
 
 RoboCup@Home DSPL向けの意味地図プラットフォーム。HSRが効率的にタスクを実行するための操作カタログと3D意味地図を提供します。
 
-## ✨ 最新情報: モジュール化リファクタリング完了
+## 概要
 
-**2025-10-29更新**: フロントエンドコードを完全にモジュール化し、生成AI向けに最適化しました！
-
-- **トークン削減率**: 89%（32,645 → 3,500トークン）
-- **ファイル数**: 1 → 27ファイル
-- **index.html行数**: 3,238行 → 184行（94.3%削減）
-- **詳細**: [MODULE_INDEX.md](./MODULE_INDEX.md) と [AI_GUIDELINES.md](./AI_GUIDELINES.md) を参照
-
-## 🎯 概要
-
-従来のSLAM地図では提供できない「ドアの開け方」「引き出しの操作方法」「収納内部構造」などの**操作仕様**を事前定義し、ロボットの認識負荷を大幅に削減します。
+従来のSLAM地図では提供できない「ドアの開け方」「引き出しの操作方法」「収納内部構造」などの操作仕様を事前定義し、ロボットの認識負荷を削減します。
 
 ### 主要機能
 
-- 🚪 **操作カタログDB**: ドア・引き出し・家電の完全な操作仕様を管理
-- 🗺️ **3D意味地図**: 2D占有格子から3D空間モデルを自動生成
-- 🔍 **MapQLエンジン**: 自然言語的なクエリで地図情報を取得
-- 🎮 **ビジュアルエディタ**: ブラウザベースの直感的な編集UI
-- 🤖 **ROS統合**: HSRとのシームレスな連携
-- 🤖 **生成AI最適化**: モジュール化により、生成AIのトークン消費を89%削減
+- 操作カタログDB: ドア・引き出し・家電の完全な操作仕様を管理
+- 3D意味地図: 2D占有格子から3D空間モデルを自動生成
+- MapQLエンジン: 自然言語的なクエリで地図情報を取得
+- ビジュアルエディタ: ブラウザベースの直感的な編集UI
+- ROS統合: HSRとのシームレスな連携
+- 生成AI最適化: モジュール化により、生成AIのトークン消費を89%削減
 
-## 📋 要求仕様
+## 要求仕様
 
 - Ubuntu 20.04/22.04
-- Node.js 18+ 
+- Node.js 18+
 - Python 3.8+
 - ROS Noetic/ROS2 Humble (optional)
 - 最新のWebブラウザ (Chrome/Firefox推奨)
 
-## 🚀 クイックスタート
+## クイックスタート
 
 ### Pythonでの起動（推奨・最速）
 
@@ -63,11 +54,9 @@ python server.py
 http://localhost:5173
 ```
 
-✅ これだけで完了！バックエンドAPI(port:3000)とフロントエンド(port:5173)が起動します。
+バックエンドAPI(port:3000)とフロントエンド(port:5173)が起動します。
 
 詳細な手順は [QUICKSTART.md](QUICKSTART.md) を参照してください。
-
----
 
 ### Node.jsでの起動（フル機能版）
 
@@ -112,11 +101,11 @@ npm run seed:maps
 npm run seed:catalog
 ```
 
-## 🏗️ プロジェクト構造
+## プロジェクト構造
 
 ```
 semantic-map-platform/
-├── server.py            # メインサーバー起動スクリプト（Python）
+├── server.py            # メインサーバー起動スクリプト (Python)
 ├── requirements.txt     # Python依存関係
 ├── apps/
 │   ├── backend/         # Flask APIサーバー
@@ -139,27 +128,23 @@ semantic-map-platform/
 └── tests/              # E2Eテスト
 ```
 
-## 📖 ドキュメント
+## ドキュメント
 
 ### 開発者向け
 - [生成AI向けガイドライン](AI_GUIDELINES.md) - 生成AIと協働開発するための完全ガイド
 - [モジュール索引](MODULE_INDEX.md) - 全モジュールの詳細と依存関係
-- [リファクタリング戦略](REFACTORING_STRATEGY.md) - リファクタリングの設計思想
 
 ### システム設計
 - [アーキテクチャ設計](docs/ARCHITECTURE.md)
 - [操作カタログ仕様](docs/OPERATION-CATALOG.md)
-- [MapQL言語仕様](docs/MAPQL.md)
-- [API リファレンス](docs/API.md)
-- [開発者ガイド](docs/DEVELOPMENT.md)
 
-## 🔧 主要コマンド
+## 主要コマンド
 
 ### Python版（シンプル・高速）
 
 | コマンド | 説明 |
 |---------|------|
-| `python server.py` | サーバー起動（バックエンド+フロントエンド） |
+| `python server.py` | サーバー起動 (バックエンド+フロントエンド) |
 | `python apps/backend/server.py` | バックエンドのみ起動 |
 | `python apps/frontend/server.py` | フロントエンドのみ起動 |
 
@@ -174,7 +159,7 @@ semantic-map-platform/
 | `npm run catalog:add` | 操作仕様を対話的に追加 |
 | `npm run map:import` | 占有格子マップのインポート |
 
-## 🤖 HSRとの連携
+## HSRとの連携
 
 ### ROS トピック/サービス
 
@@ -182,7 +167,7 @@ semantic-map-platform/
 # 意味地図の配信
 rostopic echo /semantic_map
 
-# MapQLクエリ実行  
+# MapQLクエリ実行
 rosservice call /mapql_query "query: 'GET Operation FOR kitchen_door'"
 
 # 操作実行状態
@@ -204,13 +189,13 @@ operation = client.query("GET Operation FOR 'kitchen_door'")
 execute_operation(operation.spec)
 ```
 
-## 🧪 テスト
+## テスト
 
 ```bash
 # ユニットテスト
 npm run test:unit
 
-# 統合テスト  
+# 統合テスト
 npm run test:integration
 
 # E2Eテスト
@@ -220,14 +205,6 @@ npm run test:e2e
 npm run test:coverage
 ```
 
-## 🤝 コントリビューション
-
-[CONTRIBUTING.md](docs/CONTRIBUTING.md)を参照してください。
-
-## 📝 ライセンス
+## ライセンス
 
 MIT License - 詳細は[LICENSE](LICENSE)を参照してください。
-
-## 🏆 謝辞
-
-本プロジェクトはRoboCup@Home DSPLチームの支援により開発されています。

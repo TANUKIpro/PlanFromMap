@@ -1,47 +1,28 @@
 # 生成AI向け開発ガイドライン
 
-## 📘 このドキュメントについて
-
-このガイドラインは、生成AI（Claude、ChatGPT、GitHub Copilot等）がこのプロジェクトを効率的に理解・編集できるように設計されています。
-
-### 対象読者
-- **生成AIエージェント**: コード生成・修正を行うAI
-- **人間開発者**: 生成AIと協働する開発者
-
-### 目的
-1. トークン消費の最適化
-2. コード理解速度の向上
-3. 正確な修正・拡張の実現
-
----
-
-## 🎯 プロジェクト概要
+## プロジェクト概要
 
 ### アプリケーション名
-**Semantic Map Platform for HSR**
+Semantic Map Platform for HSR
 
 ### 主要機能
-1. **マップビューア**: 2D/3D地図の表示・編集
-2. **レイヤー管理**: 複数レイヤーの重ね合わせ
-3. **描画ツール**: 手動アノテーション
-4. **メタデータ表示**: YAML形式の地図メタデータ
-5. **操作カタログ**: ロボット操作仕様のDB
-6. **MapQLクエリ**: 地図情報の自然言語的クエリ
+1. マップビューア: 2D/3D地図の表示・編集
+2. レイヤー管理: 複数レイヤーの重ね合わせ
+3. 描画ツール: 手動アノテーション
+4. メタデータ表示: YAML形式の地図メタデータ
+5. 操作カタログ: ロボット操作仕様のDB
+6. MapQLクエリ: 地図情報の自然言語的クエリ
 
 ### 技術スタック
-- **フロントエンド**: Vanilla JavaScript (ES6+), HTML5 Canvas, CSS3
-- **バックエンド**: Python (Flask)
-- **データ形式**: YAML, PGM (Portable Gray Map), JSON
+- フロントエンド: Vanilla JavaScript (ES6+), HTML5 Canvas, CSS3
+- バックエンド: Python (Flask)
+- データ形式: YAML, PGM (Portable Gray Map), JSON
 
----
-
-## 📁 プロジェクト構造
-
-### ディレクトリマップ
+## プロジェクト構造
 
 ```
 apps/frontend/static/
-├── index.html              # メインHTML（軽量、~200行）
+├── index.html              # メインHTML (184行)
 ├── styles/                 # CSSモジュール
 │   ├── base.css           # リセット、基本スタイル
 │   ├── layout.css         # レイアウト
@@ -53,7 +34,7 @@ apps/frontend/static/
 │   ├── menu-bar.css       # メニューバー
 │   └── tabs.css           # タブUI
 └── js/                    # JavaScriptモジュール
-    ├── main.js            # エントリーポイント（起動時の自動プロファイル読み込み）
+    ├── main.js            # エントリーポイント (起動時の自動プロファイル読み込み)
     ├── config.js          # 設定・定数
     ├── state/
     │   └── mapState.js    # グローバル状態管理
@@ -65,7 +46,7 @@ apps/frontend/static/
     │   ├── overlayRenderer.js
     │   ├── viewportControl.js
     │   ├── historyManager.js
-    │   ├── profileManager.js   # プロファイル管理
+    │   ├── profileManager.js
     │   └── apiClient.js
     ├── utils/             # ユーティリティ
     │   ├── coordinates.js
@@ -75,13 +56,11 @@ apps/frontend/static/
     └── ui/                # UI制御
         ├── tabs.js
         ├── controls.js
-        ├── toast.js       # トーストメッセージ（再利用可能な通知システム）
+        ├── toast.js       # トーストメッセージ (再利用可能な通知システム)
         └── events.js
 ```
 
----
-
-## 🧩 モジュール設計原則
+## モジュール設計原則
 
 ### 1. 単一責任の原則 (SRP)
 各ファイルは1つの明確な責務を持つ。
@@ -102,21 +81,21 @@ export function makeApiCall() { ... }
 ```
 
 ### 2. 適切なファイルサイズ
-- **理想**: 300-500行
-- **最大**: 1000行
-- **理由**: 生成AIの1リクエストで全体を把握可能
+- 理想: 300-500行
+- 最大: 1000行
+- 理由: 生成AIの1リクエストで全体を把握可能
 
 ### 3. 明確な命名規則
 
 #### ファイル名
-- **機能を表す名詞**: `layerManager.js`, `fileLoader.js`
-- **複数形は避ける**: `layer.js` より `layerManager.js`
-- **キャメルケース**: `drawingTools.js` (小文字始まり)
+- 機能を表す名詞: `layerManager.js`, `fileLoader.js`
+- 複数形は避ける: `layer.js` より `layerManager.js`
+- キャメルケース: `drawingTools.js` (小文字始まり)
 
 #### 関数名
-- **動詞 + 名詞**: `createLayer`, `deleteLayer`
-- **Boolean は is/has 接頭辞**: `isVisible`, `hasPermission`
-- **イベントハンドラは handle 接頭辞**: `handleClick`, `handleFileSelect`
+- 動詞 + 名詞: `createLayer`, `deleteLayer`
+- Boolean は is/has 接頭辞: `isVisible`, `hasPermission`
+- イベントハンドラは handle 接頭辞: `handleClick`, `handleFileSelect`
 
 ### 4. 依存関係の明示化
 
@@ -138,9 +117,7 @@ export function makeApiCall() { ... }
  */
 ```
 
----
-
-## 📝 コーディング規約
+## コーディング規約
 
 ### JavaScript
 
@@ -199,10 +176,10 @@ export function loadImageFile(file) {
 マジックナンバーを避け、定数化:
 
 ```javascript
-// ❌ 悪い例
+// 悪い例
 if (scale > 10) { ... }
 
-// ✅ 良い例
+// 良い例
 const MAX_SCALE = 10;
 if (scale > MAX_SCALE) { ... }
 ```
@@ -240,9 +217,7 @@ if (scale > MAX_SCALE) { ... }
 .input { ... }
 ```
 
----
-
-## 🔍 AIエージェント向け指示
+## AIエージェント向け指示
 
 ### コード読み取り時
 
@@ -255,7 +230,7 @@ if (scale > MAX_SCALE) { ... }
 1. js/modules/layerManager.js
 2. js/state/mapState.js
 3. js/utils/canvas.js
-合計: ~800行、約8,000トークン
+合計: 約800行、約8,000トークン
 ```
 
 **不要なファイル:**
@@ -264,10 +239,10 @@ if (scale > MAX_SCALE) { ... }
 - その他の無関係なモジュール
 
 #### ファイルの優先順位
-1. **ヘッダーコメント**: ファイルの目的と依存関係を確認
-2. **export 文**: 公開APIを把握
-3. **主要関数**: JSDocから機能を理解
-4. **実装詳細**: 必要に応じて
+1. ヘッダーコメント: ファイルの目的と依存関係を確認
+2. export 文: 公開APIを把握
+3. 主要関数: JSDocから機能を理解
+4. 実装詳細: 必要に応じて
 
 ### コード生成時
 
@@ -349,143 +324,49 @@ export function addLayer(name) {
 }
 ```
 
----
-
-## 📚 モジュール索引
+## モジュール索引
 
 ### コア機能
 
 | モジュール | 責務 | 主要関数 | 依存 |
 |-----------|------|---------|------|
-| **layerManager.js** | レイヤー CRUD | `createLayer`, `deleteLayer`, `toggleLayerVisibility` | mapState, canvas |
-| **drawingTools.js** | 描画操作 | `selectTool`, `performDrawing` | mapState, layerManager |
-| **fileLoader.js** | ファイル I/O | `loadPGMImageFile`, `loadYAMLMetadataFile` | mapState, imageProcessing |
-| **metadataDisplay.js** | メタデータ UI | `displayMetadata`, `toggleMetadataMinimize` | mapState |
-| **overlayRenderer.js** | オーバーレイ描画 | `drawGridOverlay`, `drawOriginOverlay` | mapState, coordinates |
-| **viewportControl.js** | ズーム/パン | `zoomIn`, `zoomOut`, `resetView` | mapState, layerManager |
-| **historyManager.js** | アンドゥ/リドゥ | `undo`, `redo`, `saveToHistory` | mapState |
-| **profileManager.js** | プロファイル管理 | `saveProfile`, `loadProfile`, `getLastProfile` | mapState, toast |
-| **apiClient.js** | API 通信 | `loadStats`, `loadOperations`, `executeQuery` | config |
+| layerManager.js | レイヤー CRUD | `createLayer`, `deleteLayer`, `toggleLayerVisibility` | mapState, canvas |
+| drawingTools.js | 描画操作 | `selectTool`, `performDrawing` | mapState, layerManager |
+| fileLoader.js | ファイル I/O | `loadPGMImageFile`, `loadYAMLMetadataFile` | mapState, imageProcessing |
+| metadataDisplay.js | メタデータ UI | `displayMetadata`, `toggleMetadataMinimize` | mapState |
+| overlayRenderer.js | オーバーレイ描画 | `drawGridOverlay`, `drawOriginOverlay` | mapState, coordinates |
+| viewportControl.js | ズーム/パン | `zoomIn`, `zoomOut`, `resetView` | mapState, layerManager |
+| historyManager.js | アンドゥ/リドゥ | `undo`, `redo`, `saveToHistory` | mapState |
+| profileManager.js | プロファイル管理 | `saveProfile`, `loadProfile`, `getLastProfile` | mapState, toast |
+| apiClient.js | API 通信 | `loadStats`, `loadOperations`, `executeQuery` | config |
 
 ### ユーティリティ
 
 | モジュール | 責務 | 主要関数 |
 |-----------|------|---------|
-| **coordinates.js** | 座標変換 | `worldToCanvas`, `canvasToImagePixel` |
-| **canvas.js** | Canvas 操作 | `clearCanvas`, `resizeCanvas` |
-| **imageProcessing.js** | 画像処理 | `parsePGM`, `pgmToImage` |
-| **formatting.js** | フォーマット | `formatDistance`, `getNiceNumber` |
+| coordinates.js | 座標変換 | `worldToCanvas`, `canvasToImagePixel` |
+| canvas.js | Canvas 操作 | `clearCanvas`, `resizeCanvas` |
+| imageProcessing.js | 画像処理 | `parsePGM`, `pgmToImage` |
+| formatting.js | フォーマット | `formatDistance`, `getNiceNumber` |
 
 ### UI制御
 
 | モジュール | 責務 | 主要関数 |
 |-----------|------|---------|
-| **tabs.js** | タブ切り替え | `switchTab` |
-| **controls.js** | UI 制御・プロファイル管理 | `loadImageFile`, `clearMap`, `loadSelectedProfile` |
-| **toast.js** | トーストメッセージ | `showSuccess`, `showError`, `showInfo`, `showWarning` |
-| **events.js** | イベント管理 | `setupEventListeners` |
+| tabs.js | タブ切り替え | `switchTab` |
+| controls.js | UI 制御・プロファイル管理 | `loadImageFile`, `clearMap`, `loadSelectedProfile` |
+| toast.js | トーストメッセージ | `showSuccess`, `showError`, `showInfo`, `showWarning` |
+| events.js | イベント管理 | `setupEventListeners` |
 
----
+## トークン消費の最適化
 
-## 🛠️ 開発ワークフロー
-
-### 新機能追加の手順
-
-#### 1. 要件確認
-```markdown
-機能: レイヤーのロック機能を追加
-影響範囲: layerManager.js, layers-panel.css
-新規ファイル: なし
-```
-
-#### 2. 該当モジュールの読み込み
-```
-必要なファイル:
-- js/modules/layerManager.js
-- styles/layers-panel.css
-```
-
-#### 3. 修正箇所の特定
-```javascript
-// layerManager.js の createLayer 関数に locked プロパティを追加
-export function createLayer(id, name, type, permanent = false) {
-    const layer = {
-        // ... 既存プロパティ
-        locked: false  // 追加
-    };
-}
-```
-
-#### 4. テスト
-```bash
-# サーバー起動
-python server.py
-
-# ブラウザで動作確認
-http://localhost:5173
-```
-
-#### 5. ドキュメント更新
-- JSDoc の更新
-- AI_GUIDELINES.md の更新（必要に応じて）
-
----
-
-## 🐛 トラブルシューティング
-
-### よくある問題
-
-#### 1. モジュールが読み込めない
-**症状**: `Uncaught TypeError: Failed to resolve module specifier`
-
-**原因**: 相対パスが不正
-
-**解決策**:
-```javascript
-// ❌ 間違い
-import { createLayer } from 'layerManager.js';
-
-// ✅ 正しい
-import { createLayer } from './modules/layerManager.js';
-```
-
-#### 2. 状態が更新されない
-**症状**: レイヤーの変更がUIに反映されない
-
-**原因**: `mapState` の直接変更
-
-**解決策**:
-```javascript
-// ❌ 間違い
-mapState.layerStack.push(newLayer);
-
-// ✅ 正しい
-import { addLayer } from '../state/mapState.js';
-addLayer(newLayer);
-```
-
-#### 3. 循環依存
-**症状**: モジュールが undefined
-
-**原因**: A → B → A の循環参照
-
-**解決策**:
-- 共通処理を別モジュールに抽出
-- イベント駆動アーキテクチャの採用
-
----
-
-## 📊 パフォーマンス最適化
-
-### トークン消費の削減
-
-#### Before (単一ファイル)
+### Before（リファクタリング前）
 ```
 index.html: 32,645トークン
 AIが全体を読み込む必要がある
 ```
 
-#### After (モジュール化)
+### After（モジュール化）
 ```
 必要なモジュールのみ読み込み:
 layerManager.js: 4,000トークン
@@ -502,30 +383,49 @@ canvas.js: 800トークン
 | JavaScript | 300-500行 | 1,000行 | 3,000-5,000 |
 | HTML | 100-200行 | 500行 | 1,000-2,000 |
 
----
+## トラブルシューティング
 
-## 🎓 学習リソース
+### よくある問題
 
-### 関連ドキュメント
-- [REFACTORING_STRATEGY.md](./REFACTORING_STRATEGY.md) - リファクタリング戦略
-- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - プロジェクト構造
+#### 1. モジュールが読み込めない
+症状: `Uncaught TypeError: Failed to resolve module specifier`
+
+原因: 相対パスが不正
+
+解決策:
+```javascript
+// 間違い
+import { createLayer } from 'layerManager.js';
+
+// 正しい
+import { createLayer } from './modules/layerManager.js';
+```
+
+#### 2. 状態が更新されない
+症状: レイヤーの変更がUIに反映されない
+
+原因: `mapState` の直接変更
+
+解決策:
+```javascript
+// 間違い
+mapState.layerStack.push(newLayer);
+
+// 正しい
+import { addLayer } from '../state/mapState.js';
+addLayer(newLayer);
+```
+
+#### 3. 循環依存
+症状: モジュールが undefined
+
+原因: A → B → A の循環参照
+
+解決策:
+- 共通処理を別モジュールに抽出
+- イベント駆動アーキテクチャの採用
+
+## 関連ドキュメント
+
+- [MODULE_INDEX.md](./MODULE_INDEX.md) - モジュール詳細
 - [README.md](./README.md) - プロジェクト概要
-
-### 外部リソース
-- [ES6 Modules](https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide/Modules)
-- [JSDoc](https://jsdoc.app/)
-- [BEM Methodology](https://en.bem.info/methodology/)
-
----
-
-## 📝 更新履歴
-
-| 日付 | バージョン | 変更内容 |
-|------|-----------|---------|
-| 2025-10-29 | 1.0.0 | 初版作成 |
-| 2025-10-29 | 1.1.0 | トーストメッセージシステム追加、プロファイル自動読み込み機能追加 |
-
----
-
-**最終更新**: 2025-10-29
-**メンテナー**: Development Team
