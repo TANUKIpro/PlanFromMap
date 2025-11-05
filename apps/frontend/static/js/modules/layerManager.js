@@ -98,12 +98,6 @@ export function createLayer(id, name, type, permanent = false, parentId = null, 
         layer.strokes = [];  // ストロークをワールド座標で保存
     }
 
-    // 四角形レイヤーの場合は初期非表示
-    if (type === 'rectangle') {
-        layer.visible = false;
-        layer.canvas.style.display = 'none';
-    }
-
     // 四角形の子レイヤーの場合は非表示(親の四角形レイヤーのキャンバスに描画されるため)
     if (type === 'rectangle-child') {
         layer.visible = false;
