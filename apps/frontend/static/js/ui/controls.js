@@ -1,13 +1,15 @@
 /**
  * @file controls.js
- * @description マップコントロール（読み込み、クリア、描画）機能を提供するモジュール
+ * @description マップコントロール（読み込み、クリア、描画、保存）機能を提供するモジュール
  * @requires ../state/mapState.js - マップの状態管理
  * @requires ../modules/profileManager.js - プロファイル管理
+ * @requires ../modules/fileLoader.js - ファイル読み込み・保存
  * @requires ./toast.js - トーストメッセージ表示
  * @exports loadImageFile - 画像ファイル読み込みダイアログを開く
  * @exports loadYAMLFile - YAMLファイル読み込みダイアログを開く
  * @exports clearMap - マップをクリアする
  * @exports drawMap - マップを描画する
+ * @exports saveAsPGM - マップをPGM形式で保存
  * @exports showProfileManager - プロファイル管理モーダルを表示
  * @exports closeProfileManager - プロファイル管理モーダルを閉じる
  * @exports saveCurrentProfile - 現在の状態をプロファイルとして保存
@@ -20,6 +22,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import { saveMapAsPGM } from '../modules/fileLoader.js';
 import {
     saveProfile,
     loadProfile,
@@ -27,6 +30,7 @@ import {
     listProfiles,
     getProfileInfo,
     exportProfileToFile,
+    importProfileFromFile,
     getCurrentProfile,
     saveCurrentProfile as saveCurrentProfileInternal,
     saveProfileAs
@@ -50,6 +54,23 @@ export function loadYAMLFile() {
     const yamlInput = document.getElementById('yamlFileInput');
     if (yamlInput) {
         yamlInput.click();
+    }
+}
+
+/**
+ * マップをPGM形式で保存する
+ */
+export function saveAsPGM() {
+    if (!mapState.image) {
+        showWarning('保存する画像がありません');
+        return;
+    }
+
+    try {
+        saveMapAsPGM();
+        showSuccess('マップをPGM形式で保存しました', 2000);
+    } catch (error) {
+        showError('マップの保存に失敗しました: ' + error.message, 2000);
     }
 }
 
@@ -373,6 +394,11 @@ export async function loadSelectedProfile(profileName, options = {}) {
             canvasStack.style.display = 'block';
         }
 
+        // ステータスバーを更新
+        if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+            window.updateStatusBar();
+        }
+
         if (showMessage) {
             showSuccess(`プロファイルを読み込みました\n保存場所: LocalStorage (ブラウザ内) - キー: map_profile_${profileName}`, 3000);
         }
@@ -408,6 +434,49 @@ export function deleteSelectedProfile(profileName) {
  */
 export function exportSelectedProfile(profileName) {
     exportProfileToFile(profileName);
+}
+
+/**
+ * プロファイルをインポート
+ */
+export function importProfile() {
+    const profileInput = document.getElementById('profileFileInput');
+    if (profileInput) {
+        profileInput.click();
+    }
+}
+
+/**
+ * プロファイルファイルの選択を処理
+ */
+export async function handleProfileFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const success = await importProfileFromFile(file);
+    if (success) {
+        showSuccess('プロファイルをインポートしました');
+        // プロファイル管理モーダルが開いている場合はリストを更新
+        const modal = document.getElementById('profileManagerModal');
+        if (modal && modal.style.display !== 'none') {
+            updateProfileList();
+        }
+    }
+
+    // ファイル入力をリセット
+    event.target.value = '';
+}
+
+/**
+ * 現在のプロファイルをエクスポート
+ */
+export function exportCurrentProfile() {
+    const currentProfile = getCurrentProfile();
+    if (!currentProfile) {
+        showWarning('プロファイルが選択されていません');
+        return;
+    }
+    exportProfileToFile(currentProfile);
 }
 
 /**

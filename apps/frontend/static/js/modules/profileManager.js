@@ -200,6 +200,8 @@ export function saveProfile(profileName) {
             name: trimmedName,
             timestamp: Date.now(),
             image: imageToBase64(mapState.image),
+            imageFileName: mapState.imageFileName,
+            yamlFileName: mapState.yamlFileName,
             metadata: mapState.metadata,
             scale: mapState.scale,
             offsetX: mapState.offsetX,
@@ -288,6 +290,10 @@ export async function loadProfile(profileName) {
         } else {
             mapState.image = null;
         }
+
+        // ファイル名を復元
+        mapState.imageFileName = profile.imageFileName || null;
+        mapState.yamlFileName = profile.yamlFileName || null;
 
         // メタデータを復元
         mapState.metadata = profile.metadata || null;
