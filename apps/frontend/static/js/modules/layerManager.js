@@ -98,9 +98,9 @@ export function createLayer(id, name, type, permanent = false, parentId = null, 
         layer.strokes = [];  // ストロークをワールド座標で保存
     }
 
-    // 四角形の子レイヤーの場合は非表示(親の四角形レイヤーのキャンバスに描画されるため)
+    // 四角形の子レイヤーの場合、キャンバス自体は非表示（親の四角形レイヤーのキャンバスに描画されるため）
+    // ただし、visibleフラグはtrueにして四角形を表示する
     if (type === 'rectangle-child') {
-        layer.visible = false;
         layer.canvas.style.display = 'none';
     }
 
