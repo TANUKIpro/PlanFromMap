@@ -115,61 +115,74 @@
                         <!-- 描画ツールパレット -->
                         <div class="drawing-tools-palette hidden" id="drawingToolsPalette">
                             <div class="drawing-tools-body">
-                                <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
-                                    <img src="icons/finger-circle.svg" alt="パン" class="tool-icon">
-                                </button>
-                                <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
-                                    <img src="icons/pen-1.svg" alt="鉛筆" class="tool-icon">
-                                </button>
-                                <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
-                                    <img src="icons/eraser.svg" alt="消しゴム" class="tool-icon">
-                                </button>
-                                <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
-                                    <img src="icons/ruler.svg" alt="測量" class="tool-icon">
-                                </button>
-                                <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
-                                    <img src="icons/bucket.svg" alt="塗りつぶし" class="tool-icon">
-                                </button>
-                                <div class="tool-divider"></div>
-                                <div class="tool-divider"></div>
-                                <button class="tool-button" id="rectangleTool" onclick="toggleRectangleToolMode()" title="四角形（オン/オフ）">
-                                    ▭
-                                </button>
-                                <div class="tool-divider"></div>
-                                <!-- カラーアイコン -->
-                                <button class="tool-button color-icon-button" id="colorIconButton" onclick="toggleColorPicker()" title="色を選択">
-                                    <div class="color-icon-display" id="colorIconDisplay" style="background-color: #FF0000;"></div>
-                                </button>
-
-                                <!-- カラーピッカーポップアップ -->
-                                <div class="color-picker-popup hidden" id="colorPickerPopup">
-                                    <div class="color-picker-header">
-                                        <button class="color-mode-button active" id="paletteMode" onclick="switchColorMode('palette')">パレット</button>
-                                        <button class="color-mode-button" id="rgbMode" onclick="switchColorMode('rgb')">RGB</button>
-                                    </div>
-                                    <div class="color-picker-content">
-                                        <!-- パレットモード -->
-                                        <div class="color-palette" id="colorPalette">
-                                            <button class="palette-color active" data-color="#FF0000" style="background-color: #FF0000;" onclick="selectPaletteColor('#FF0000')" title="赤"></button>
-                                            <button class="palette-color" data-color="#00FF00" style="background-color: #00FF00;" onclick="selectPaletteColor('#00FF00')" title="緑"></button>
-                                            <button class="palette-color" data-color="#0000FF" style="background-color: #0000FF;" onclick="selectPaletteColor('#0000FF')" title="青"></button>
-                                            <button class="palette-color" data-color="#FFFF00" style="background-color: #FFFF00;" onclick="selectPaletteColor('#FFFF00')" title="黄"></button>
-                                            <button class="palette-color" data-color="#FF00FF" style="background-color: #FF00FF;" onclick="selectPaletteColor('#FF00FF')" title="マゼンタ"></button>
-                                            <button class="palette-color" data-color="#00FFFF" style="background-color: #00FFFF;" onclick="selectPaletteColor('#00FFFF')" title="シアン"></button>
-                                            <button class="palette-color" data-color="#FFA500" style="background-color: #FFA500;" onclick="selectPaletteColor('#FFA500')" title="オレンジ"></button>
-                                            <button class="palette-color" data-color="#800080" style="background-color: #800080;" onclick="selectPaletteColor('#800080')" title="紫"></button>
-                                            <button class="palette-color" data-color="#000000" style="background-color: #000000;" onclick="selectPaletteColor('#000000')" title="黒"></button>
-                                            <button class="palette-color" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ccc;" onclick="selectPaletteColor('#FFFFFF')" title="白"></button>
-                                        </div>
-                                        <!-- RGBモード -->
-                                        <div class="color-rgb hidden" id="colorRGB">
-                                            <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
-                                        </div>
-                                    </div>
+                                <!-- 左列: ツールボタン -->
+                                <div class="tools-column">
+                                    <button class="tool-button active" id="panTool" onclick="selectTool('pan')" title="パン（移動）">
+                                        <img src="icons/finger-circle.svg" alt="パン" class="tool-icon">
+                                    </button>
+                                    <button class="tool-button" id="pencilTool" onclick="selectTool('pencil')" title="鉛筆">
+                                        <img src="icons/pen-1.svg" alt="鉛筆" class="tool-icon">
+                                    </button>
+                                    <button class="tool-button" id="eraserTool" onclick="selectTool('eraser')" title="消しゴム">
+                                        <img src="icons/eraser.svg" alt="消しゴム" class="tool-icon">
+                                    </button>
+                                    <button class="tool-button" id="measureTool" onclick="selectTool('measure')" title="測量">
+                                        <img src="icons/ruler.svg" alt="測量" class="tool-icon">
+                                    </button>
+                                    <button class="tool-button" id="bucketTool" onclick="selectTool('bucket')" title="塗りつぶし">
+                                        <img src="icons/bucket.svg" alt="塗りつぶし" class="tool-icon">
+                                    </button>
+                                    <div class="tool-divider"></div>
+                                    <button class="tool-button" id="rectangleTool" onclick="toggleRectangleToolMode()" title="四角形（オン/オフ）">
+                                        ▭
+                                    </button>
                                 </div>
-                                <div class="brush-size-control">
-                                    <div class="brush-size-label">サイズ: <span id="brushSizeValue">5</span></div>
-                                    <input type="range" class="brush-size-slider" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)">
+
+                                <!-- 右列: カラーとブラシサイズ -->
+                                <div class="options-column">
+                                    <!-- カラーアイコン -->
+                                    <button class="tool-button color-icon-button" id="colorIconButton" onclick="toggleColorPicker()" title="色を選択">
+                                        <div class="color-icon-display" id="colorIconDisplay" style="background-color: #FF0000;"></div>
+                                    </button>
+
+                                    <!-- カラーピッカーポップアップ -->
+                                    <div class="color-picker-popup hidden" id="colorPickerPopup">
+                                        <div class="color-picker-header">
+                                            <button class="color-mode-button active" id="paletteMode" onclick="switchColorMode('palette')" title="パレット">
+                                                <img src="icons/color-grid.svg" alt="パレット" class="color-mode-icon">
+                                            </button>
+                                            <button class="color-mode-button" id="rgbMode" onclick="switchColorMode('rgb')" title="RGB">
+                                                <img src="icons/color-palette.svg" alt="RGB" class="color-mode-icon">
+                                            </button>
+                                        </div>
+                                        <div class="color-picker-content">
+                                            <!-- パレットモード -->
+                                            <div class="color-palette" id="colorPalette">
+                                                <button class="palette-color active" data-color="#FF0000" style="background-color: #FF0000;" onclick="selectPaletteColor('#FF0000')" title="赤"></button>
+                                                <button class="palette-color" data-color="#00FF00" style="background-color: #00FF00;" onclick="selectPaletteColor('#00FF00')" title="緑"></button>
+                                                <button class="palette-color" data-color="#0000FF" style="background-color: #0000FF;" onclick="selectPaletteColor('#0000FF')" title="青"></button>
+                                                <button class="palette-color" data-color="#FFFF00" style="background-color: #FFFF00;" onclick="selectPaletteColor('#FFFF00')" title="黄"></button>
+                                                <button class="palette-color" data-color="#FF00FF" style="background-color: #FF00FF;" onclick="selectPaletteColor('#FF00FF')" title="マゼンタ"></button>
+                                                <button class="palette-color" data-color="#00FFFF" style="background-color: #00FFFF;" onclick="selectPaletteColor('#00FFFF')" title="シアン"></button>
+                                                <button class="palette-color" data-color="#FFA500" style="background-color: #FFA500;" onclick="selectPaletteColor('#FFA500')" title="オレンジ"></button>
+                                                <button class="palette-color" data-color="#800080" style="background-color: #800080;" onclick="selectPaletteColor('#800080')" title="紫"></button>
+                                                <button class="palette-color" data-color="#000000" style="background-color: #000000;" onclick="selectPaletteColor('#000000')" title="黒"></button>
+                                                <button class="palette-color" data-color="#FFFFFF" style="background-color: #FFFFFF; border: 1px solid #ccc;" onclick="selectPaletteColor('#FFFFFF')" title="白"></button>
+                                            </div>
+                                            <!-- RGBモード -->
+                                            <div class="color-rgb hidden" id="colorRGB">
+                                                <input type="color" class="color-picker-input" id="colorPicker" value="#FF0000" onchange="changeDrawingColor(this.value)">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ブラシサイズコントロール（縦方向） -->
+                                    <div class="brush-size-control-vertical">
+                                        <input type="range" class="brush-size-slider-vertical" id="brushSizeSlider" min="1" max="50" value="5" oninput="changeBrushSize(this.value)" orient="vertical">
+                                        <div class="brush-size-label-vertical">
+                                            <span id="brushSizeValue">5</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <button class="drawing-tools-toggle" id="drawingToolsToggle" onclick="toggleDrawingToolsVisibility()" title="描画ツールを表示/非表示">

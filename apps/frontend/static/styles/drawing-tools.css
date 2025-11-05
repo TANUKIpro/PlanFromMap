@@ -60,12 +60,28 @@
 .drawing-tools-body {
     padding: 12px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: nowrap;
     max-height: calc(100vh - 100px);
     overflow-y: auto;
+}
+
+/* 左列: ツールボタン */
+.tools-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+/* 右列: オプション */
+.options-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
 }
 
 /* ========================================
@@ -166,13 +182,16 @@
 
 .color-mode-button {
     flex: 1;
-    padding: 6px 12px;
+    padding: 6px 8px;
     font-size: 0.85em;
     border: 1px solid #e0e0e0;
     background: white;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .color-mode-button:hover {
@@ -183,6 +202,17 @@
     background: #667eea;
     color: white;
     border-color: #667eea;
+}
+
+.color-mode-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    transition: filter 0.2s ease;
+}
+
+.color-mode-button.active .color-mode-icon {
+    filter: brightness(0) invert(1);
 }
 
 .color-picker-content {
@@ -276,6 +306,32 @@
 
 .brush-size-slider {
     width: 120px;
+}
+
+/* ブラシサイズコントロール（縦方向） */
+.brush-size-control-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 8px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    align-items: center;
+    height: 180px;
+}
+
+.brush-size-label-vertical {
+    font-size: 0.85em;
+    color: #666;
+    text-align: center;
+}
+
+.brush-size-slider-vertical {
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 8px;
+    height: 140px;
+    padding: 0;
 }
 
 /* ========================================

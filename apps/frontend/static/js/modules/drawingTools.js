@@ -142,6 +142,20 @@ export function toggleRectangleToolMode() {
 
     // 四角形ツールがオンになった場合
     if (newState) {
+        // 四角形レイヤーを表示
+        if (window.getRectangleLayer && typeof window.getRectangleLayer === 'function') {
+            const rectangleLayer = window.getRectangleLayer();
+            if (rectangleLayer) {
+                rectangleLayer.visible = true;
+                rectangleLayer.canvas.style.display = 'block';
+
+                // レイヤーパネルを更新
+                if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+                    window.updateLayersPanel();
+                }
+            }
+        }
+
         // 四角形が1つもない場合は、中央に作成
         if (window.getAllRectangles && typeof window.getAllRectangles === 'function') {
             const rectangles = window.getAllRectangles();
