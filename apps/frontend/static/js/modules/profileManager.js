@@ -473,6 +473,12 @@ export function exportProfileToFile(profileName) {
         URL.revokeObjectURL(url);
 
         console.log('exportProfileToFile: エクスポート成功', profileName);
+
+        // 成功メッセージを表示
+        if (window.showSuccess && typeof window.showSuccess === 'function') {
+            const fileName = `${profileName.trim()}_profile.json`;
+            window.showSuccess(`プロファイルをエクスポートしました\nファイル名: ${fileName}\n保存場所: ブラウザのダウンロードフォルダ`, 3000);
+        }
     } catch (error) {
         console.error('exportProfileToFile: エラー', error);
         alert('プロファイルのエクスポートに失敗しました');

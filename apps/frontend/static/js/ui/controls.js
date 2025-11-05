@@ -221,7 +221,7 @@ export function saveCurrentProfile() {
 
     const success = saveProfile(profileName);
     if (success) {
-        showSuccess('プロファイルを保存しました');
+        showSuccess(`プロファイルを保存しました\n保存場所: LocalStorage (ブラウザ内) - キー: map_profile_${profileName}`, 3000);
         input.value = '';
         updateProfileList();
     } else {
@@ -374,7 +374,7 @@ export async function loadSelectedProfile(profileName, options = {}) {
         }
 
         if (showMessage) {
-            showSuccess('プロファイルを読み込みました');
+            showSuccess(`プロファイルを読み込みました\n保存場所: LocalStorage (ブラウザ内) - キー: map_profile_${profileName}`, 3000);
         }
         if (closeModal) {
             closeProfileManager();
@@ -504,7 +504,7 @@ export function quickSave() {
     const success = saveCurrentProfileInternal();
 
     if (success) {
-        showSuccess(`プロファイル「${currentProfile}」を保存しました`, 1500);
+        showSuccess(`プロファイル「${currentProfile}」を保存しました\n保存場所: LocalStorage (ブラウザ内)`, 2000);
     } else {
         showError('プロファイルの保存に失敗しました', 2000);
     }
@@ -529,7 +529,7 @@ export function saveAs() {
     const success = saveProfileAs(newName.trim());
 
     if (success) {
-        showSuccess(`プロファイル「${newName.trim()}」を保存しました`, 1500);
+        showSuccess(`プロファイル「${newName.trim()}」を保存しました\n保存場所: LocalStorage (ブラウザ内)`, 2000);
         // プロファイル管理モーダルが開いている場合はリストを更新
         if (document.getElementById('profileManagerModal').style.display !== 'none') {
             updateProfileList();
