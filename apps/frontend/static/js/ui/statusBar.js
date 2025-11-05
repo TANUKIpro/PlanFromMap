@@ -71,10 +71,32 @@ export function updateSelectedLayer() {
     if (!layerElement) return;
 
     if (mapState.selectedLayerId) {
-        const layer = mapState.layerStack.find(l => l.id === mapState.selectedLayerId);
+        // まず親レイヤースタックから検索
+        let layer = mapState.layerStack.find(l => l.id === mapState.selectedLayerId);
+        let parentLayer = null;
+
+        // 見つからない場合は子レイヤーを検索
+        if (!layer) {
+            for (const parent of mapState.layerStack) {
+                if (parent.children && parent.children.length > 0) {
+                    layer = parent.children.find(c => c.id === mapState.selectedLayerId);
+                    if (layer) {
+                        parentLayer = parent;
+                        break;
+                    }
+                }
+            }
+        }
+
         if (layer) {
-            layerElement.textContent = layer.name;
-            layerElement.title = `レイヤータイプ: ${layer.type}`;
+            // 子レイヤーの場合は「親レイヤー名 - 子レイヤー名」形式で表示
+            if (parentLayer) {
+                layerElement.textContent = `${parentLayer.name} - ${layer.name}`;
+                layerElement.title = `レイヤータイプ: ${layer.type} (親: ${parentLayer.name})`;
+            } else {
+                layerElement.textContent = layer.name;
+                layerElement.title = `レイヤータイプ: ${layer.type}`;
+            }
         } else {
             layerElement.textContent = '-';
             layerElement.title = '';
