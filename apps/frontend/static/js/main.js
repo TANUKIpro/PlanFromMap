@@ -148,6 +148,30 @@ import {
     handleRectangleMouseUp
 } from './modules/rectangleInteraction.js';
 
+// オブジェクトプロパティ管理
+import {
+    setObjectType,
+    setObjectProperty,
+    setObjectProperties,
+    getObjectProperties,
+    setHeightMeters,
+    setFrontDirection,
+    resetObjectProperties,
+    applyObjectType,
+    pixelsToMeters,
+    metersToPixels,
+    get3DCoordinates,
+    getAll3DCoordinates
+} from './modules/objectPropertyManager.js';
+
+import {
+    initializePropertyPanel,
+    showPropertyPanel,
+    hidePropertyPanel,
+    updatePropertyPanel,
+    refreshPropertyPanel
+} from './ui/objectPropertyPanel.js';
+
 // ステータスバー
 import {
     updateStatusBar,
@@ -272,6 +296,25 @@ window.handleRectangleMouseDown = handleRectangleMouseDown;
 window.handleRectangleMouseMove = handleRectangleMouseMove;
 window.handleRectangleMouseUp = handleRectangleMouseUp;
 
+// オブジェクトプロパティ管理
+window.setObjectType = setObjectType;
+window.setObjectProperty = setObjectProperty;
+window.setObjectProperties = setObjectProperties;
+window.getObjectProperties = getObjectProperties;
+window.setHeightMeters = setHeightMeters;
+window.setFrontDirection = setFrontDirection;
+window.resetObjectProperties = resetObjectProperties;
+window.applyObjectType = applyObjectType;
+window.pixelsToMeters = pixelsToMeters;
+window.metersToPixels = metersToPixels;
+window.get3DCoordinates = get3DCoordinates;
+window.getAll3DCoordinates = getAll3DCoordinates;
+window.initializePropertyPanel = initializePropertyPanel;
+window.showPropertyPanel = showPropertyPanel;
+window.hidePropertyPanel = hidePropertyPanel;
+window.updatePropertyPanel = updatePropertyPanel;
+window.refreshPropertyPanel = refreshPropertyPanel;
+
 // ステータスバー
 window.updateStatusBar = updateStatusBar;
 window.updateFileName = updateFileName;
@@ -307,6 +350,9 @@ function initializeApp() {
 
     // ステータスバーの表示状態を復元
     restoreStatusBarVisibility();
+
+    // オブジェクトプロパティパネルを初期化
+    initializePropertyPanel();
 
     console.log('Application initialized successfully');
 }

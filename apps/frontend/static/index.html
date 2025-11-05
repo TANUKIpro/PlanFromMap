@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="styles/metadata-overlay.css">
     <link rel="stylesheet" href="styles/tabs.css">
     <link rel="stylesheet" href="styles/menu-bar.css">
+    <link rel="stylesheet" href="styles/object-property-panel.css">
 </head>
 <body>
     <div class="container">
@@ -247,6 +248,66 @@
                                     <input type="range" class="global-opacity-slider" id="globalOpacitySlider"
                                            min="0" max="1" step="0.01" value="1.0">
                                     <span class="global-opacity-value" id="globalOpacityValue">100%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- オブジェクトプロパティパネル -->
+                        <div class="object-property-panel" id="objectPropertyPanel">
+                            <div class="property-panel__header">
+                                <h3 class="property-panel__title">🏠 オブジェクトプロパティ</h3>
+                                <p class="property-panel__selected-info" id="selectedObjectInfo">選択: -</p>
+                            </div>
+                            <div class="property-panel__body">
+                                <!-- 基本情報セクション -->
+                                <div class="property-section">
+                                    <h4 class="property-section__title">基本情報</h4>
+
+                                    <div class="property-field">
+                                        <label class="property-label" for="objectTypeSelect">カテゴリ</label>
+                                        <select class="property-select" id="objectTypeSelect">
+                                            <option value="none">なし</option>
+                                            <option value="shelf">棚</option>
+                                            <option value="box">箱</option>
+                                            <option value="table">テーブル</option>
+                                            <option value="door">扉</option>
+                                            <option value="wall">壁</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 3D情報セクション -->
+                                <div class="property-section">
+                                    <h4 class="property-section__title">3D情報</h4>
+
+                                    <div class="property-field">
+                                        <label class="property-label" for="heightMetersInput">高さ (m)</label>
+                                        <input type="number" class="property-input" id="heightMetersInput"
+                                               min="0.01" max="10" step="0.01" value="0.50">
+                                    </div>
+
+                                    <div class="property-field">
+                                        <label class="property-label" for="frontDirectionSelect">前面方向</label>
+                                        <select class="property-select" id="frontDirectionSelect">
+                                            <option value="top">上</option>
+                                            <option value="right">右</option>
+                                            <option value="bottom">下</option>
+                                            <option value="left">左</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- カテゴリ別詳細設定 -->
+                                <div class="property-section">
+                                    <div id="objectDetailsContainer">
+                                        <!-- カテゴリに応じた詳細設定が動的に生成される -->
+                                    </div>
+                                </div>
+
+                                <!-- アクションボタン -->
+                                <div class="property-panel__actions">
+                                    <button class="property-button property-button--primary" id="applyPropertiesButton">適用</button>
+                                    <button class="property-button property-button--secondary" id="resetPropertiesButton">リセット</button>
                                 </div>
                             </div>
                         </div>

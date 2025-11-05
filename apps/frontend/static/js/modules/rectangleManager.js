@@ -4,6 +4,7 @@
  *
  * @requires ../state/mapState.js - アプリケーション状態管理
  * @requires ../config.js - 設定値
+ * @requires ../models/objectTypes.js - オブジェクトタイプ定義
  *
  * @exports toggleRectangleTool - 四角形ツールのオン/オフ切り替え
  * @exports createRectangle - 新しい四角形の作成
@@ -19,6 +20,7 @@
 
 import { mapState } from '../state/mapState.js';
 import { RECTANGLE_DEFAULTS } from '../config.js';
+import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES } from '../models/objectTypes.js';
 
 /**
  * 四角形ツールのオン/オフを切り替える
@@ -114,6 +116,7 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null,
     const rectangleColor = color || mapState.drawingState.color || RECTANGLE_DEFAULTS.STROKE_COLOR;
 
     const rectangle = {
+        // 基本プロパティ
         id: id,
         x: x,
         y: y,
@@ -121,7 +124,13 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null,
         height: height || RECTANGLE_DEFAULTS.DEFAULT_HEIGHT,
         rotation: rotation,  // 回転角度（度）
         color: rectangleColor,  // 四角形の色
-        selected: false
+        selected: false,
+
+        // オブジェクト情報（新規追加）
+        objectType: OBJECT_TYPES.NONE,  // デフォルトは「なし」
+        heightMeters: DEFAULT_3D_PROPERTIES.heightMeters,  // 高さ（メートル）
+        frontDirection: DEFAULT_3D_PROPERTIES.frontDirection,  // 前面方向
+        objectProperties: {}  // カテゴリ別のプロパティ（空で初期化）
     };
 
     mapState.rectangleToolState.rectangles.push(rectangle);
@@ -190,6 +199,11 @@ export function selectRectangle(rectangleId) {
     if (rectangle) {
         rectangle.selected = true;
         mapState.rectangleToolState.selectedRectangleId = rectangleId;
+
+        // オブジェクトプロパティパネルを表示
+        if (window.showPropertyPanel && typeof window.showPropertyPanel === 'function') {
+            window.showPropertyPanel(rectangleId);
+        }
     }
 }
 
@@ -204,6 +218,11 @@ export function selectRectangle(rectangleId) {
 export function deselectRectangle() {
     mapState.rectangleToolState.rectangles.forEach(r => r.selected = false);
     mapState.rectangleToolState.selectedRectangleId = null;
+
+    // オブジェクトプロパティパネルを非表示
+    if (window.hidePropertyPanel && typeof window.hidePropertyPanel === 'function') {
+        window.hidePropertyPanel();
+    }
 }
 
 /**
