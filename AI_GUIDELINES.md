@@ -425,7 +425,152 @@ addLayer(newLayer);
 - 共通処理を別モジュールに抽出
 - イベント駆動アーキテクチャの採用
 
+## テスト戦略とガイドライン
+
+### テストの重要性
+
+新機能の実装やリファクタリングを行う際は、**必ずテストを実行**して既存機能の破壊がないことを確認してください。
+
+### テストの実行
+
+```bash
+# すべてのテストを実行
+pytest
+
+# ユニットテストのみ実行（高速）
+pytest -m unit
+
+# 統合テストのみ実行
+pytest -m integration
+
+# E2Eテストのみ実行
+pytest -m e2e
+
+# 詳細な出力
+pytest -v -s
+```
+
+### テストカバレッジ
+
+1. **ユニットテスト** (`tests/unit/`)
+   - バックエンドAPIエンドポイント
+   - PGMファイルパース機能
+   - 座標変換ロジック
+   - フォーマット関数
+
+2. **統合テスト** (`tests/integration/`)
+   - 実際のYAML/PGMファイルのロード
+   - プロファイルの保存・読み込み
+   - データの整合性検証
+
+3. **E2Eテスト** (`tests/e2e/`)
+   - 完全なマップロードワークフロー
+   - プロファイル管理フロー
+   - レイヤー操作フロー
+
+### テスト時の留意点
+
+#### フロントエンドの自由描画機能について
+
+フロントエンドの自由描画機能（ユーザーが手動で行う描画操作）は、テストの対象外です。
+
+**理由**:
+- テストの本質は「既存機能の破壊検出」と「コア機能の動作保証」
+- 自由描画は無限のバリエーションがあり、完全なテストは不可能
+- 描画ツールの内部ロジックは別途ユニットテストでカバー
+
+**テスト対象**:
+- ✅ 描画ツールの座標計算ロジック
+- ✅ 色変換関数
+- ✅ レイヤー管理（描画レイヤーの作成・削除）
+- ✅ プロファイル保存時に描画データが含まれること
+
+**テスト対象外**:
+- ❌ ユーザーが手動で行う描画操作のピクセル単位の検証
+- ❌ 描画UIの見た目やスタイル
+- ❌ マウスドラッグによる描画の軌跡
+
+### テスト出力とプロファイル保存
+
+テストで生成されたデータは、すべて `tests/outputs/` に保存され、解析可能です：
+
+```
+tests/outputs/
+├── profiles/      # テストで生成されたプロファイル
+├── screenshots/   # テストスクリーンショット
+└── reports/       # テスト結果レポート（JSON、マークダウン）
+```
+
+#### プロファイル保存の重要性
+
+テストで生成されたプロファイルは、以下の目的で保存されます：
+
+1. **デバッグ**: テスト失敗時の状態を確認
+2. **リグレッション検証**: 過去のテスト結果と比較
+3. **パフォーマンス測定**: プロファイルサイズや処理時間の記録
+4. **ドキュメント化**: 実際の使用例としてPRに添付
+
+### テスト作成時のガイドライン
+
+新しいテストを追加する際は、以下のテンプレートを使用してください：
+
+```python
+"""
+Test Module Name
+テストの説明
+"""
+import pytest
+
+
+class TestFeatureName:
+    """機能名のテストクラス"""
+
+    def test_basic_functionality(self):
+        """基本機能のテスト"""
+        # Arrange (準備)
+        input_data = ...
+
+        # Act (実行)
+        result = function_under_test(input_data)
+
+        # Assert (検証)
+        assert result == expected_value
+
+    def test_edge_cases(self):
+        """エッジケースのテスト"""
+        pass
+
+    def test_error_handling(self):
+        """エラーハンドリングのテスト"""
+        with pytest.raises(ExpectedError):
+            function_under_test(invalid_input)
+```
+
+### CI/CD統合
+
+GitHub ActionsなどのCI/CDツールでテストを自動実行することを推奨します：
+
+```yaml
+# .github/workflows/test.yml の例
+name: Test Suite
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest -m "unit or integration"
+```
+
 ## 関連ドキュメント
 
 - [MODULE_INDEX.md](./MODULE_INDEX.md) - モジュール詳細
 - [README.md](./README.md) - プロジェクト概要
+- [tests/README.md](./tests/README.md) - テストスイート詳細

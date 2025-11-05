@@ -43,6 +43,14 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+tests/outputs/profiles/*
+tests/outputs/screenshots/*
+tests/outputs/reports/*
+!tests/outputs/.gitkeep
 
 # Database
 *.db
