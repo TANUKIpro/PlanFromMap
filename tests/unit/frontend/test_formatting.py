@@ -24,7 +24,7 @@ class TestDistanceFormatting:
         """キロメートル単位のフォーマット"""
         assert self.format_distance(1000) == "1.00 km"
         assert self.format_distance(1500) == "1.50 km"
-        assert self.format_distance(2500.5) == "2.51 km"
+        assert self.format_distance(2500.5) == "2.50 km"  # 2500.5 / 1000 = 2.5005 → 2.50
         assert self.format_distance(10000) == "10.00 km"
 
     def test_meter_formatting(self):
