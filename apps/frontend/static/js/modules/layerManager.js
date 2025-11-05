@@ -7,6 +7,7 @@
  *
  * @requires ../state/mapState.js - アプリケーション状態管理
  * @requires ./overlayRenderer.js - メタデータオーバーレイ描画
+ * @requires ../ui/statusBar.js - ステータスバー更新
  *
  * @exports initializeLayers - レイヤーシステムの初期化
  * @exports createLayer - 新しいレイヤーの作成
@@ -24,6 +25,7 @@
 
 import { mapState } from '../state/mapState.js';
 import { drawMetadataOverlayOnContext } from './overlayRenderer.js';
+import { updateSelectedLayer } from '../ui/statusBar.js';
 
 /**
  * レイヤーシステムを初期化する
@@ -417,6 +419,7 @@ export function toggleLayerVisibility(layerId, visible) {
 export function selectLayer(layerId) {
     mapState.selectedLayerId = layerId;
     updateLayersPanel();
+    updateSelectedLayer();
 }
 
 /**

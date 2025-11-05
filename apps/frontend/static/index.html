@@ -103,6 +103,38 @@
                                         <span id="snapToGridLabel">スナップ</span>
                                     </label>
                                 </div>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="metadataLayerToggleMenu" checked onchange="toggleLayer('metadataOverlay', this.checked)">
+                                        <span>メタデータオーバーレイ</span>
+                                    </label>
+                                </div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="gridOverlayToggleMenu" data-option="showGrid" checked onchange="toggleOverlayOption('showGrid', this.checked)">
+                                        <span>1mグリッド</span>
+                                    </label>
+                                </div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="originOverlayToggleMenu" data-option="showOrigin" checked onchange="toggleOverlayOption('showOrigin', this.checked)">
+                                        <span>原点マーカー</span>
+                                    </label>
+                                </div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="scaleOverlayToggleMenu" data-option="showScaleBar" checked onchange="toggleOverlayOption('showScaleBar', this.checked)">
+                                        <span>スケールバー</span>
+                                    </label>
+                                </div>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <div class="menu-bar__dropdown-submenu">
+                                    <label class="menu-bar__dropdown-checkbox">
+                                        <input type="checkbox" id="statusBarToggleMenu" checked onchange="toggleStatusBar(this.checked)">
+                                        <span>ステータスバー</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -226,49 +258,6 @@
                                 <div class="edge-length-input-buttons">
                                     <button id="edgeLengthConfirm" class="edge-length-button confirm">✓</button>
                                     <button id="edgeLengthCancel" class="edge-length-button cancel">✕</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="metadata-overlay-panel minimized" id="metadataOverlay" aria-hidden="true">
-                            <div class="metadata-overlay-header" onclick="toggleMetadataMinimize()" data-tooltip="マップメタデータ">
-                                <span class="metadata-overlay-icon">
-                                    <img src="icons/map.svg" alt="マップ" class="metadata-icon">
-                                </span>
-                                <span class="metadata-overlay-title">📋 マップメタデータ</span>
-                                <button
-                                    type="button"
-                                    class="metadata-overlay-minimize"
-                                    onclick="event.stopPropagation(); toggleMetadataMinimize()"
-                                    title="最小化"
-                                >
-                                    <span class="metadata-overlay-minimize-icon">▾</span>
-                                </button>
-                            </div>
-                            <div class="metadata-overlay-body" id="metadataOverlayBody">
-                                <div class="metadata-overlay-section metadata-overlay-info" id="metadataOverlayInfo">
-                                    <div class="metadata-overlay-list" id="metadataOverlayContent"></div>
-                                </div>
-                                <div class="metadata-overlay-section metadata-overlay-options inactive" id="metadataOverlayOptions">
-                                    <div class="metadata-overlay-section-title">表示オプション</div>
-                                    <div class="metadata-overlay-toggle-list">
-                                        <label class="metadata-overlay-toggle metadata-toggle">
-                                            <span>メタデータオーバーレイ</span>
-                                            <input type="checkbox" id="metadataLayerToggle" checked onchange="toggleLayer('metadataOverlay', this.checked)">
-                                        </label>
-                                        <label class="metadata-overlay-toggle metadata-dependent">
-                                            <span>1mグリッド</span>
-                                            <input type="checkbox" id="gridOverlayToggle" data-option="showGrid" checked onchange="toggleOverlayOption('showGrid', this.checked)">
-                                        </label>
-                                        <label class="metadata-overlay-toggle metadata-dependent">
-                                            <span>原点マーカー</span>
-                                            <input type="checkbox" id="originOverlayToggle" data-option="showOrigin" checked onchange="toggleOverlayOption('showOrigin', this.checked)">
-                                        </label>
-                                        <label class="metadata-overlay-toggle metadata-dependent">
-                                            <span>スケールバー</span>
-                                            <input type="checkbox" id="scaleOverlayToggle" data-option="showScaleBar" checked onchange="toggleOverlayOption('showScaleBar', this.checked)">
-                                        </label>
-                                    </div>
                                 </div>
                             </div>
                         </div>

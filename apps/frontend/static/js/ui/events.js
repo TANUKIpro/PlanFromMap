@@ -2,10 +2,14 @@
  * @file events.js
  * @description イベントリスナーのセットアップを管理するモジュール
  * @requires ../state/mapState.js - マップの状態管理
+ * @requires ../utils/coordinates.js - 座標変換ユーティリティ
+ * @requires ./statusBar.js - ステータスバー更新
  * @exports setupEventListeners - すべてのイベントリスナーをセットアップする関数
  */
 
 import { mapState } from '../state/mapState.js';
+import { canvasToWorld } from '../utils/coordinates.js';
+import { updateCursorPosition } from './statusBar.js';
 
 /**
  * すべてのイベントリスナーをセットアップする
@@ -275,12 +279,20 @@ function handleMouseMove(e) {
     const container = document.getElementById('mapContainer');
     const tool = mapState.drawingState.currentTool;
 
+    // マウス位置を取得してワールド座標に変換し、ステータスバーを更新
+    const rect = container.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
+
+    const worldPos = canvasToWorld(canvasX, canvasY, container);
+    if (worldPos) {
+        updateCursorPosition(worldPos.x, worldPos.y);
+    } else {
+        updateCursorPosition(null, null);
+    }
+
     // 四角形ツールが有効な場合、四角形イベントハンドラーを呼び出す
     if (mapState.rectangleToolState && mapState.rectangleToolState.enabled) {
-        const rect = container.getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
-
         if (window.handleRectangleMouseMove && typeof window.handleRectangleMouseMove === 'function') {
             const handled = window.handleRectangleMouseMove(canvasX, canvasY);
             if (handled) {
@@ -316,10 +328,6 @@ function handleMouseMove(e) {
     // 描画中
     else if (mapState.drawingState.isDrawing && (tool === 'pencil' || tool === 'eraser')) {
         e.preventDefault();
-
-        const rect = container.getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
 
         // 画像ピクセル座標に変換
         if (window.canvasToImagePixel && typeof window.canvasToImagePixel === 'function') {

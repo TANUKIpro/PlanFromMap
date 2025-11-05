@@ -12,6 +12,8 @@
  * @exports worldToCanvas - ワールド座標をキャンバス座標に変換
  * @exports canvasToImagePixel - キャンバス座標を画像ピクセル座標に変換
  * @exports imagePixelToCanvas - 画像ピクセル座標をキャンバス座標に変換
+ * @exports imagePixelToWorld - 画像ピクセル座標をワールド座標に変換
+ * @exports canvasToWorld - キャンバス座標をワールド座標に変換
  */
 
 import { mapState } from '../state/mapState.js';
@@ -130,4 +132,71 @@ export function imagePixelToCanvas(imagePixelX, imagePixelY, container) {
     const canvasY = imagePixelY * mapState.scale + drawY;
 
     return {x: canvasX, y: canvasY};
+}
+
+/**
+ * 画像ピクセル座標をワールド座標（メートル）に変換
+ *
+ * この関数は、画像のピクセル座標を、実世界のメートル座標に変換します。
+ * worldToCanvas の逆変換です。
+ *
+ * @param {number} imagePixelX - 画像のピクセルX座標
+ * @param {number} imagePixelY - 画像のピクセルY座標
+ * @returns {Object|null} ワールド座標 {x, y}、またはメタデータがない場合はnull
+ *
+ * @example
+ * // 画像の特定のピクセル位置（100, 100）をワールド座標に変換
+ * const worldPos = imagePixelToWorld(100, 100);
+ * if (worldPos) {
+ *   console.log(`World position: ${worldPos.x} m, ${worldPos.y} m`);
+ * }
+ */
+export function imagePixelToWorld(imagePixelX, imagePixelY) {
+    if (!mapState.metadata || !Array.isArray(mapState.metadata.origin) || !mapState.image) {
+        return null;
+    }
+    const resolution = mapState.metadata.resolution;
+    if (!resolution) return null;
+
+    const [originX, originY] = mapState.metadata.origin;
+
+    // 画像ピクセル座標からワールド座標への変換
+    // Y軸は画像では上が0、ワールド座標では下が0なので反転が必要
+    const worldX = originX + imagePixelX * resolution;
+    const worldY = originY + (mapState.image.height - imagePixelY) * resolution;
+
+    if (!isFinite(worldX) || !isFinite(worldY)) {
+        return null;
+    }
+
+    return {x: worldX, y: worldY};
+}
+
+/**
+ * キャンバス座標をワールド座標（メートル）に変換
+ *
+ * この関数は、画面上のキャンバス座標を、実世界のメートル座標に変換します。
+ * canvasToImagePixel と imagePixelToWorld を組み合わせた変換です。
+ *
+ * @param {number} canvasX - キャンバス上のX座標
+ * @param {number} canvasY - キャンバス上のY座標
+ * @param {HTMLElement} container - キャンバスのコンテナ要素（幅と高さの取得に使用）
+ * @returns {Object|null} ワールド座標 {x, y}、またはメタデータがない場合はnull
+ *
+ * @example
+ * // マウスクリック位置をワールド座標に変換
+ * const rect = container.getBoundingClientRect();
+ * const canvasX = e.clientX - rect.left;
+ * const canvasY = e.clientY - rect.top;
+ * const worldPos = canvasToWorld(canvasX, canvasY, container);
+ * if (worldPos) {
+ *   console.log(`World position: ${worldPos.x} m, ${worldPos.y} m`);
+ * }
+ */
+export function canvasToWorld(canvasX, canvasY, container) {
+    // まずキャンバス座標を画像ピクセル座標に変換
+    const imagePixel = canvasToImagePixel(canvasX, canvasY, container);
+
+    // 次に画像ピクセル座標をワールド座標に変換
+    return imagePixelToWorld(imagePixel.x, imagePixel.y);
 }
