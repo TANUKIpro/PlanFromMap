@@ -2,13 +2,13 @@
 
 ## 概要
 
-操作カタログは、HSRが環境内の可動要素（ドア、引き出し、家電等）を操作するための**完全な仕様**を事前定義するシステムです。
+操作カタログは、HSRが環境内の可動要素（ドア、引き出し、家電等）を操作するための完全な仕様を事前定義するシステムです。
 
 ## 設計思想
 
 ### 問題意識
 
-ロボットが扉を開ける際、以下の情報を毎回視覚的に推定するのは非効率：
+ロボットが扉を開ける際、以下の情報を毎回視覚的に推定するのは非効率:
 
 - ノブの回転方向と角度
 - 押すのか引くのか
@@ -18,7 +18,7 @@
 
 ### 解決策
 
-**人間が事前に完全な操作仕様を登録** → **ロボットは識別のみで即座に正しい操作を実行**
+人間が事前に完全な操作仕様を登録 → ロボットは識別のみで即座に正しい操作を実行
 
 ## データ構造
 
@@ -39,7 +39,7 @@ OperationCatalogEntry {
 
 #### 2.1 事前動作（pre_actions）
 
-扉を開ける前に必要な動作：
+扉を開ける前に必要な動作:
 
 ```json
 "pre_actions": [
@@ -56,7 +56,7 @@ OperationCatalogEntry {
 ]
 ```
 
-**タイプ一覧**：
+タイプ一覧:
 - `rotate_knob`: ノブを回転
 - `push_button`: ボタンを押す
 - `lift_latch`: ラッチを持ち上げる
@@ -65,7 +65,7 @@ OperationCatalogEntry {
 
 #### 2.2 主動作（main_action）
 
-メインとなる開閉動作：
+メインとなる開閉動作:
 
 ```json
 "main_action": {
@@ -80,7 +80,7 @@ OperationCatalogEntry {
 }
 ```
 
-**タイプ一覧**：
+タイプ一覧:
 - `pull` / `push`: 引く/押す
 - `slide_left` / `slide_right`: 横スライド
 - `lift` / `lower`: 上げる/下げる
@@ -88,7 +88,7 @@ OperationCatalogEntry {
 
 #### 2.3 機構情報（mechanism）
 
-物理的な構造：
+物理的な構造:
 
 ```json
 "mechanism": {
@@ -107,7 +107,7 @@ OperationCatalogEntry {
 
 #### 2.4 把持仕様（grasp_specs）
 
-どこをどう掴むか：
+どこをどう掴むか:
 
 ```json
 "grasp_specs": [
@@ -128,7 +128,7 @@ OperationCatalogEntry {
 
 ### 3. 状態検出（state_detection）
 
-開閉状態の判定方法：
+開閉状態の判定方法:
 
 ```json
 "state_detection": {
@@ -141,7 +141,7 @@ OperationCatalogEntry {
   ],
   "open_indicators": [
     {
-      "type": "visual", 
+      "type": "visual",
       "feature": "interior_visible",
       "confidence_weight": 0.9
     }
@@ -160,11 +160,11 @@ OperationCatalogEntry {
    - 場所: kitchen
 
 2. 動作パターン選択
-   [🚪回転扉] ← 選択
+   [回転扉] ← 選択
 
 3. 詳細設定
    - ノブ: [不要] ← 選択
-   - 開き方: [手前引き] ← 選択  
+   - 開き方: [手前引き] ← 選択
    - 最大角度: [90°] ← 選択
 
 4. 3Dマーキング
@@ -209,7 +209,7 @@ npm run catalog:calibrate kitchen_upper_left_door
 GET Operation FOR 'kitchen_door'
 ```
 
-**レスポンス**:
+レスポンス:
 ```json
 {
   "success": true,
@@ -222,8 +222,8 @@ GET Operation FOR 'kitchen_door'
 ### 条件検索
 
 ```sql
-FIND Operations WHERE 
-  type = 'drawer' AND 
+FIND Operations WHERE
+  type = 'drawer' AND
   location = 'bedroom' AND
   verified = true
 ```
@@ -266,7 +266,7 @@ state = executor.verify_state('open')
 | カテゴリ | テンプレートID | 説明 |
 |---------|--------------|------|
 | キャビネット | CABINET_REVOLUTE_90 | 標準的な90度開きキャビネット |
-| 引き出し | DRAWER_STANDARD | 標準引き出し（400-600mm） |
+| 引き出し | DRAWER_STANDARD | 標準引き出し (400-600mm) |
 | 冷蔵庫 | FRIDGE_MAGNETIC | マグネット式冷蔵庫扉 |
 | 食洗器 | DISHWASHER_PULLDOWN | プルダウン式食洗器 |
 
@@ -297,7 +297,7 @@ const customized = {
 ```typescript
 grasp_specs: [
   { priority: 1, ... }, // 主ハンドル
-  { priority: 2, ... }, // 副ハンドル  
+  { priority: 2, ... }, // 副ハンドル
   { priority: 3, ... }  // 緊急用エッジ把持
 ]
 ```
@@ -318,21 +318,21 @@ grasp_specs: [
 
 #### Q: 登録した仕様通りに動かない
 
-**確認項目**:
-1. 座標系の一致（map frame基準か確認）
-2. 単位の確認（mm/m、deg/rad）
+確認項目:
+1. 座標系の一致 (map frame基準か確認)
+2. 単位の確認 (mm/m、deg/rad)
 3. approach方向の符号
 
 #### Q: 把持に失敗する
 
-**対策**:
+対策:
 1. 複数の把持点を登録
 2. pre_grasp_offsetを調整
 3. approach方向を見直し
 
 #### Q: 途中で止まる
 
-**原因と対策**:
+原因と対策:
 - force_threshold_Nが低すぎる → 適切な値に調整
 - 干渉している → collision_zonesを設定
 - 機構が固い → nominal_speedを下げる
@@ -342,7 +342,7 @@ grasp_specs: [
 ### A. 座標系定義
 
 - 原点: マップ原点
-- X軸: 前方向（ロボット基準）
+- X軸: 前方向 (ロボット基準)
 - Y軸: 左方向
 - Z軸: 上方向
 - 角度: 反時計回りが正
@@ -354,9 +354,3 @@ grasp_specs: [
 | speed_mm_s | 150 | 80 | 100 |
 | force_N | 20 | 50 | 30 |
 | compliance | true | true | false |
-
-### C. 拡張予定機能
-
-- 音声フィードバック統合
-- 学習による自動調整
-- マルチロボット共有
