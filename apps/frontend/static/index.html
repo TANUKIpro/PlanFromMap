@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="styles/tabs.css">
     <link rel="stylesheet" href="styles/menu-bar.css">
     <link rel="stylesheet" href="styles/object-property-panel.css">
+    <link rel="stylesheet" href="styles/view-3d.css">
 </head>
 <body>
     <div class="container">
@@ -136,6 +137,11 @@
                                         <span>ステータスバー</span>
                                     </label>
                                 </div>
+                                <div class="menu-bar__dropdown-divider"></div>
+                                <button class="menu-bar__dropdown-item" onclick="toggle3DView(true); closeAllMenus();">
+                                    3Dプレビューを開く
+                                    <span class="menu-bar__shortcut">📦</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -320,6 +326,19 @@
                                     <button id="edgeLengthConfirm" class="edge-length-button confirm">✓</button>
                                     <button id="edgeLengthCancel" class="edge-length-button cancel">✕</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- 3Dビューコンテナ -->
+                        <div class="view-3d-container" id="view3DContainer" style="display: none;">
+                            <div class="view-3d-header">
+                                <h4>📦 3Dプレビュー</h4>
+                                <button class="view-3d-close" onclick="toggle3DView(false)">×</button>
+                            </div>
+                            <canvas id="view3DCanvas" class="view-3d-canvas"></canvas>
+                            <div class="view-3d-controls">
+                                <button onclick="set3DViewRotation(45, 30)" title="リセット">🔄</button>
+                                <button onclick="toggle3DView(false)" title="閉じる">✕</button>
                             </div>
                         </div>
 

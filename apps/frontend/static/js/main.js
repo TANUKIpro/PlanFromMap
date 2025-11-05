@@ -172,6 +172,15 @@ import {
     refreshPropertyPanel
 } from './ui/objectPropertyPanel.js';
 
+// 3D描画
+import {
+    initialize3DView,
+    render3DScene,
+    update3DObject,
+    toggle3DView,
+    set3DViewRotation
+} from './modules/threeDRenderer.js';
+
 // ステータスバー
 import {
     updateStatusBar,
@@ -315,6 +324,13 @@ window.hidePropertyPanel = hidePropertyPanel;
 window.updatePropertyPanel = updatePropertyPanel;
 window.refreshPropertyPanel = refreshPropertyPanel;
 
+// 3D描画
+window.initialize3DView = initialize3DView;
+window.render3DScene = render3DScene;
+window.update3DObject = update3DObject;
+window.toggle3DView = toggle3DView;
+window.set3DViewRotation = set3DViewRotation;
+
 // ステータスバー
 window.updateStatusBar = updateStatusBar;
 window.updateFileName = updateFileName;
@@ -353,6 +369,9 @@ function initializeApp() {
 
     // オブジェクトプロパティパネルを初期化
     initializePropertyPanel();
+
+    // 3Dビューを初期化
+    initialize3DView();
 
     console.log('Application initialized successfully');
 }

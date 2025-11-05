@@ -14,13 +14,17 @@ apps/frontend/static/
 │   ├── drawing-tools.css          # 116行 - 描画ツール
 │   ├── layers-panel.css           # 183行 - レイヤーパネル
 │   ├── metadata-overlay.css       # 188行 - メタデータオーバーレイ
-│   └── tabs.css                   # 128行 - タブUI
+│   ├── tabs.css                   # 128行 - タブUI
+│   ├── object-property-panel.css  # 300行 - オブジェクトプロパティパネル
+│   └── view-3d.css                # 80行 - 3Dビュー
 ├── js/                            # JavaScriptモジュール (17ファイル)
 │   ├── main.js                    # 98行 - エントリーポイント
 │   ├── config.js                  # 150行 - 設定・定数
 │   ├── state/
 │   │   └── mapState.js            # 250行 - 状態管理
-│   ├── modules/                   # コア機能 (10ファイル)
+│   ├── models/                    # データモデル (1ファイル)
+│   │   └── objectTypes.js         # 500行 - オブジェクトタイプ定義
+│   ├── modules/                   # コア機能 (13ファイル)
 │   │   ├── layerManager.js        # 488行 - レイヤー管理
 │   │   ├── historyManager.js      # 175行 - アンドゥ/リドゥ
 │   │   ├── viewportControl.js     # 117行 - ズーム/パン
@@ -29,14 +33,18 @@ apps/frontend/static/
 │   │   ├── metadataDisplay.js     # 225行 - メタデータ表示
 │   │   ├── fileLoader.js          # 259行 - ファイル読み込み
 │   │   ├── apiClient.js           # 139行 - API通信
-│   │   └── profileManager.js      # 400行 - プロファイル管理
+│   │   ├── profileManager.js      # 400行 - プロファイル管理
+│   │   ├── rectangleManager.js    # 293行 - 四角形管理
+│   │   ├── objectPropertyManager.js # 350行 - オブジェクトプロパティ管理
+│   │   └── threeDRenderer.js      # 520行 - 3D描画（等角投影）
 │   ├── utils/                     # ユーティリティ (4ファイル)
 │   │   ├── coordinates.js         # 133行 - 座標変換
 │   │   ├── formatting.js          # 94行 - フォーマット
 │   │   ├── canvas.js              # 54行 - Canvas操作
 │   │   └── imageProcessing.js     # 190行 - 画像処理
-│   └── ui/                        # UI制御 (3ファイル)
+│   └── ui/                        # UI制御 (4ファイル)
 │       ├── tabs.js                # 48行 - タブ切り替え
+│       ├── objectPropertyPanel.js # 550行 - オブジェクトプロパティパネル
 │       ├── controls.js            # 163行 - UIコントロール
 │       ├── toast.js               # 143行 - トーストメッセージ
 │       └── events.js              # 404行 - イベント管理
