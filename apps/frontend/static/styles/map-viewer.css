@@ -125,3 +125,55 @@
     left: 0;
     image-rendering: pixelated;
 }
+
+/* ========================================
+   ステータスバー
+   ======================================== */
+.status-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: #2d3748;
+    color: #e2e8f0;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    border-top: 1px solid #4a5568;
+    z-index: 1000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.status-bar.hidden {
+    display: none;
+}
+
+.status-bar-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-bar-label {
+    color: #a0aec0;
+    font-weight: 500;
+}
+
+.status-bar-value {
+    color: #e2e8f0;
+    font-weight: 400;
+}
+
+.status-bar-separator {
+    color: #4a5568;
+    margin: 0 4px;
+}
+
+.status-bar-metadata {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+}

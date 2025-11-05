@@ -23,12 +23,16 @@ import {
     loadYAMLFile,
     clearMap,
     drawMap,
+    saveAsPGM,
     showProfileManager,
     closeProfileManager,
     saveCurrentProfile,
     loadSelectedProfile,
     deleteSelectedProfile,
     exportSelectedProfile,
+    importProfile,
+    exportCurrentProfile,
+    handleProfileFileSelect,
     toggleDrawingToolsExpand,
     toggleDrawingToolsVisibility,
     toggleLayersPanelExpand,
@@ -144,6 +148,17 @@ import {
     handleRectangleMouseUp
 } from './modules/rectangleInteraction.js';
 
+// ステータスバー
+import {
+    updateStatusBar,
+    updateFileName,
+    updateCursorPosition,
+    updateSelectedLayer,
+    updateMetadataStatus,
+    toggleStatusBar,
+    restoreStatusBarVisibility
+} from './ui/statusBar.js';
+
 // =====================================
 // グローバルスコープへの公開
 // （HTML内のonclick/onchange属性との互換性のため）
@@ -157,6 +172,7 @@ window.loadImageFile = loadImageFile;
 window.loadYAMLFile = loadYAMLFile;
 window.clearMap = clearMap;
 window.drawMap = drawMap;
+window.saveAsPGM = saveAsPGM;
 
 // プロファイル管理
 window.showProfileManager = showProfileManager;
@@ -165,6 +181,9 @@ window.saveCurrentProfile = saveCurrentProfile;
 window.loadSelectedProfile = loadSelectedProfile;
 window.deleteSelectedProfile = deleteSelectedProfile;
 window.exportSelectedProfile = exportSelectedProfile;
+window.importProfile = importProfile;
+window.exportCurrentProfile = exportCurrentProfile;
+window.handleProfileFileSelect = handleProfileFileSelect;
 window.quickSave = quickSave;
 window.saveAs = saveAs;
 
@@ -253,6 +272,14 @@ window.handleRectangleMouseDown = handleRectangleMouseDown;
 window.handleRectangleMouseMove = handleRectangleMouseMove;
 window.handleRectangleMouseUp = handleRectangleMouseUp;
 
+// ステータスバー
+window.updateStatusBar = updateStatusBar;
+window.updateFileName = updateFileName;
+window.updateCursorPosition = updateCursorPosition;
+window.updateSelectedLayer = updateSelectedLayer;
+window.updateMetadataStatus = updateMetadataStatus;
+window.toggleStatusBar = toggleStatusBar;
+
 // =====================================
 // 初期化処理
 // =====================================
@@ -277,6 +304,9 @@ function initializeApp() {
 
     // オーバーレイコントロールを更新
     updateOverlayControls();
+
+    // ステータスバーの表示状態を復元
+    restoreStatusBarVisibility();
 
     console.log('Application initialized successfully');
 }

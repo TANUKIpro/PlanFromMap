@@ -6,10 +6,14 @@
  * ユーティリティ関数が含まれています：
  * - PGMフォーマットのパース
  * - PGMデータからImageオブジェクトへの変換
+ * - PGM形式への変換とファイル生成
  * - 16進数カラーコードの変換
  *
  * @exports parsePGM - PGMフォーマット（P5, P2）をパース
  * @exports pgmToImage - PGMデータをImageオブジェクトに変換
+ * @exports imageToPGM - ImageまたはCanvasをPGMデータに変換
+ * @exports canvasToPGM - CanvasをPGMデータに変換
+ * @exports downloadPGM - PGMファイルをダウンロード
  * @exports hexToRgb - 16進数カラーコードをRGB値に変換
  */
 
@@ -155,6 +159,142 @@ export function pgmToImage(pgmData) {
     img.src = tempCanvas.toDataURL();
 
     return img;
+}
+
+/**
+ * Canvasをグレースケールデータに変換
+ *
+ * @private
+ * @param {HTMLCanvasElement} canvas - 変換するキャンバス
+ * @returns {Uint8Array} グレースケールピクセルデータ
+ */
+function canvasToGrayscale(canvas) {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const grayscaleData = new Uint8Array(canvas.width * canvas.height);
+
+    for (let i = 0; i < canvas.width * canvas.height; i++) {
+        const idx = i * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const alpha = data[idx + 3];
+
+        // アルファ値が0の場合は255（白）、それ以外はグレースケール変換
+        if (alpha === 0) {
+            grayscaleData[i] = 255;
+        } else {
+            // グレースケール変換（ITU-R BT.601の係数）
+            grayscaleData[i] = Math.floor(0.299 * r + 0.587 * g + 0.114 * b);
+        }
+    }
+
+    return grayscaleData;
+}
+
+/**
+ * CanvasをPGMデータに変換
+ *
+ * この関数は、HTMLCanvasElementをPGMフォーマット（P5: バイナリ形式）のデータに変換します。
+ * キャンバスの内容をグレースケールに変換し、PGMヘッダーとピクセルデータを生成します。
+ *
+ * @param {HTMLCanvasElement} canvas - 変換するキャンバス
+ * @returns {Uint8Array} PGMフォーマットのバイナリデータ
+ *
+ * @example
+ * const canvas = document.getElementById('myCanvas');
+ * const pgmData = canvasToPGM(canvas);
+ */
+export function canvasToPGM(canvas) {
+    if (!canvas || !canvas.getContext) {
+        throw new Error('有効なCanvasが指定されていません');
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const grayscaleData = canvasToGrayscale(canvas);
+
+    // PGMヘッダーを生成
+    const header = `P5\n${width} ${height}\n255\n`;
+    const headerBytes = new TextEncoder().encode(header);
+
+    // ヘッダーとピクセルデータを結合
+    const pgmData = new Uint8Array(headerBytes.length + grayscaleData.length);
+    pgmData.set(headerBytes, 0);
+    pgmData.set(grayscaleData, headerBytes.length);
+
+    return pgmData;
+}
+
+/**
+ * ImageまたはCanvasをPGMデータに変換
+ *
+ * この関数は、HTMLImageElementまたはHTMLCanvasElementをPGMフォーマットのデータに変換します。
+ * Imageの場合は一時的なCanvasを作成してから変換します。
+ *
+ * @param {HTMLImageElement|HTMLCanvasElement} source - 変換する画像またはキャンバス
+ * @returns {Uint8Array} PGMフォーマットのバイナリデータ
+ *
+ * @example
+ * const img = document.getElementById('myImage');
+ * const pgmData = imageToPGM(img);
+ */
+export function imageToPGM(source) {
+    if (!source) {
+        throw new Error('画像またはキャンバスが指定されていません');
+    }
+
+    // Canvasの場合はそのまま変換
+    if (source instanceof HTMLCanvasElement) {
+        return canvasToPGM(source);
+    }
+
+    // Imageの場合は一時Canvasを作成
+    if (source instanceof HTMLImageElement) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = source.width;
+        tempCanvas.height = source.height;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(source, 0, 0);
+        return canvasToPGM(tempCanvas);
+    }
+
+    throw new Error('サポートされていないソースタイプです');
+}
+
+/**
+ * PGMファイルをダウンロード
+ *
+ * この関数は、PGMデータをファイルとしてダウンロードします。
+ * ブラウザのダウンロード機能を使用して、指定されたファイル名でPGMファイルを保存します。
+ *
+ * @param {Uint8Array} pgmData - PGMフォーマットのバイナリデータ
+ * @param {string} filename - 保存するファイル名（拡張子を含む）
+ *
+ * @example
+ * const canvas = document.getElementById('myCanvas');
+ * const pgmData = canvasToPGM(canvas);
+ * downloadPGM(pgmData, 'map.pgm');
+ */
+export function downloadPGM(pgmData, filename) {
+    if (!pgmData || !(pgmData instanceof Uint8Array)) {
+        throw new Error('有効なPGMデータが指定されていません');
+    }
+
+    if (!filename || typeof filename !== 'string') {
+        throw new Error('有効なファイル名が指定されていません');
+    }
+
+    const blob = new Blob([pgmData], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 /**

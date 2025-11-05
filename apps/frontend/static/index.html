@@ -24,6 +24,7 @@
         <!-- 隠しファイル入力 -->
         <input type="file" id="imageFileInput" accept="image/*,.pgm" style="display: none;" onchange="handleImageFileSelect(event)">
         <input type="file" id="yamlFileInput" accept=".yaml,.yml" style="display: none;" onchange="handleYAMLFileSelect(event)">
+        <input type="file" id="profileFileInput" accept=".json" style="display: none;" onchange="handleProfileFileSelect(event)">
 
         <!-- タブコンテナ -->
         <div class="tabs-container">
@@ -52,8 +53,11 @@
                                     <span class="menu-bar__shortcut">Ctrl+S</span>
                                 </button>
                                 <button class="menu-bar__dropdown-item" onclick="saveAs(); closeAllMenus();">名前を付けて保存...</button>
+                                <button class="menu-bar__dropdown-item" onclick="saveAsPGM(); closeAllMenus();">マップをPGMで保存...</button>
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <button class="menu-bar__dropdown-item" onclick="showProfileManager(); closeAllMenus();">プロファイル管理</button>
+                                <button class="menu-bar__dropdown-item" onclick="importProfile(); closeAllMenus();">プロファイルをインポート...</button>
+                                <button class="menu-bar__dropdown-item" onclick="exportCurrentProfile(); closeAllMenus();">プロファイルをエクスポート...</button>
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <button class="menu-bar__dropdown-item" onclick="clearMap(); closeAllMenus();">マップをクリア</button>
                             </div>
@@ -266,6 +270,29 @@
                                         </label>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- ステータスバー -->
+                        <div class="status-bar" id="statusBar">
+                            <div class="status-bar-section">
+                                <span class="status-bar-label">ファイル:</span>
+                                <span class="status-bar-value" id="statusFileName">-</span>
+                            </div>
+                            <div class="status-bar-section">
+                                <span class="status-bar-label">カーソル:</span>
+                                <span class="status-bar-value" id="statusCursor">-</span>
+                            </div>
+                            <div class="status-bar-section">
+                                <span class="status-bar-label">レイヤー:</span>
+                                <span class="status-bar-value" id="statusLayer">-</span>
+                            </div>
+                            <div class="status-bar-section status-bar-metadata" id="statusMetadata">
+                                <span class="status-bar-label">解像度:</span>
+                                <span class="status-bar-value" id="statusResolution">-</span>
+                                <span class="status-bar-separator">|</span>
+                                <span class="status-bar-label">原点:</span>
+                                <span class="status-bar-value" id="statusOrigin">-</span>
                             </div>
                         </div>
                     </div>

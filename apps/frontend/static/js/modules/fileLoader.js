@@ -1,14 +1,16 @@
 /**
  * @file fileLoader.js
- * @description ファイル読み込み関連の機能を提供するモジュール
+ * @description ファイル読み込み・保存関連の機能を提供するモジュール
  * @requires ../state/mapState.js
  * @requires ./layerManager.js
  * @requires ./metadataDisplay.js
+ * @requires ../utils/imageProcessing.js
  * @exports handleImageFileSelect
  * @exports handleYAMLFileSelect
  * @exports loadStandardImageFile
  * @exports loadYAMLMetadataFile
  * @exports loadPGMImageFile
+ * @exports saveMapAsPGM
  * @exports parsePGM
  * @exports pgmToImage
  */
@@ -16,6 +18,7 @@
 import { mapState } from '../state/mapState.js';
 import { initializeLayers, redrawAllLayers } from './layerManager.js';
 import { displayMetadata, updateOverlayControls } from './metadataDisplay.js';
+import { canvasToPGM, downloadPGM } from '../utils/imageProcessing.js';
 
 /**
  * PGMフォーマットをパース（P5形式とP2形式に対応）
@@ -162,6 +165,7 @@ export function loadStandardImageFile(file) {
         const img = new Image();
         img.onload = function() {
             mapState.image = img;
+            mapState.imageFileName = file.name;
             mapState.scale = 1.0;
             mapState.offsetX = 0;
             mapState.offsetY = 0;
@@ -189,6 +193,11 @@ export function loadStandardImageFile(file) {
 
             // すべてのレイヤーを再描画
             redrawAllLayers();
+
+            // ステータスバーを更新
+            if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                window.updateStatusBar();
+            }
         };
         img.src = e.target.result;
     };
@@ -209,6 +218,7 @@ export function loadYAMLMetadataFile(file) {
 
             // メタデータを保存
             mapState.metadata = metadata;
+            mapState.yamlFileName = file.name;
             mapState.layers.metadataOverlay = true;
 
             // メタデータを表示
@@ -219,6 +229,11 @@ export function loadYAMLMetadataFile(file) {
 
             // すべてのレイヤーを再描画（メタデータオーバーレイを含む）
             redrawAllLayers();
+
+            // ステータスバーを更新
+            if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                window.updateStatusBar();
+            }
         } catch (error) {
             console.error('YAMLファイルの読み込みに失敗:', error);
             alert('YAMLファイルの読み込みに失敗しました: ' + error.message);
@@ -247,6 +262,7 @@ export function loadPGMImageFile(file) {
 
             img.onload = function() {
                 mapState.image = img;
+                mapState.imageFileName = file.name;
                 mapState.scale = 1.0;
                 mapState.offsetX = 0;
                 mapState.offsetY = 0;
@@ -274,6 +290,11 @@ export function loadPGMImageFile(file) {
 
                 // すべてのレイヤーを再描画
                 redrawAllLayers();
+
+                // ステータスバーを更新
+                if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                    window.updateStatusBar();
+                }
             };
         } catch (error) {
             console.error('PGMファイルの読み込みに失敗:', error);
@@ -281,4 +302,67 @@ export function loadPGMImageFile(file) {
         }
     };
     reader.readAsArrayBuffer(file);
+}
+
+/**
+ * 現在のマップをPGMファイルとして保存
+ *
+ * すべてのレイヤーを統合したキャンバスをPGM形式で保存します。
+ * ファイル名は、インポートしたファイル名をベースにするか、デフォルト名を使用します。
+ *
+ * @export
+ * @param {string} [filename] - 保存するファイル名（省略時は自動生成）
+ */
+export function saveMapAsPGM(filename) {
+    try {
+        // 画像が読み込まれていない場合はエラー
+        if (!mapState.image) {
+            throw new Error('保存する画像がありません');
+        }
+
+        // すべての可視レイヤーを統合したキャンバスを作成
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = mapState.image.width;
+        tempCanvas.height = mapState.image.height;
+        const ctx = tempCanvas.getContext('2d');
+
+        // 背景を白で塗りつぶし
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        // レイヤースタックを下から順に描画
+        mapState.layerStack.forEach(layer => {
+            if (layer.visible && layer.canvas) {
+                // 元のサイズでレイヤーを描画
+                ctx.globalAlpha = layer.opacity || 1.0;
+                ctx.drawImage(layer.canvas, 0, 0);
+            }
+        });
+
+        // アルファを戻す
+        ctx.globalAlpha = 1.0;
+
+        // PGMデータに変換
+        const pgmData = canvasToPGM(tempCanvas);
+
+        // ファイル名を決定
+        let finalFilename = filename;
+        if (!finalFilename) {
+            // 画像ファイル名がある場合はそれを使用
+            if (mapState.imageFileName) {
+                const baseName = mapState.imageFileName.replace(/\.[^/.]+$/, '');
+                finalFilename = `${baseName}_exported.pgm`;
+            } else {
+                finalFilename = 'map_exported.pgm';
+            }
+        }
+
+        // ファイルをダウンロード
+        downloadPGM(pgmData, finalFilename);
+
+        console.log('saveMapAsPGM: PGMファイル保存成功', finalFilename);
+    } catch (error) {
+        console.error('saveMapAsPGM: 保存エラー', error);
+        throw error;
+    }
 }

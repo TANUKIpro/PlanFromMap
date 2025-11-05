@@ -35,6 +35,12 @@ export const mapState = {
     /** 読み込まれた画像データ */
     image: null,
 
+    /** 現在読み込んでいる画像ファイル名 */
+    imageFileName: null,
+
+    /** 現在読み込んでいるYAMLファイル名 */
+    yamlFileName: null,
+
     /** 現在のスケール（拡大率） */
     scale: CANVAS_DEFAULTS.INITIAL_SCALE,
 
@@ -174,6 +180,8 @@ export function updateState(updates) {
  */
 export function resetState() {
     mapState.image = null;
+    mapState.imageFileName = null;
+    mapState.yamlFileName = null;
     mapState.scale = CANVAS_DEFAULTS.INITIAL_SCALE;
     mapState.offsetX = CANVAS_DEFAULTS.INITIAL_OFFSET_X;
     mapState.offsetY = CANVAS_DEFAULTS.INITIAL_OFFSET_Y;
