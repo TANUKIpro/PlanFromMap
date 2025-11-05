@@ -425,7 +425,262 @@ addLayer(newLayer);
 - 共通処理を別モジュールに抽出
 - イベント駆動アーキテクチャの採用
 
+## テスト戦略
+
+### テストの重要性
+
+新機能の実装やリファクタリング時には、必ずテストを実行して既存機能が破壊されていないことを確認してください。
+
+### テストの種類
+
+#### 1. ユニットテスト
+個々のモジュール・関数の動作をテストします。
+
+**Python（バックエンド）:**
+```bash
+# すべてのバックエンドユニットテスト
+pytest tests/unit/backend/
+
+# 特定のテストファイル
+pytest tests/unit/backend/test_operations.py
+
+# 特定のテストケース
+pytest tests/unit/backend/test_operations.py::TestOperationsAPI::test_get_operations_returns_200
+```
+
+**JavaScript（フロントエンド）:**
+```bash
+# すべてのフロントエンドユニットテスト
+npm run test:unit:frontend
+
+# ウォッチモード（開発時）
+npm run test:watch
+
+# UIモード
+npm run test:ui
+```
+
+#### 2. 統合テスト
+複数のモジュール間の連携をテストします。
+
+```bash
+# バックエンド統合テスト
+pytest tests/integration/backend/
+
+# フロントエンド統合テスト
+npm run test:integration:frontend
+```
+
+#### 3. E2Eテスト
+実際のブラウザ環境で、ユーザーの操作フローをテストします。
+
+```bash
+# すべてのE2Eテスト
+npm run test:e2e
+
+# 特定のブラウザのみ
+npx playwright test --project=chromium
+```
+
+### テストカバレッジ
+
+テストカバレッジレポートを生成して、テストされていないコードを特定します。
+
+```bash
+# すべてのカバレッジレポート生成
+npm run test:coverage
+
+# バックエンドのみ
+npm run test:coverage:backend
+
+# フロントエンドのみ
+npm run test:coverage:frontend
+```
+
+**カバレッジレポート:**
+- Python: `tests/coverage/backend/html/index.html`
+- JavaScript: `tests/coverage/frontend/index.html`
+
+### テストデータとプロファイルの管理
+
+#### テストデータの保存
+
+テスト実行中に生成されたデータやプロファイルは、`tests/reports/` ディレクトリに自動的に保存されます。これにより、テスト結果の解析や問題の再現が容易になります。
+
+**例:**
+```python
+# Pythonテストでデータを保存
+def test_create_operation(client, save_test_output):
+    response = client.post('/api/operations', json=data)
+    result = response.get_json()
+
+    # テスト結果を保存
+    save_test_output('operation_creation_test', result)
+```
+
+#### テストフィクスチャ
+
+テスト用のフィクスチャは `tests/fixtures/` に配置されています:
+
+- `tests/fixtures/maps/` - テスト用マップデータ（YAML, PGM）
+- `tests/fixtures/profiles/` - テスト用プロファイルJSON
+
+### テスト実行のベストプラクティス
+
+#### 1. テストの独立性
+各テストは他のテストに依存しないように作成してください。
+
+```javascript
+// 良い例
+describe('layerManager', () => {
+  beforeEach(() => {
+    // 各テスト前に状態をリセット
+    resetState();
+  });
+
+  it('レイヤーを追加できる', () => {
+    // テストコード
+  });
+});
+```
+
+#### 2. AAA形式
+テストコードは Arrange-Act-Assert 形式で記述してください。
+
+```javascript
+it('ズーム操作が正しく動作する', () => {
+  // Arrange: テストの準備
+  const initialScale = mapState.scale;
+
+  // Act: 実際の操作
+  zoomIn();
+
+  // Assert: 結果の検証
+  expect(mapState.scale).toBeGreaterThan(initialScale);
+});
+```
+
+#### 3. わかりやすいテスト名
+テスト名は「何をテストするか」が明確にわかるようにしてください。
+
+```python
+# 良い例
+def test_get_operations_returns_200(client):
+    """操作カタログ一覧取得が200を返すことを確認"""
+    # テストコード
+
+# 悪い例
+def test_operations(client):
+    # テストコード
+```
+
+#### 4. クリーンアップ
+テスト後は必ず状態をクリーンアップしてください。
+
+```javascript
+afterEach(() => {
+  // モックをリセット
+  vi.clearAllMocks();
+
+  // localStorageをクリア
+  localStorage.clear();
+});
+```
+
+### 新機能実装時のテスト手順
+
+1. **ユニットテストを先に書く（TDD推奨）**
+   ```bash
+   # テストを先に書いて実行（失敗することを確認）
+   npm run test:watch
+   ```
+
+2. **機能を実装する**
+   - テストが通るように実装
+
+3. **統合テストを追加する**
+   - 複数のモジュールが連携して動作することを確認
+
+4. **E2Eテストを追加する（必要に応じて）**
+   - ユーザー視点での動作を確認
+
+5. **すべてのテストを実行して確認**
+   ```bash
+   npm run test
+   ```
+
+### リファクタリング時のテスト手順
+
+1. **既存のテストをすべて実行**
+   ```bash
+   npm run test
+   ```
+   - すべてのテストが通ることを確認
+
+2. **リファクタリングを実行**
+
+3. **再度すべてのテストを実行**
+   - リファクタリング後もすべてのテストが通ることを確認
+
+4. **カバレッジを確認**
+   ```bash
+   npm run test:coverage
+   ```
+   - カバレッジが低下していないことを確認
+
+### CI/CD統合
+
+GitHub Actionsを使用して、プッシュ時やプルリクエスト時に自動的にテストが実行されます。
+
+**ワークフロー:** `.github/workflows/test.yml`
+
+テストが失敗した場合、マージはブロックされます。
+
+### テストレポート
+
+テスト実行後、以下のレポートが生成されます:
+
+- **HTMLレポート:** `tests/reports/`
+- **カバレッジレポート:** `tests/coverage/`
+- **Playwrightレポート:** `tests/reports/playwright/`
+
+これらのレポートを確認して、テストの実行状況やカバレッジを把握してください。
+
+### トラブルシューティング
+
+#### テストが失敗する場合
+
+1. **エラーメッセージを確認**
+   - どのテストが失敗しているかを特定
+
+2. **該当するコードを確認**
+   - 最近の変更が影響していないか確認
+
+3. **テストを個別に実行**
+   ```bash
+   # 特定のテストのみ実行
+   pytest tests/unit/backend/test_operations.py::test_specific_case -v
+   ```
+
+4. **デバッグモードで実行**
+   ```bash
+   # Vitestのデバッグモード
+   npm run test:ui
+   ```
+
+#### カバレッジが低い場合
+
+1. **カバレッジレポートを確認**
+   - どの部分がテストされていないかを特定
+
+2. **不足しているテストを追加**
+   - エッジケースや例外処理のテストを追加
+
+3. **不要なコードを削除**
+   - デッドコードがあれば削除
+
 ## 関連ドキュメント
 
 - [MODULE_INDEX.md](./MODULE_INDEX.md) - モジュール詳細
 - [README.md](./README.md) - プロジェクト概要
+- [TESTING.md](./TESTING.md) - テスト詳細ドキュメント

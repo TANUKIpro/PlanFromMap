@@ -1,0 +1,31 @@
+{
+  "profileName": "test_profile",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "mapImage": null,
+  "metadata": {
+    "resolution": 0.05,
+    "origin": [-10.0, -10.0, 0.0],
+    "negate": 0,
+    "occupied_thresh": 0.65,
+    "free_thresh": 0.196
+  },
+  "layers": [
+    {
+      "id": "layer-1",
+      "name": "Test Map Layer",
+      "type": "image",
+      "visible": true,
+      "permanent": true
+    },
+    {
+      "id": "layer-2",
+      "name": "Drawing Layer",
+      "type": "drawing",
+      "visible": true,
+      "permanent": false
+    }
+  ],
+  "scale": 1.0,
+  "offsetX": 0,
+  "offsetY": 0
+}
