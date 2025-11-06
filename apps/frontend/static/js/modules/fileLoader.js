@@ -18,7 +18,8 @@
 import { mapState } from '../state/mapState.js';
 import { initializeLayers, redrawAllLayers } from './layerManager.js';
 import { displayMetadata, updateOverlayControls } from './metadataDisplay.js';
-import { canvasToPGM, downloadPGM, analyzeMapBounds, extractValidRegion } from '../utils/imageProcessing.js';
+import { canvasToPGM, downloadPGM, analyzeMapBounds } from '../utils/imageProcessing.js';
+import { API_BASE_URL } from '../config.js';
 
 /**
  * 有効領域にフィットするようにビューを調整
@@ -197,103 +198,112 @@ export function handleYAMLFileSelect(event) {
 }
 
 /**
+ * バックエンドAPIで画像を最適化
+ * @private
+ * @param {File} file - 画像ファイル
+ * @returns {Promise<Object>} 最適化結果
+ */
+async function optimizeImageWithAPI(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('black_threshold', '100');
+    formData.append('white_threshold', '220');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/optimize-image`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('optimizeImageWithAPI: エラー', error);
+        throw error;
+    }
+}
+
+/**
  * 通常の画像ファイルを読み込む
  * @export
  * @param {File} file - 画像ファイル
  */
-export function loadStandardImageFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
+export async function loadStandardImageFile(file) {
+    try {
+        console.log(`loadStandardImageFile: 画像を最適化中...`);
+
+        // バックエンドAPIで画像を最適化
+        const optimizedResult = await optimizeImageWithAPI(file);
+
+        if (!optimizedResult.success) {
+            throw new Error(optimizedResult.error || '画像の最適化に失敗しました');
+        }
+
+        console.log(`loadStandardImageFile: 元のサイズ ${optimizedResult.original_size.width}x${optimizedResult.original_size.height}`);
+        console.log(`loadStandardImageFile: 最適化後のサイズ ${optimizedResult.cropped_size.width}x${optimizedResult.cropped_size.height}`);
+
+        const reductionPercent = ((1 - (optimizedResult.cropped_size.width * optimizedResult.cropped_size.height) /
+                                      (optimizedResult.original_size.width * optimizedResult.original_size.height)) * 100).toFixed(1);
+        console.log(`loadStandardImageFile: ${reductionPercent}% 削減`);
+
+        // 最適化された画像を読み込む
         const img = new Image();
         img.onload = function() {
-            console.log(`loadStandardImageFile: 元のサイズ ${img.width}x${img.height}`);
+            mapState.image = img;
+            mapState.imageFileName = file.name;
+            mapState.layers.image = true;
 
-            // 有効領域を検出してクロップを試みる
-            const bounds = analyzeMapBounds(img);
+            // クロップオフセット情報を保存
+            mapState.imageCropOffset = optimizedResult.offset;
+            mapState.originalImageSize = optimizedResult.original_size;
 
-            let finalImage = img;
-            let cropOffset = { x: 0, y: 0 };
-            let originalSize = { width: img.width, height: img.height };
+            const container = document.getElementById('mapContainer');
+            const canvas = document.getElementById('mapCanvas');
+            const canvasStack = document.getElementById('canvasStack');
 
-            if (bounds && (bounds.minX > 0 || bounds.minY > 0 ||
-                          bounds.maxX < img.width - 1 || bounds.maxY < img.height - 1)) {
-                // クロップが必要な場合
-                const cropWidth = bounds.maxX - bounds.minX + 1;
-                const cropHeight = bounds.maxY - bounds.minY + 1;
+            // キャンバスのサイズを設定
+            const containerRect = container.getBoundingClientRect();
+            canvas.width = containerRect.width;
+            canvas.height = containerRect.height;
 
-                // 一時キャンバスで画像をクロップ
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = cropWidth;
-                tempCanvas.height = cropHeight;
-                const tempCtx = tempCanvas.getContext('2d');
+            // 有効領域にフィットするようにビューを調整
+            fitViewToBounds(img, container);
 
-                // クロップ領域を描画
-                tempCtx.drawImage(img,
-                    bounds.minX, bounds.minY, cropWidth, cropHeight,
-                    0, 0, cropWidth, cropHeight
-                );
+            // プレースホルダーを非表示、新しいレイヤーシステムを表示
+            document.getElementById('mapPlaceholder').style.display = 'none';
+            canvasStack.style.display = 'block';
+            canvas.style.display = 'none';  // 古いcanvasは非表示に
 
-                // 新しい画像を作成
-                finalImage = new Image();
-                finalImage.src = tempCanvas.toDataURL();
+            // レイヤーシステムを初期化
+            initializeLayers();
 
-                cropOffset = { x: bounds.minX, y: bounds.minY };
+            // オーバーレイコントロールを更新
+            updateOverlayControls();
 
-                const reductionPercent = ((1 - (cropWidth * cropHeight) / (img.width * img.height)) * 100).toFixed(1);
-                console.log(`loadStandardImageFile: クロップ後のサイズ ${cropWidth}x${cropHeight}, オフセット (${cropOffset.x}, ${cropOffset.y}) (${reductionPercent}% 削減)`);
-            }
+            // すべてのレイヤーを再描画
+            redrawAllLayers();
 
-            // 画像がロードされるまで待つ（クロップされた場合）
-            const setupMap = () => {
-                mapState.image = finalImage;
-                mapState.imageFileName = file.name;
-                mapState.layers.image = true;
-
-                // クロップオフセット情報を保存
-                mapState.imageCropOffset = cropOffset;
-                mapState.originalImageSize = originalSize;
-
-                const container = document.getElementById('mapContainer');
-                const canvas = document.getElementById('mapCanvas');
-                const canvasStack = document.getElementById('canvasStack');
-
-                // キャンバスのサイズを設定
-                const containerRect = container.getBoundingClientRect();
-                canvas.width = containerRect.width;
-                canvas.height = containerRect.height;
-
-                // 有効領域にフィットするようにビューを調整
-                fitViewToBounds(finalImage, container);
-
-                // プレースホルダーを非表示、新しいレイヤーシステムを表示
-                document.getElementById('mapPlaceholder').style.display = 'none';
-                canvasStack.style.display = 'block';
-                canvas.style.display = 'none';  // 古いcanvasは非表示に
-
-                // レイヤーシステムを初期化
-                initializeLayers();
-
-                // オーバーレイコントロールを更新
-                updateOverlayControls();
-
-                // すべてのレイヤーを再描画
-                redrawAllLayers();
-
-                // ステータスバーを更新
-                if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
-                    window.updateStatusBar();
-                }
-            };
-
-            if (finalImage === img) {
-                setupMap();
-            } else {
-                finalImage.onload = setupMap;
+            // ステータスバーを更新
+            if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                window.updateStatusBar();
             }
         };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+
+        img.onerror = function() {
+            console.error('loadStandardImageFile: 画像の読み込みに失敗しました');
+            alert('最適化された画像の読み込みに失敗しました');
+        };
+
+        img.src = optimizedResult.image;
+
+    } catch (error) {
+        console.error('loadStandardImageFile: エラー', error);
+        alert(`画像の読み込みに失敗しました: ${error.message}`);
+    }
 }
 
 /**
@@ -377,88 +387,78 @@ export function loadYAMLMetadataFile(file) {
  * @export
  * @param {File} file - PGMファイル
  */
-export function loadPGMImageFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const arrayBuffer = e.target.result;
-            const uint8Array = new Uint8Array(arrayBuffer);
+export async function loadPGMImageFile(file) {
+    try {
+        console.log(`loadPGMImageFile: PGM画像を最適化中...`);
 
-            // PGMフォーマットをパース
-            const pgmData = parsePGM(uint8Array);
+        // バックエンドAPIで画像を最適化
+        const optimizedResult = await optimizeImageWithAPI(file);
 
-            console.log(`loadPGMImageFile: 元のサイズ ${pgmData.width}x${pgmData.height}`);
-
-            // 有効領域を抽出してクロップ
-            const extractResult = extractValidRegion(pgmData);
-
-            let finalPGMData, cropOffset;
-            if (extractResult && extractResult.pgmData) {
-                finalPGMData = extractResult.pgmData;
-                cropOffset = {
-                    x: extractResult.pgmData.offsetX || 0,
-                    y: extractResult.pgmData.offsetY || 0
-                };
-                console.log(`loadPGMImageFile: クロップ後のサイズ ${finalPGMData.width}x${finalPGMData.height}, オフセット (${cropOffset.x}, ${cropOffset.y})`);
-            } else {
-                // 抽出失敗時は元のデータを使用
-                finalPGMData = pgmData;
-                cropOffset = { x: 0, y: 0 };
-                console.warn('loadPGMImageFile: 有効領域の抽出に失敗しました。元の画像を使用します。');
-            }
-
-            // PGMデータをImageに変換
-            const img = pgmToImage(finalPGMData);
-
-            img.onload = function() {
-                mapState.image = img;
-                mapState.imageFileName = file.name;
-                mapState.layers.image = true;
-
-                // クロップオフセット情報を保存（3Dレンダリングやその他の用途）
-                mapState.imageCropOffset = cropOffset;
-                mapState.originalImageSize = {
-                    width: pgmData.width,
-                    height: pgmData.height
-                };
-
-                const container = document.getElementById('mapContainer');
-                const canvas = document.getElementById('mapCanvas');
-                const canvasStack = document.getElementById('canvasStack');
-
-                // キャンバスのサイズを設定
-                const containerRect = container.getBoundingClientRect();
-                canvas.width = containerRect.width;
-                canvas.height = containerRect.height;
-
-                // 有効領域にフィットするようにビューを調整
-                fitViewToBounds(img, container);
-
-                // プレースホルダーを非表示、新しいレイヤーシステムを表示
-                document.getElementById('mapPlaceholder').style.display = 'none';
-                canvasStack.style.display = 'block';
-                canvas.style.display = 'none';  // 古いcanvasは非表示に
-
-                // レイヤーシステムを初期化
-                initializeLayers();
-
-                // オーバーレイコントロールを更新
-                updateOverlayControls();
-
-                // すべてのレイヤーを再描画
-                redrawAllLayers();
-
-                // ステータスバーを更新
-                if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
-                    window.updateStatusBar();
-                }
-            };
-        } catch (error) {
-            console.error('PGMファイルの読み込みに失敗:', error);
-            alert('PGMファイルの読み込みに失敗しました: ' + error.message);
+        if (!optimizedResult.success) {
+            throw new Error(optimizedResult.error || 'PGM画像の最適化に失敗しました');
         }
-    };
-    reader.readAsArrayBuffer(file);
+
+        console.log(`loadPGMImageFile: 元のサイズ ${optimizedResult.original_size.width}x${optimizedResult.original_size.height}`);
+        console.log(`loadPGMImageFile: 最適化後のサイズ ${optimizedResult.cropped_size.width}x${optimizedResult.cropped_size.height}`);
+
+        const reductionPercent = ((1 - (optimizedResult.cropped_size.width * optimizedResult.cropped_size.height) /
+                                      (optimizedResult.original_size.width * optimizedResult.original_size.height)) * 100).toFixed(1);
+        console.log(`loadPGMImageFile: ${reductionPercent}% 削減`);
+
+        // 最適化された画像を読み込む
+        const img = new Image();
+        img.onload = function() {
+            mapState.image = img;
+            mapState.imageFileName = file.name;
+            mapState.layers.image = true;
+
+            // クロップオフセット情報を保存
+            mapState.imageCropOffset = optimizedResult.offset;
+            mapState.originalImageSize = optimizedResult.original_size;
+
+            const container = document.getElementById('mapContainer');
+            const canvas = document.getElementById('mapCanvas');
+            const canvasStack = document.getElementById('canvasStack');
+
+            // キャンバスのサイズを設定
+            const containerRect = container.getBoundingClientRect();
+            canvas.width = containerRect.width;
+            canvas.height = containerRect.height;
+
+            // 有効領域にフィットするようにビューを調整
+            fitViewToBounds(img, container);
+
+            // プレースホルダーを非表示、新しいレイヤーシステムを表示
+            document.getElementById('mapPlaceholder').style.display = 'none';
+            canvasStack.style.display = 'block';
+            canvas.style.display = 'none';  // 古いcanvasは非表示に
+
+            // レイヤーシステムを初期化
+            initializeLayers();
+
+            // オーバーレイコントロールを更新
+            updateOverlayControls();
+
+            // すべてのレイヤーを再描画
+            redrawAllLayers();
+
+            // ステータスバーを更新
+            if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                window.updateStatusBar();
+            }
+        };
+
+        img.onerror = function() {
+            console.error('loadPGMImageFile: 画像の読み込みに失敗しました');
+            alert('最適化されたPGM画像の読み込みに失敗しました');
+        };
+
+        img.src = optimizedResult.image;
+
+    } catch (error) {
+        console.error('loadPGMImageFile: エラー', error);
+        alert(`PGM画像の読み込みに失敗しました: ${error.message}`);
+    }
 }
 
 /**
