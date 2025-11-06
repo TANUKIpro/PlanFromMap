@@ -137,17 +137,47 @@ export function drawMetadataOverlayOnContext(targetCtx, drawX, drawY, scaledWidt
 
     const resolution = metadata.resolution;
 
+    // グリッド描画
     if (mapState.overlaySettings.showGrid && resolution) {
-        drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution);
+        console.log('[DEBUG] About to draw grid');
+        try {
+            drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution);
+            console.log('[DEBUG] Grid drawing completed');
+        } catch (error) {
+            console.error('[DEBUG] Error drawing grid:', error);
+        }
     }
 
+    // 原点描画
     if (mapState.overlaySettings.showOrigin && Array.isArray(metadata.origin)) {
-        console.log('[DEBUG] Calling drawOriginOverlayOnContext');
-        drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
+        console.log('[DEBUG] About to draw origin, condition check:', {
+            showOrigin: mapState.overlaySettings.showOrigin,
+            isArray: Array.isArray(metadata.origin),
+            origin: metadata.origin
+        });
+        try {
+            drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
+            console.log('[DEBUG] Origin drawing completed');
+        } catch (error) {
+            console.error('[DEBUG] Error drawing origin:', error);
+        }
+    } else {
+        console.log('[DEBUG] Origin drawing skipped:', {
+            showOrigin: mapState.overlaySettings.showOrigin,
+            isArray: Array.isArray(metadata.origin),
+            hasOrigin: !!metadata.origin
+        });
     }
 
+    // スケールバー描画
     if (mapState.overlaySettings.showScaleBar && resolution) {
-        drawScaleBarOnContext(targetCtx, resolution);
+        console.log('[DEBUG] About to draw scale bar');
+        try {
+            drawScaleBarOnContext(targetCtx, resolution);
+            console.log('[DEBUG] Scale bar drawing completed');
+        } catch (error) {
+            console.error('[DEBUG] Error drawing scale bar:', error);
+        }
     }
 }
 
