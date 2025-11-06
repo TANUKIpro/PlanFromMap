@@ -169,12 +169,33 @@ export function render3DScene() {
     // マップ画像を床面に描画（グリッドの前に）
     drawMapTexture(ctx, centerX, centerY);
 
-    // グリッドを描画（マップ画像の上に）
-    drawGrid(ctx, centerX, centerY);
+    // グリッドを描画（マップ画像の上に）- 2Dマップの表示設定を引き継ぐ
+    if (mapState.overlaySettings.showGrid) {
+        drawGrid(ctx, centerX, centerY);
+    }
 
-    // すべての四角形を3Dで描画
+    // 原点を描画 - 2Dマップの表示設定を引き継ぐ
+    if (mapState.overlaySettings.showOrigin) {
+        drawOrigin(ctx, centerX, centerY);
+    }
+
+    // すべての四角形を3Dで描画 - 2Dマップのレイヤー非表示設定を反映
     const rectangles = getAllRectangles();
+
+    // 四角形レイヤーの表示状態を確認
+    const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+    const isRectangleLayerVisible = rectangleLayer ? rectangleLayer.visible : true;
+
     rectangles.forEach(rect => {
+        // 四角形レイヤー全体が非表示の場合は描画しない
+        if (!isRectangleLayerVisible) return;
+
+        // 個別の四角形の子レイヤーが非表示の場合も描画しない
+        if (rectangleLayer && rectangleLayer.children) {
+            const childLayer = rectangleLayer.children.find(c => c.rectangleId === rect.id);
+            if (childLayer && !childLayer.visible) return;
+        }
+
         draw3DObject(ctx, rect, centerX, centerY);
     });
 
@@ -209,8 +230,10 @@ function drawMapTexture(ctx, centerX, centerY) {
     const bounds = view3DState.mapBounds;
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
-    const originX = mapState.metadata?.origin?.x || 0;
-    const originY = mapState.metadata?.origin?.y || 0;
+    // originは配列形式 [x, y, theta]
+    const origin = mapState.metadata?.origin || [0, 0, 0];
+    const originX = Array.isArray(origin) ? origin[0] : 0;
+    const originY = Array.isArray(origin) ? origin[1] : 0;
 
     // 有効領域の実世界座標を計算
     // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
@@ -341,8 +364,10 @@ function drawGrid(ctx, centerX, centerY) {
     const image = mapState.image;
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
-    const originX = mapState.metadata?.origin?.x || 0;
-    const originY = mapState.metadata?.origin?.y || 0;
+    // originは配列形式 [x, y, theta]
+    const origin = mapState.metadata?.origin || [0, 0, 0];
+    const originX = Array.isArray(origin) ? origin[0] : 0;
+    const originY = Array.isArray(origin) ? origin[1] : 0;
 
     // 有効領域の実世界座標を計算
     // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
@@ -382,6 +407,139 @@ function drawGrid(ctx, centerX, centerY) {
         ctx.lineTo(centerX + endIso.x * view3DState.scale, centerY - endIso.y * view3DState.scale);
         ctx.stroke();
     }
+
+    ctx.restore();
+}
+
+/**
+ * 原点を描画（3D空間）
+ * 2Dマップの表示設定を引き継ぎ、原点マーカーと座標軸を表示
+ *
+ * @private
+ */
+function drawOrigin(ctx, centerX, centerY) {
+    if (!mapState.metadata || !Array.isArray(mapState.metadata.origin)) return;
+
+    // 原点 (0, 0, 0) を等角投影
+    const originIso = worldToIso(0, 0, 0);
+    const originScreen = {
+        x: centerX + originIso.x * view3DState.scale,
+        y: centerY - originIso.y * view3DState.scale
+    };
+
+    ctx.save();
+
+    // 軸の長さ（メートル）
+    const axisLength = 1.0;
+
+    // X軸（赤）
+    const xAxisEnd = worldToIso(axisLength, 0, 0);
+    const xAxisScreen = {
+        x: centerX + xAxisEnd.x * view3DState.scale,
+        y: centerY - xAxisEnd.y * view3DState.scale
+    };
+
+    ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(originScreen.x, originScreen.y);
+    ctx.lineTo(xAxisScreen.x, xAxisScreen.y);
+    ctx.stroke();
+
+    // X軸矢印
+    drawArrowhead(ctx, originScreen, xAxisScreen, 'rgba(231, 76, 60, 0.9)');
+
+    // Y軸（緑）
+    const yAxisEnd = worldToIso(0, axisLength, 0);
+    const yAxisScreen = {
+        x: centerX + yAxisEnd.x * view3DState.scale,
+        y: centerY - yAxisEnd.y * view3DState.scale
+    };
+
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(originScreen.x, originScreen.y);
+    ctx.lineTo(yAxisScreen.x, yAxisScreen.y);
+    ctx.stroke();
+
+    // Y軸矢印
+    drawArrowhead(ctx, originScreen, yAxisScreen, 'rgba(46, 204, 113, 0.9)');
+
+    // Z軸（青）
+    const zAxisEnd = worldToIso(0, 0, axisLength);
+    const zAxisScreen = {
+        x: centerX + zAxisEnd.x * view3DState.scale,
+        y: centerY - zAxisEnd.y * view3DState.scale
+    };
+
+    ctx.strokeStyle = 'rgba(52, 152, 219, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(originScreen.x, originScreen.y);
+    ctx.lineTo(zAxisScreen.x, zAxisScreen.y);
+    ctx.stroke();
+
+    // Z軸矢印
+    drawArrowhead(ctx, originScreen, zAxisScreen, 'rgba(52, 152, 219, 0.9)');
+
+    // 原点マーカー（十字）
+    ctx.strokeStyle = 'rgba(52, 73, 94, 0.9)';
+    ctx.lineWidth = 2;
+    const crossSize = 8;
+    ctx.beginPath();
+    ctx.moveTo(originScreen.x - crossSize, originScreen.y);
+    ctx.lineTo(originScreen.x + crossSize, originScreen.y);
+    ctx.moveTo(originScreen.x, originScreen.y - crossSize);
+    ctx.lineTo(originScreen.x, originScreen.y + crossSize);
+    ctx.stroke();
+
+    // ラベル「原点 (0,0,0)」
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+    ctx.fillStyle = 'rgba(52, 73, 94, 0.9)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('原点 (0,0,0)', originScreen.x + 10, originScreen.y - 5);
+
+    // 軸ラベル
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.fillText('X', xAxisScreen.x + 5, xAxisScreen.y + 5);
+
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.9)';
+    ctx.fillText('Y', yAxisScreen.x + 5, yAxisScreen.y + 5);
+
+    ctx.fillStyle = 'rgba(52, 152, 219, 0.9)';
+    ctx.fillText('Z', zAxisScreen.x + 5, zAxisScreen.y - 5);
+
+    ctx.restore();
+}
+
+/**
+ * 矢印の先端を描画
+ *
+ * @private
+ */
+function drawArrowhead(ctx, from, to, color) {
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    const headLength = 10;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(
+        to.x - headLength * Math.cos(angle - Math.PI / 6),
+        to.y - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.lineTo(
+        to.x - headLength * Math.cos(angle + Math.PI / 6),
+        to.y - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
 }
@@ -1029,8 +1187,10 @@ function worldToIso(x, y, z) {
 
     if (view3DState.mapBounds && mapState.image) {
         const resolution = mapState.metadata?.resolution || 0.05;
-        const originX = mapState.metadata?.origin?.x || 0;
-        const originY = mapState.metadata?.origin?.y || 0;
+        // originは配列形式 [x, y, theta]
+        const origin = mapState.metadata?.origin || [0, 0, 0];
+        const originX = Array.isArray(origin) ? origin[0] : 0;
+        const originY = Array.isArray(origin) ? origin[1] : 0;
         const imageHeight = mapState.image.height;
 
         // 有効領域の中心座標（実世界座標）
