@@ -156,7 +156,7 @@ export function addNewLayer() {
  * 四角形レイヤーに子レイヤーを追加する
  *
  * @param {string} rectangleId - 対応する四角形のID
- * @param {string} [name] - レイヤー名（省略時は自動生成）
+ * @param {string} [name] - レイヤー名（省略時は四角形のnameプロパティを使用）
  * @returns {Object|null} 作成された子レイヤーオブジェクト
  *
  * @example
@@ -170,8 +170,17 @@ export function addRectangleChildLayer(rectangleId, name = null) {
         return null;
     }
 
-    // 子レイヤー名を生成
-    const childLayerName = name || `四角形 ${rectangleLayer.children.length + 1}`;
+    // 四角形オブジェクトを取得して名前を取得
+    let childLayerName = name;
+    if (!childLayerName) {
+        const rectangle = mapState.rectangleToolState.rectangles.find(r => r.id === rectangleId);
+        if (rectangle && rectangle.name) {
+            childLayerName = rectangle.name;
+        } else {
+            childLayerName = `四角形 ${rectangleLayer.children.length + 1}`;
+        }
+    }
+
     const childLayerId = `${rectangleLayer.id}-child-${rectangleId}`;
 
     // 既に存在する場合は何もしない

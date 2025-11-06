@@ -184,7 +184,9 @@ import {
     update3DObject,
     resize3DView,
     set3DViewRotation,
-    reset3DView
+    reset3DView,
+    getMapBounds,
+    setMapBounds
 } from './modules/threeDRenderer.js';
 
 // ステータスバー
@@ -338,6 +340,8 @@ window.update3DObject = update3DObject;
 window.resize3DView = resize3DView;
 window.set3DViewRotation = set3DViewRotation;
 window.reset3DView = reset3DView;
+window.getMapBounds = getMapBounds;
+window.setMapBounds = setMapBounds;
 
 // オブジェクトカタログ
 window.initializeObjectCatalog = initializeObjectCatalog;

@@ -378,9 +378,23 @@ export function get3DCoordinates(rectangleId) {
         return null;
     }
 
+    // マップの解像度と原点を取得
+    const resolution = mapState.metadata?.resolution || 0.05; // m/pixel
+    const originX = mapState.metadata?.origin?.x || 0;
+    const originY = mapState.metadata?.origin?.y || 0;
+
+    // 画像の高さ（Y軸反転のため必要）
+    const imageHeight = mapState.image?.height || 0;
+
+    // 画像ピクセル座標を実世界座標に変換
+    // ROSマップ: 画像の左下が原点、Y軸が上向き
+    // 画像座標: 左上が原点、Y軸が下向き
+    const worldX = originX + rectangle.x * resolution;
+    const worldY = originY + (imageHeight - rectangle.y) * resolution;
+
     return {
-        x: pixelsToMeters(rectangle.x),
-        y: pixelsToMeters(rectangle.y),
+        x: worldX,
+        y: worldY,
         z: (rectangle.heightMeters || 0.5) / 2,  // 高さの半分（底面からの中心）
         width: pixelsToMeters(rectangle.width),
         depth: pixelsToMeters(rectangle.height),
