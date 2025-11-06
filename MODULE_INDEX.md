@@ -24,7 +24,7 @@ apps/frontend/static/
 │   │   └── mapState.js            # 250行 - 状態管理
 │   ├── models/                    # データモデル (1ファイル)
 │   │   └── objectTypes.js         # 500行 - オブジェクトタイプ定義
-│   ├── modules/                   # コア機能 (13ファイル)
+│   ├── modules/                   # コア機能 (14ファイル)
 │   │   ├── layerManager.js        # 488行 - レイヤー管理
 │   │   ├── historyManager.js      # 175行 - アンドゥ/リドゥ
 │   │   ├── viewportControl.js     # 117行 - ズーム/パン
@@ -34,17 +34,18 @@ apps/frontend/static/
 │   │   ├── fileLoader.js          # 259行 - ファイル読み込み
 │   │   ├── apiClient.js           # 139行 - API通信
 │   │   ├── profileManager.js      # 400行 - プロファイル管理
-│   │   ├── rectangleManager.js    # 293行 - 四角形管理
+│   │   ├── rectangleManager.js    # 350行 - 四角形管理
+│   │   ├── rectangleRenderer.js   # 520行 - 四角形2D描画
 │   │   ├── objectPropertyManager.js # 350行 - オブジェクトプロパティ管理
-│   │   └── threeDRenderer.js      # 520行 - 3D描画（等角投影）
+│   │   └── threeDRenderer.js      # 1250行 - 3D描画（等角投影、カテゴリ別モデル）
 │   ├── utils/                     # ユーティリティ (4ファイル)
 │   │   ├── coordinates.js         # 133行 - 座標変換
 │   │   ├── formatting.js          # 94行 - フォーマット
 │   │   ├── canvas.js              # 54行 - Canvas操作
 │   │   └── imageProcessing.js     # 190行 - 画像処理
-│   └── ui/                        # UI制御 (4ファイル)
+│   └── ui/                        # UI制御 (5ファイル)
 │       ├── tabs.js                # 48行 - タブ切り替え
-│       ├── objectPropertyPanel.js # 550行 - オブジェクトプロパティパネル
+│       ├── objectPropertyPanel.js # 600行 - オブジェクトプロパティパネル
 │       ├── controls.js            # 163行 - UIコントロール
 │       ├── toast.js               # 143行 - トーストメッセージ
 │       └── events.js              # 404行 - イベント管理
@@ -79,6 +80,43 @@ apps/frontend/static/
 - `getLayerById(layerId)` - レイヤー取得
 - `getSelectedLayer()` - 選択中レイヤー取得
 - `getNextLayerId()` - 次のレイヤーID生成
+
+### models/objectTypes.js (500行)
+**責務**: オブジェクトタイプとプロパティスキーマの定義
+
+**エクスポート**:
+- `OBJECT_TYPES` - オブジェクトタイプ定数（NONE, SHELF, BOX, TABLE, DOOR, WALL）
+- `OBJECT_TYPE_LABELS` - タイプごとの日本語ラベル
+- `OBJECT_TYPE_COLORS` - タイプごとの表示色
+- `PROPERTY_SCHEMAS` - カテゴリ別プロパティスキーマ
+- `DEFAULT_PROPERTIES` - カテゴリ別デフォルト値
+- `getObjectTypeOptions()` - カテゴリ選択肢取得
+- `getFrontDirectionOptions()` - 前面方向選択肢取得
+- `getPropertySchema(objectType)` - プロパティスキーマ取得
+- `getDefaultProperties(objectType)` - デフォルトプロパティ取得
+- `validatePropertyValue(objectType, key, value)` - プロパティ値検証
+
+**スキーマ構造**:
+```javascript
+{
+  label: "段数",
+  type: "number",     // number | checkbox | select | radio
+  min: 1,
+  max: 10,
+  default: 3,
+  hasSlider: true,
+  options: [...]      // selectまたはradioの場合
+}
+```
+
+**カテゴリ別プロパティ**:
+- **棚（SHELF）**: 段数、仕切り数、棚タイプ
+- **箱（BOX）**: 蓋、取っ手、材質
+- **テーブル（TABLE）**: 脚の数、天板形状、引き出し
+- **扉（DOOR）**: 開き方、取っ手側、自動ドア
+- **壁（WALL）**: 壁厚、材質、窓
+
+**依存**: なし
 
 ## モジュール層
 
@@ -182,6 +220,89 @@ apps/frontend/static/
 
 **ストレージ**: LocalStorage (最大5MB)
 
+### modules/rectangleManager.js (350行)
+**責務**: 四角形オブジェクトのライフサイクル管理
+
+**主要関数**:
+- `createRectangle(x, y, width, height, rotation, color)` - 四角形の作成
+- `deleteRectangle(rectangleId)` - 四角形の削除
+- `selectRectangle(rectangleId)` - 四角形の選択
+- `deselectAllRectangles()` - 全選択解除
+- `getRectangleById(rectangleId)` - IDによる四角形取得
+- `getSelectedRectangle()` - 選択中の四角形取得
+- `getAllRectangles()` - 全四角形取得
+
+**依存**: mapState.js, objectPropertyPanel.js
+
+**データモデル**: オブジェクトプロパティ（objectType, heightMeters, frontDirection, objectProperties）を含む拡張四角形モデル
+
+### modules/rectangleRenderer.js (520行)
+**責務**: 四角形の2D描画とビジュアルフィードバック
+
+**主要関数**:
+- `drawRectangle(ctx, rectangle)` - 四角形を描画
+- `drawResizeHandles(ctx, width, height)` - リサイズハンドル描画
+- `drawRotationHandle(ctx, width, height)` - 回転ハンドル描画
+- `drawHatchPattern(ctx, width, height, color)` - 斜線パターン描画
+- `drawFrontDirectionArrow(ctx, rectangle, width, height, centerPos)` - 前面方向矢印描画
+- `drawEdgeLength(ctx, rectangle, edge)` - エッジの長さ表示
+
+**視覚的フィードバック**:
+- 斜線パターン: カテゴリと高さが設定されたオブジェクトに表示
+- 前面方向矢印: 前面方向が設定されたオブジェクトに表示（上/下/左/右）
+- ハンドル: 選択時のリサイズ・回転操作
+
+**依存**: mapState.js, RECTANGLE_DEFAULTS (config.js)
+
+### modules/objectPropertyManager.js (350行)
+**責務**: オブジェクトプロパティのビジネスロジック
+
+**主要関数**:
+- `setObjectType(rectangleId, objectType, preserveProperties)` - オブジェクトタイプ設定
+- `setObjectProperty(rectangleId, key, value)` - 個別プロパティ設定
+- `setObjectProperties(rectangleId, properties)` - 複数プロパティ一括設定
+- `getObjectProperties(rectangleId)` - プロパティ取得
+- `setHeightMeters(rectangleId, height)` - 高さ設定
+- `setFrontDirection(rectangleId, direction)` - 前面方向設定
+- `resetObjectProperties(rectangleId)` - プロパティリセット
+- `get3DCoordinates(rectangleId)` - 3D座標への変換
+
+**プロパティ検証**: スキーマベースのバリデーション（範囲チェック、型チェック）
+
+**依存**: rectangleManager.js, objectTypes.js, historyManager.js
+
+### modules/threeDRenderer.js (1250行)
+**責務**: 3D描画エンジン（等角投影、カテゴリ別モデル）
+
+**主要関数**:
+- `initialize3DView()` - 3Dビューの初期化
+- `toggle3DView(visible)` - 3Dビュー表示切替
+- `render3DScene()` - 3Dシーン全体の描画
+- `initializePropertyPreview()` - プロパティパネル内プレビュー初期化
+- `renderPropertyPreview(rectangleId)` - プレビュー描画
+
+**カテゴリ別3Dモデル描画**:
+- `draw3DShelf()` / `drawPreviewShelf()` - 棚（前面開口、棚板表示）
+- `draw3DBox_Hollowed()` / `drawPreviewBox_Hollowed()` - 箱（上部開放）
+- `draw3DTable()` / `drawPreviewTable()` - テーブル（天板+脚）
+- `draw3DDoor()` / `drawPreviewDoor()` - 扉（薄型）
+- `draw3DWall()` / `drawPreviewWall()` - 壁（標準）
+
+**等角投影**:
+- `worldToIso(x, y, z)` - 3D座標→2D画面座標変換
+- `worldToPreviewIso(x, y, z)` - プレビュー用投影変換
+
+**インタラクション**（メインビューのみ）:
+- マウスドラッグ: 視点回転
+- マウスホイール: ズーム
+- オフセット調整: パン操作
+
+**状態管理**:
+- `view3DState`: メイン3Dビュー状態
+- `previewState`: プロパティパネルプレビュー状態
+
+**依存**: mapState.js, objectPropertyManager.js, rectangleManager.js, objectTypes.js
+
 ## ユーティリティ層
 
 ### utils/coordinates.js (133行)
@@ -262,6 +383,36 @@ showSuccess('プロファイルを読み込みました');
 showError('エラーが発生しました', 2000);
 ```
 
+### ui/objectPropertyPanel.js (600行)
+**責務**: オブジェクトプロパティパネルのUI制御
+
+**主要関数**:
+- `initializePropertyPanel()` - パネル初期化
+- `showPropertyPanel(rectangleId)` - パネル表示
+- `hidePropertyPanel()` - パネル非表示
+- `updatePropertyPanel(rectangleId)` - パネル内容更新
+- `refreshPropertyPanel()` - 現在選択中の四角形でパネルを更新
+
+**動的フォーム生成**:
+- `createNumberInput(field, currentValue, rectangle)` - 数値入力生成（スライダー付き）
+- `createCheckboxInput(field, currentValue, rectangle)` - チェックボックス生成
+- `createSelectInput(field, currentValue, rectangle)` - セレクトボックス生成
+- `createRadioInput(field, currentValue, rectangle)` - ラジオボタン生成
+
+**イベントハンドラ**:
+- `handleCategoryChange()` - カテゴリ変更時の処理
+- `handleHeightChange()` - 高さ変更時の処理
+- `handleFrontDirectionChange()` - 前面方向変更時の処理
+- ホイールイベント: パネル内スクロールのみ許可（マップズーム防止）
+
+**特徴**:
+- スキーマベースの動的フォーム生成
+- リアルタイムプレビュー更新
+- バリデーション付き入力
+- カテゴリごとの専用プロパティフォーム
+
+**依存**: mapState.js, objectPropertyManager.js, rectangleManager.js, objectTypes.js, toast.js, threeDRenderer.js
+
 ### ui/events.js (404行)
 **責務**: イベントリスナーの統合管理
 
@@ -339,3 +490,5 @@ After (リファクタリング後):
 
 - [AI_GUIDELINES.md](./AI_GUIDELINES.md) - 生成AI向け開発ガイドライン
 - [README.md](./README.md) - プロジェクト概要
+- [MAP-EDITOR.md](./docs/MAP-EDITOR.md) - 2Dマップエディタ - オブジェクトプロパティ管理
+- [OPERATION-CATALOG.md](./docs/OPERATION-CATALOG.md) - 操作カタログ仕様
