@@ -1005,7 +1005,10 @@ const previewState = {
     ctx: null,
     rotation: 45,
     tilt: 30,
-    scale: 30
+    scale: 30,
+    minScale: 10,
+    maxScale: 100,
+    currentRectangleId: null  // 現在表示中のrectangleId
 };
 
 /**
@@ -1030,7 +1033,32 @@ export function initializePropertyPreview() {
         previewState.canvas.height = container.clientHeight;
     }
 
+    // ホイールイベントでズーム（スケール変更）
+    canvas.addEventListener('wheel', handlePreviewWheel, { passive: false });
+
     console.log('プロパティプレビューを初期化しました');
+}
+
+/**
+ * プレビュー用ホイールイベントハンドラ（ズーム）
+ *
+ * @private
+ */
+function handlePreviewWheel(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ホイールの方向に応じてスケールを変更
+    const delta = e.deltaY > 0 ? -2 : 2;
+    previewState.scale = Math.max(
+        previewState.minScale,
+        Math.min(previewState.maxScale, previewState.scale + delta)
+    );
+
+    // 現在表示中のオブジェクトを再描画
+    if (previewState.currentRectangleId) {
+        renderPropertyPreview(previewState.currentRectangleId);
+    }
 }
 
 /**
@@ -1041,6 +1069,9 @@ export function initializePropertyPreview() {
  */
 export function renderPropertyPreview(rectangleId) {
     if (!previewState.ctx || !previewState.canvas) return;
+
+    // 現在表示中のrectangleIdを保存（ズーム時の再描画用）
+    previewState.currentRectangleId = rectangleId;
 
     // パネルが表示された後、親要素のサイズに合わせてcanvasを再設定
     // 初期化時はパネルがdisplay:noneのためサイズが0x0になっているので、
