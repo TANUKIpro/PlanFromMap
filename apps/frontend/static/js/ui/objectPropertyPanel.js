@@ -74,6 +74,15 @@ export function initializePropertyPanel() {
  * @private
  */
 function setupEventListeners() {
+    // プロパティパネル上でのホイールイベントを捕捉して、マップのズームを防ぐ
+    const panel = document.getElementById('objectPropertyPanel');
+    if (panel) {
+        panel.addEventListener('wheel', (e) => {
+            // プロパティパネル内でのスクロールは許可するが、イベントの伝播を停止
+            e.stopPropagation();
+        }, { passive: true });
+    }
+
     // カテゴリ選択
     const categorySelect = document.getElementById('objectTypeSelect');
     if (categorySelect) {
