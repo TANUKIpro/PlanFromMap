@@ -353,10 +353,10 @@ export async function loadProfile(profileName) {
         mapState.offsetX = profile.offsetX || 0;
         mapState.offsetY = profile.offsetY || 0;
 
-        // レイヤー設定を復元
-        mapState.layers = profile.layers || {
-            image: true,
-            metadataOverlay: true
+        // レイヤー設定を復元（デフォルトで両方とも表示）
+        mapState.layers = {
+            image: profile.layers?.image !== undefined ? profile.layers.image : true,
+            metadataOverlay: profile.layers?.metadataOverlay !== undefined ? profile.layers.metadataOverlay : true
         };
 
         // オーバーレイ設定を復元

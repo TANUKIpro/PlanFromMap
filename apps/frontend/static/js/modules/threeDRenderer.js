@@ -186,16 +186,34 @@ export function render3DScene() {
     const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
     const isRectangleLayerVisible = rectangleLayer ? rectangleLayer.visible : true;
 
+    // デバッグ情報
+    console.log('[3D] 四角形数:', rectangles.length, '四角形レイヤー表示:', isRectangleLayerVisible);
+    if (rectangleLayer) {
+        console.log('[3D] 子レイヤー数:', rectangleLayer.children?.length || 0);
+    }
+
     rectangles.forEach(rect => {
         // 四角形レイヤー全体が非表示の場合は描画しない
-        if (!isRectangleLayerVisible) return;
+        if (!isRectangleLayerVisible) {
+            console.log('[3D] 四角形レイヤー全体が非表示のため、四角形', rect.id, 'をスキップ');
+            return;
+        }
 
         // 個別の四角形の子レイヤーが非表示の場合も描画しない
         if (rectangleLayer && rectangleLayer.children) {
             const childLayer = rectangleLayer.children.find(c => c.rectangleId === rect.id);
-            if (childLayer && !childLayer.visible) return;
+            if (childLayer) {
+                console.log('[3D] 四角形', rect.id, 'の子レイヤー visible:', childLayer.visible);
+                if (!childLayer.visible) {
+                    console.log('[3D] 子レイヤーが非表示のため、四角形', rect.id, 'をスキップ');
+                    return;
+                }
+            } else {
+                console.log('[3D] 四角形', rect.id, 'の子レイヤーが見つかりません（描画します）');
+            }
         }
 
+        console.log('[3D] 四角形', rect.id, 'を描画');
         draw3DObject(ctx, rect, centerX, centerY);
     });
 
