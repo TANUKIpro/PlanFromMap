@@ -27,7 +27,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
-import { getAllRectangles, getRectangleById } from '../modules/rectangleManager.js';
+import { getAllRectangles, getRectangleById, getRectangleLayer } from '../modules/rectangleManager.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
 import { initializeViewCube, updateViewCube } from '../ui/viewCube.js';
@@ -169,14 +169,24 @@ export function render3DScene() {
     // マップ画像を床面に描画（グリッドの前に）
     drawMapTexture(ctx, centerX, centerY);
 
-    // グリッドを描画（マップ画像の上に）
-    drawGrid(ctx, centerX, centerY);
+    // グリッドを描画（マップ画像の上に）- 2Dマップの設定と同期
+    if (mapState.overlaySettings.showGrid) {
+        drawGrid(ctx, centerX, centerY);
+    }
 
-    // すべての四角形を3Dで描画
-    const rectangles = getAllRectangles();
-    rectangles.forEach(rect => {
-        draw3DObject(ctx, rect, centerX, centerY);
-    });
+    // 原点を描画 - 2Dマップの設定と同期
+    if (mapState.overlaySettings.showOrigin) {
+        draw3DOrigin(ctx, centerX, centerY);
+    }
+
+    // すべての四角形を3Dで描画（2Dマップのレイヤー可視性設定を反映）
+    const rectangleLayer = getRectangleLayer();
+    if (rectangleLayer && rectangleLayer.visible) {
+        const rectangles = getAllRectangles();
+        rectangles.forEach(rect => {
+            draw3DObject(ctx, rect, centerX, centerY);
+        });
+    }
 
     // 情報を表示
     drawInfo(ctx);
@@ -382,6 +392,107 @@ function drawGrid(ctx, centerX, centerY) {
         ctx.lineTo(centerX + endIso.x * view3DState.scale, centerY - endIso.y * view3DState.scale);
         ctx.stroke();
     }
+
+    ctx.restore();
+}
+
+/**
+ * 3D空間に原点マーカーを描画
+ * 床面(z=0)に原点(0,0,0)を赤い十字と矢印で表示
+ *
+ * @private
+ */
+function draw3DOrigin(ctx, centerX, centerY) {
+    if (!mapState.metadata || !mapState.metadata.origin) {
+        return;
+    }
+
+    // 原点の3D座標
+    const originX = 0;
+    const originY = 0;
+    const originZ = 0;
+
+    // 原点を等角投影
+    const originIso = worldToIso(originX, originY, originZ);
+    const screenX = centerX + originIso.x * view3DState.scale;
+    const screenY = centerY - originIso.y * view3DState.scale;
+
+    ctx.save();
+
+    // 赤い十字を描画
+    ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.lineWidth = 3;
+
+    const crossSize = 15;
+    ctx.beginPath();
+    ctx.moveTo(screenX - crossSize, screenY);
+    ctx.lineTo(screenX + crossSize, screenY);
+    ctx.moveTo(screenX, screenY - crossSize);
+    ctx.lineTo(screenX, screenY + crossSize);
+    ctx.stroke();
+
+    // 方向矢印を描画（theta方向）
+    const theta = Array.isArray(mapState.metadata.origin) && mapState.metadata.origin.length >= 3
+        ? mapState.metadata.origin[2]
+        : 0;
+
+    // 矢印の長さ（3D空間での実寸）
+    const arrowLengthMeters = 0.5; // 50cm
+
+    // 矢印の終点（3D座標）
+    const arrowEndX = originX + Math.cos(theta) * arrowLengthMeters;
+    const arrowEndY = originY + Math.sin(theta) * arrowLengthMeters;
+    const arrowEndZ = originZ;
+
+    // 等角投影
+    const arrowEndIso = worldToIso(arrowEndX, arrowEndY, arrowEndZ);
+    const arrowEndScreenX = centerX + arrowEndIso.x * view3DState.scale;
+    const arrowEndScreenY = centerY - arrowEndIso.y * view3DState.scale;
+
+    // 矢印の線
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(screenX, screenY);
+    ctx.lineTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.stroke();
+
+    // 矢印の先端
+    const dx = arrowEndScreenX - screenX;
+    const dy = arrowEndScreenY - screenY;
+    const angle = Math.atan2(dy, dx);
+
+    const headLength = 10;
+    ctx.beginPath();
+    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.lineTo(
+        arrowEndScreenX - headLength * Math.cos(angle - Math.PI / 6),
+        arrowEndScreenY - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.lineTo(
+        arrowEndScreenX - headLength * Math.cos(angle + Math.PI / 6),
+        arrowEndScreenY - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.stroke();
+
+    // ラベルを描画
+    const label = '原点 (0,0)';
+    ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+    const labelPadding = 4;
+    const textWidth = ctx.measureText(label).width;
+    const labelX = screenX + 18;
+    const labelY = screenY + 18;
+
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.fillRect(
+        labelX - labelPadding,
+        labelY - labelPadding - 12,
+        textWidth + labelPadding * 2,
+        18
+    );
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, labelX, labelY);
 
     ctx.restore();
 }
