@@ -115,6 +115,11 @@ export function drawRectangle(ctx, rectangle) {
         scaledHeight
     );
 
+    // カテゴリと高さ情報がある場合は斜線で塗りつぶし
+    if (rectangle.objectType && rectangle.objectType !== 'none' && rectangle.heightMeters > 0) {
+        drawHatchPattern(ctx, scaledWidth, scaledHeight, color);
+    }
+
     // 選択されている場合はハンドルを描画
     if (rectangle.selected) {
         drawResizeHandles(ctx, scaledWidth, scaledHeight);
@@ -134,6 +139,11 @@ export function drawRectangle(ctx, rectangle) {
             drawEdgeLength(ctx, rectangle, mapState.rectangleToolState.measureEdge);
             return;
         }
+    }
+
+    // 前方向情報がある場合は矢印を表示
+    if (rectangle.frontDirection && rectangle.objectType && rectangle.objectType !== 'none') {
+        drawFrontDirectionArrow(ctx, rectangle, scaledWidth, scaledHeight, centerPos);
     }
 
     ctx.restore();
@@ -372,6 +382,135 @@ export function drawEdgeLength(ctx, rectangle, edge) {
     // テキストを描画
     ctx.fillStyle = 'white';
     ctx.fillText(text, canvasPos.x, canvasPos.y);
+
+    ctx.restore();
+}
+
+/**
+ * 斜線パターンを描画する
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {number} width - 四角形の幅（スケール済み）
+ * @param {number} height - 四角形の高さ（スケール済み）
+ * @param {string} color - 線の色
+ * @returns {void}
+ *
+ * @example
+ * drawHatchPattern(ctx, 200, 150, '#667eea');
+ */
+function drawHatchPattern(ctx, width, height, color) {
+    ctx.save();
+
+    // クリッピング領域を設定（四角形の内部のみに描画）
+    ctx.beginPath();
+    ctx.rect(-width / 2, -height / 2, width, height);
+    ctx.clip();
+
+    // 斜線のスタイル設定
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = 1;
+
+    const spacing = 10; // 斜線の間隔
+    const diagonal = Math.sqrt(width * width + height * height);
+
+    // 対角線パターンを描画
+    ctx.beginPath();
+    for (let i = -diagonal; i < diagonal; i += spacing) {
+        ctx.moveTo(-width / 2 + i, -height / 2);
+        ctx.lineTo(-width / 2 + i + diagonal, -height / 2 + diagonal);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
+ * 前方向矢印を描画する
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} rectangle - 四角形オブジェクト
+ * @param {number} width - 四角形の幅（スケール済み）
+ * @param {number} height - 四角形の高さ（スケール済み）
+ * @param {{x: number, y: number}} centerPos - 四角形の中心位置（互換性のため）
+ * @returns {void}
+ *
+ * @example
+ * drawFrontDirectionArrow(ctx, rectangle, 200, 150, {x: 100, y: 200});
+ */
+function drawFrontDirectionArrow(ctx, rectangle, width, height, centerPos) {
+    ctx.save();
+
+    // 矢印のサイズ（四角形のサイズに応じて調整）
+    const arrowLength = Math.min(width, height) * 0.4;
+    const arrowHeadWidth = arrowLength * 0.5;
+    const arrowBodyWidth = arrowLength * 0.2;
+
+    // 矢印の色（選択状態に応じて変更）
+    const color = rectangle.selected ?
+        RECTANGLE_DEFAULTS.SELECTED_COLOR :
+        (rectangle.color || RECTANGLE_DEFAULTS.STROKE_COLOR);
+
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+
+    // 矢印の位置と回転角度を前方向に応じて設定
+    let offsetX = 0;
+    let offsetY = 0;
+    let rotation = 0;
+
+    switch (rectangle.frontDirection) {
+        case 'top':
+            offsetX = 0;
+            offsetY = -height / 2 + arrowLength / 2 + 8;
+            rotation = -Math.PI / 2; // 上向き
+            break;
+        case 'bottom':
+            offsetX = 0;
+            offsetY = height / 2 - arrowLength / 2 - 8;
+            rotation = Math.PI / 2; // 下向き
+            break;
+        case 'left':
+            offsetX = -width / 2 + arrowLength / 2 + 8;
+            offsetY = 0;
+            rotation = Math.PI; // 左向き
+            break;
+        case 'right':
+            offsetX = width / 2 - arrowLength / 2 - 8;
+            offsetY = 0;
+            rotation = 0; // 右向き
+            break;
+        default:
+            ctx.restore();
+            return;
+    }
+
+    // 矢印の描画位置に移動して回転
+    ctx.translate(offsetX, offsetY);
+    ctx.rotate(rotation);
+
+    // 矢印図形を描画（右向きを基準）
+    ctx.beginPath();
+
+    // 矢印の先端
+    ctx.moveTo(arrowLength / 2, 0);
+
+    // 上側の矢じり
+    ctx.lineTo(arrowLength / 2 - arrowHeadWidth, -arrowHeadWidth / 2);
+    ctx.lineTo(arrowLength / 2 - arrowHeadWidth, -arrowBodyWidth / 2);
+
+    // 矢印の本体（上辺）
+    ctx.lineTo(-arrowLength / 2, -arrowBodyWidth / 2);
+
+    // 矢印の本体（下辺）
+    ctx.lineTo(-arrowLength / 2, arrowBodyWidth / 2);
+
+    // 下側の矢じり
+    ctx.lineTo(arrowLength / 2 - arrowHeadWidth, arrowBodyWidth / 2);
+    ctx.lineTo(arrowLength / 2 - arrowHeadWidth, arrowHeadWidth / 2);
+
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
 }

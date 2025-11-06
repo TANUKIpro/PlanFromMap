@@ -148,6 +148,39 @@ import {
     handleRectangleMouseUp
 } from './modules/rectangleInteraction.js';
 
+// オブジェクトプロパティ管理
+import {
+    setObjectType,
+    setObjectProperty,
+    setObjectProperties,
+    getObjectProperties,
+    setHeightMeters,
+    setFrontDirection,
+    resetObjectProperties,
+    applyObjectType,
+    pixelsToMeters,
+    metersToPixels,
+    get3DCoordinates,
+    getAll3DCoordinates
+} from './modules/objectPropertyManager.js';
+
+import {
+    initializePropertyPanel,
+    showPropertyPanel,
+    hidePropertyPanel,
+    updatePropertyPanel,
+    refreshPropertyPanel
+} from './ui/objectPropertyPanel.js';
+
+// 3D描画
+import {
+    initialize3DView,
+    render3DScene,
+    update3DObject,
+    toggle3DView,
+    set3DViewRotation
+} from './modules/threeDRenderer.js';
+
 // ステータスバー
 import {
     updateStatusBar,
@@ -272,6 +305,32 @@ window.handleRectangleMouseDown = handleRectangleMouseDown;
 window.handleRectangleMouseMove = handleRectangleMouseMove;
 window.handleRectangleMouseUp = handleRectangleMouseUp;
 
+// オブジェクトプロパティ管理
+window.setObjectType = setObjectType;
+window.setObjectProperty = setObjectProperty;
+window.setObjectProperties = setObjectProperties;
+window.getObjectProperties = getObjectProperties;
+window.setHeightMeters = setHeightMeters;
+window.setFrontDirection = setFrontDirection;
+window.resetObjectProperties = resetObjectProperties;
+window.applyObjectType = applyObjectType;
+window.pixelsToMeters = pixelsToMeters;
+window.metersToPixels = metersToPixels;
+window.get3DCoordinates = get3DCoordinates;
+window.getAll3DCoordinates = getAll3DCoordinates;
+window.initializePropertyPanel = initializePropertyPanel;
+window.showPropertyPanel = showPropertyPanel;
+window.hidePropertyPanel = hidePropertyPanel;
+window.updatePropertyPanel = updatePropertyPanel;
+window.refreshPropertyPanel = refreshPropertyPanel;
+
+// 3D描画
+window.initialize3DView = initialize3DView;
+window.render3DScene = render3DScene;
+window.update3DObject = update3DObject;
+window.toggle3DView = toggle3DView;
+window.set3DViewRotation = set3DViewRotation;
+
 // ステータスバー
 window.updateStatusBar = updateStatusBar;
 window.updateFileName = updateFileName;
@@ -307,6 +366,12 @@ function initializeApp() {
 
     // ステータスバーの表示状態を復元
     restoreStatusBarVisibility();
+
+    // オブジェクトプロパティパネルを初期化
+    initializePropertyPanel();
+
+    // 3Dビューを初期化
+    initialize3DView();
 
     console.log('Application initialized successfully');
 }
