@@ -16,6 +16,7 @@ import { OBJECT_TYPES, OBJECT_TYPE_LABELS, OBJECT_TYPE_COLORS, getCommonProperty
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { mapState } from '../state/mapState.js';
 import { initializeViewCube } from '../ui/viewCube.js';
+import { getPreviewState, drawPreviewModel, drawPreviewFrontDirection } from '../modules/threeDRenderer.js';
 
 // カタログの状態
 const catalogState = {
@@ -311,6 +312,16 @@ function updatePreview(rectangleId) {
         ? OBJECT_TYPE_COLORS[rectangle.objectType]
         : OBJECT_TYPE_COLORS.none;
 
+    // threeDRenderer.jsのpreviewStateを一時的に設定
+    const previewState = getPreviewState();
+    const originalRotation = previewState.rotation;
+    const originalTilt = previewState.tilt;
+    const originalScale = previewState.scale;
+
+    previewState.rotation = catalogState.rotation;
+    previewState.tilt = catalogState.tilt;
+    previewState.scale = catalogState.scale;
+
     // グリッドを描画
     drawCatalogPreviewGrid(ctx, centerX, centerY);
 
@@ -326,13 +337,18 @@ function updatePreview(rectangleId) {
         frontDirection: rectangle.frontDirection || 'top'
     };
 
-    // オブジェクトタイプに応じた3Dモデルを描画
-    drawCatalogPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+    // threeDRenderer.jsの描画関数を使用（メタデータを反映）
+    drawPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
 
     // 前面方向を矢印で表示
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
-        drawCatalogPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
+        drawPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
     }
+
+    // previewStateを元に戻す
+    previewState.rotation = originalRotation;
+    previewState.tilt = originalTilt;
+    previewState.scale = originalScale;
 }
 
 /**
