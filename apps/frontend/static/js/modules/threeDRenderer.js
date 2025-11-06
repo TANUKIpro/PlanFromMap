@@ -200,114 +200,72 @@ function analyzeMapBounds() {
     const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
     const data = imageData.data;
 
-    // 黒色の閾値（占有格子マップで障害物を表す）
-    const blackThreshold = 50; // 0-50を黒色とみなす
+    // 占有格子マップの閾値
+    // 黒色（障害物）: 0-100
+    // 白色（自由空間）: 220-255
+    // グレー（未知領域）: 101-219 は除外
+    const blackThreshold = 100;
+    const whiteThreshold = 220;
 
-    // 画像の中心座標
-    const imageCenterX = Math.floor(image.width / 2);
-    const imageCenterY = Math.floor(image.height / 2);
+    // 有効ピクセル（黒または白）を持つ行と列を記録
+    const validRows = new Set();
+    const validCols = new Set();
 
-    // 最大探索距離（対角線の半分）
-    const maxDistance = Math.ceil(Math.sqrt(image.width * image.width + image.height * image.height) / 2);
+    // 全ピクセルをスキャンして有効ピクセルを検出
+    for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+            const index = (y * image.width + x) * 4;
+            const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
 
-    // 各方向で黒色が見つかった距離を記録
-    let foundTop = null;
-    let foundBottom = null;
-    let foundLeft = null;
-    let foundRight = null;
-
-    // 中心から外側に向かって探索
-    for (let distance = 0; distance < maxDistance; distance++) {
-        // 上辺をチェック（まだ見つかっていない場合）
-        if (foundTop === null) {
-            const y = imageCenterY - distance;
-            if (y >= 0) {
-                for (let x = Math.max(0, imageCenterX - distance); x <= Math.min(image.width - 1, imageCenterX + distance); x++) {
-                    const index = (y * image.width + x) * 4;
-                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
-                    if (gray < blackThreshold) {
-                        foundTop = y;
-                        break;
-                    }
-                }
+            // 黒色（障害物）または白色（自由空間）の場合は有効
+            if (gray <= blackThreshold || gray >= whiteThreshold) {
+                validRows.add(y);
+                validCols.add(x);
             }
-        }
-
-        // 下辺をチェック
-        if (foundBottom === null) {
-            const y = imageCenterY + distance;
-            if (y < image.height) {
-                for (let x = Math.max(0, imageCenterX - distance); x <= Math.min(image.width - 1, imageCenterX + distance); x++) {
-                    const index = (y * image.width + x) * 4;
-                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
-                    if (gray < blackThreshold) {
-                        foundBottom = y;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 左辺をチェック
-        if (foundLeft === null) {
-            const x = imageCenterX - distance;
-            if (x >= 0) {
-                for (let y = Math.max(0, imageCenterY - distance); y <= Math.min(image.height - 1, imageCenterY + distance); y++) {
-                    const index = (y * image.width + x) * 4;
-                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
-                    if (gray < blackThreshold) {
-                        foundLeft = x;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 右辺をチェック
-        if (foundRight === null) {
-            const x = imageCenterX + distance;
-            if (x < image.width) {
-                for (let y = Math.max(0, imageCenterY - distance); y <= Math.min(image.height - 1, imageCenterY + distance); y++) {
-                    const index = (y * image.width + x) * 4;
-                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
-                    if (gray < blackThreshold) {
-                        foundRight = x;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // すべての辺で黒色が見つかったら終了
-        if (foundTop !== null && foundBottom !== null && foundLeft !== null && foundRight !== null) {
-            break;
         }
     }
 
-    // 見つからなかった辺は画像の端を使用
-    if (foundTop === null) foundTop = 0;
-    if (foundBottom === null) foundBottom = image.height - 1;
-    if (foundLeft === null) foundLeft = 0;
-    if (foundRight === null) foundRight = image.width - 1;
+    // 有効ピクセルが見つからない場合は画像全体を使用
+    if (validRows.size === 0 || validCols.size === 0) {
+        console.warn('有効な領域が見つかりませんでした。画像全体を使用します。');
+        return {
+            minX: 0,
+            minY: 0,
+            maxX: image.width - 1,
+            maxY: image.height - 1,
+            centerX: image.width / 2,
+            centerY: image.height / 2
+        };
+    }
 
-    // 5%のマージンを追加
-    const width = foundRight - foundLeft;
-    const height = foundBottom - foundTop;
+    // 行と列の最小値・最大値を取得
+    const rowArray = Array.from(validRows).sort((a, b) => a - b);
+    const colArray = Array.from(validCols).sort((a, b) => a - b);
+
+    const minY = rowArray[0];
+    const maxY = rowArray[rowArray.length - 1];
+    const minX = colArray[0];
+    const maxX = colArray[colArray.length - 1];
+
+    // マージンを追加（5%）
+    const width = maxX - minX + 1;
+    const height = maxY - minY + 1;
     const marginX = Math.ceil(width * 0.05);
     const marginY = Math.ceil(height * 0.05);
 
-    const minX = Math.max(0, foundLeft - marginX);
-    const minY = Math.max(0, foundTop - marginY);
-    const maxX = Math.min(image.width - 1, foundRight + marginX);
-    const maxY = Math.min(image.height - 1, foundBottom + marginY);
+    const finalMinX = Math.max(0, minX - marginX);
+    const finalMinY = Math.max(0, minY - marginY);
+    const finalMaxX = Math.min(image.width - 1, maxX + marginX);
+    const finalMaxY = Math.min(image.height - 1, maxY + marginY);
 
     // 中心座標を計算
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
+    const centerX = (finalMinX + finalMaxX) / 2;
+    const centerY = (finalMinY + finalMaxY) / 2;
 
-    console.log(`マップ有効領域を検出: [${minX}, ${minY}] - [${maxX}, ${maxY}], 中心: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+    console.log(`マップ有効領域を検出: [${finalMinX}, ${finalMinY}] - [${finalMaxX}, ${finalMaxY}], 中心: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+    console.log(`有効ピクセル数: ${validRows.size * validCols.size} / ${image.width * image.height} (行: ${rowArray.length}, 列: ${colArray.length})`);
 
-    return { minX, minY, maxX, maxY, centerX, centerY };
+    return { minX: finalMinX, minY: finalMinY, maxX: finalMaxX, maxY: finalMaxY, centerX, centerY };
 }
 
 /**
