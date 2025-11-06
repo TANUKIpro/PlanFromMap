@@ -210,6 +210,8 @@ export function saveProfile(profileName) {
             yamlFileName: mapState.yamlFileName,
             metadata: mapState.metadata,
             mapBounds: mapBounds, // マップ境界情報を保存
+            imageCropOffset: mapState.imageCropOffset || null, // クロップオフセット情報
+            originalImageSize: mapState.originalImageSize || null, // 元の画像サイズ
             scale: mapState.scale,
             offsetX: mapState.offsetX,
             offsetY: mapState.offsetY,
@@ -304,6 +306,10 @@ export async function loadProfile(profileName) {
 
         // メタデータを復元
         mapState.metadata = profile.metadata || null;
+
+        // クロップオフセット情報を復元
+        mapState.imageCropOffset = profile.imageCropOffset || null;
+        mapState.originalImageSize = profile.originalImageSize || null;
 
         // マップ境界情報を復元（3Dレンダラーに設定）
         if (profile.mapBounds && window.setMapBounds && typeof window.setMapBounds === 'function') {

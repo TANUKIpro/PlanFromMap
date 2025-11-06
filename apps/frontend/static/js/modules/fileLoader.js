@@ -18,7 +18,7 @@
 import { mapState } from '../state/mapState.js';
 import { initializeLayers, redrawAllLayers } from './layerManager.js';
 import { displayMetadata, updateOverlayControls } from './metadataDisplay.js';
-import { canvasToPGM, downloadPGM, analyzeMapBounds } from '../utils/imageProcessing.js';
+import { canvasToPGM, downloadPGM, analyzeMapBounds, extractValidRegion } from '../utils/imageProcessing.js';
 
 /**
  * 有効領域にフィットするようにビューを調整
@@ -206,44 +206,129 @@ export function loadStandardImageFile(file) {
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            mapState.image = img;
-            mapState.imageFileName = file.name;
-            mapState.layers.image = true;
+            console.log(`loadStandardImageFile: 元のサイズ ${img.width}x${img.height}`);
 
-            const container = document.getElementById('mapContainer');
-            const canvas = document.getElementById('mapCanvas');
-            const canvasStack = document.getElementById('canvasStack');
+            // 有効領域を検出してクロップを試みる
+            const bounds = analyzeMapBounds(img);
 
-            // キャンバスのサイズを設定
-            const containerRect = container.getBoundingClientRect();
-            canvas.width = containerRect.width;
-            canvas.height = containerRect.height;
+            let finalImage = img;
+            let cropOffset = { x: 0, y: 0 };
+            let originalSize = { width: img.width, height: img.height };
 
-            // 有効領域にフィットするようにビューを調整
-            fitViewToBounds(img, container);
+            if (bounds && (bounds.minX > 0 || bounds.minY > 0 ||
+                          bounds.maxX < img.width - 1 || bounds.maxY < img.height - 1)) {
+                // クロップが必要な場合
+                const cropWidth = bounds.maxX - bounds.minX + 1;
+                const cropHeight = bounds.maxY - bounds.minY + 1;
 
-            // プレースホルダーを非表示、新しいレイヤーシステムを表示
-            document.getElementById('mapPlaceholder').style.display = 'none';
-            canvasStack.style.display = 'block';
-            canvas.style.display = 'none';  // 古いcanvasは非表示に
+                // 一時キャンバスで画像をクロップ
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = cropWidth;
+                tempCanvas.height = cropHeight;
+                const tempCtx = tempCanvas.getContext('2d');
 
-            // レイヤーシステムを初期化
-            initializeLayers();
+                // クロップ領域を描画
+                tempCtx.drawImage(img,
+                    bounds.minX, bounds.minY, cropWidth, cropHeight,
+                    0, 0, cropWidth, cropHeight
+                );
 
-            // オーバーレイコントロールを更新
-            updateOverlayControls();
+                // 新しい画像を作成
+                finalImage = new Image();
+                finalImage.src = tempCanvas.toDataURL();
 
-            // すべてのレイヤーを再描画
-            redrawAllLayers();
+                cropOffset = { x: bounds.minX, y: bounds.minY };
 
-            // ステータスバーを更新
-            if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
-                window.updateStatusBar();
+                const reductionPercent = ((1 - (cropWidth * cropHeight) / (img.width * img.height)) * 100).toFixed(1);
+                console.log(`loadStandardImageFile: クロップ後のサイズ ${cropWidth}x${cropHeight}, オフセット (${cropOffset.x}, ${cropOffset.y}) (${reductionPercent}% 削減)`);
+            }
+
+            // 画像がロードされるまで待つ（クロップされた場合）
+            const setupMap = () => {
+                mapState.image = finalImage;
+                mapState.imageFileName = file.name;
+                mapState.layers.image = true;
+
+                // クロップオフセット情報を保存
+                mapState.imageCropOffset = cropOffset;
+                mapState.originalImageSize = originalSize;
+
+                const container = document.getElementById('mapContainer');
+                const canvas = document.getElementById('mapCanvas');
+                const canvasStack = document.getElementById('canvasStack');
+
+                // キャンバスのサイズを設定
+                const containerRect = container.getBoundingClientRect();
+                canvas.width = containerRect.width;
+                canvas.height = containerRect.height;
+
+                // 有効領域にフィットするようにビューを調整
+                fitViewToBounds(finalImage, container);
+
+                // プレースホルダーを非表示、新しいレイヤーシステムを表示
+                document.getElementById('mapPlaceholder').style.display = 'none';
+                canvasStack.style.display = 'block';
+                canvas.style.display = 'none';  // 古いcanvasは非表示に
+
+                // レイヤーシステムを初期化
+                initializeLayers();
+
+                // オーバーレイコントロールを更新
+                updateOverlayControls();
+
+                // すべてのレイヤーを再描画
+                redrawAllLayers();
+
+                // ステータスバーを更新
+                if (window.updateStatusBar && typeof window.updateStatusBar === 'function') {
+                    window.updateStatusBar();
+                }
+            };
+
+            if (finalImage === img) {
+                setupMap();
+            } else {
+                finalImage.onload = setupMap;
             }
         };
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+/**
+ * メタデータのorigin座標をクロップオフセットに応じて調整
+ * @private
+ * @param {Object} metadata - メタデータ
+ */
+function adjustMetadataForCrop(metadata) {
+    if (!metadata || !mapState.imageCropOffset) return;
+
+    const cropOffset = mapState.imageCropOffset;
+    const resolution = metadata.resolution || 0.05;
+
+    // クロップオフセットがある場合、メタデータのorigin座標を調整
+    if (cropOffset.x !== 0 || cropOffset.y !== 0) {
+        if (metadata.origin) {
+            // 元のorigin座標を保存（デバッグ用）
+            if (!metadata._originalOrigin) {
+                metadata._originalOrigin = { ...metadata.origin };
+            }
+
+            // ROSマップは左下が原点、画像は左上が原点なので Y 軸の変換に注意
+            // クロップによって画像が小さくなった場合、originも調整する必要がある
+            const originalHeight = mapState.originalImageSize?.height || mapState.image.height;
+
+            // X方向: 右方向が正なので、クロップオフセット分を加算
+            metadata.origin.x = metadata._originalOrigin.x + cropOffset.x * resolution;
+
+            // Y方向: ROSは左下原点なので、クロップによって下側が切り取られた場合は調整
+            // クロップオフセットは画像の左上からの距離なので、originへの影響は逆
+            metadata.origin.y = metadata._originalOrigin.y + cropOffset.y * resolution;
+
+            console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin.x}, ${metadata._originalOrigin.y}) → (${metadata.origin.x}, ${metadata.origin.y})`);
+        }
+    }
 }
 
 /**
@@ -262,6 +347,9 @@ export function loadYAMLMetadataFile(file) {
             mapState.metadata = metadata;
             mapState.yamlFileName = file.name;
             mapState.layers.metadataOverlay = true;
+
+            // クロップオフセットがある場合、メタデータを調整
+            adjustMetadataForCrop(metadata);
 
             // メタデータを表示
             displayMetadata(metadata);
@@ -299,13 +387,40 @@ export function loadPGMImageFile(file) {
             // PGMフォーマットをパース
             const pgmData = parsePGM(uint8Array);
 
+            console.log(`loadPGMImageFile: 元のサイズ ${pgmData.width}x${pgmData.height}`);
+
+            // 有効領域を抽出してクロップ
+            const extractResult = extractValidRegion(pgmData);
+
+            let finalPGMData, cropOffset;
+            if (extractResult && extractResult.pgmData) {
+                finalPGMData = extractResult.pgmData;
+                cropOffset = {
+                    x: extractResult.pgmData.offsetX || 0,
+                    y: extractResult.pgmData.offsetY || 0
+                };
+                console.log(`loadPGMImageFile: クロップ後のサイズ ${finalPGMData.width}x${finalPGMData.height}, オフセット (${cropOffset.x}, ${cropOffset.y})`);
+            } else {
+                // 抽出失敗時は元のデータを使用
+                finalPGMData = pgmData;
+                cropOffset = { x: 0, y: 0 };
+                console.warn('loadPGMImageFile: 有効領域の抽出に失敗しました。元の画像を使用します。');
+            }
+
             // PGMデータをImageに変換
-            const img = pgmToImage(pgmData);
+            const img = pgmToImage(finalPGMData);
 
             img.onload = function() {
                 mapState.image = img;
                 mapState.imageFileName = file.name;
                 mapState.layers.image = true;
+
+                // クロップオフセット情報を保存（3Dレンダリングやその他の用途）
+                mapState.imageCropOffset = cropOffset;
+                mapState.originalImageSize = {
+                    width: pgmData.width,
+                    height: pgmData.height
+                };
 
                 const container = document.getElementById('mapContainer');
                 const canvas = document.getElementById('mapCanvas');
@@ -351,6 +466,7 @@ export function loadPGMImageFile(file) {
  *
  * すべてのレイヤーを統合したキャンバスをPGM形式で保存します。
  * ファイル名は、インポートしたファイル名をベースにするか、デフォルト名を使用します。
+ * 保存時には有効領域の自動クロップは行いません（ユーザーが描画したアノテーションを保持するため）。
  *
  * @export
  * @param {string} [filename] - 保存するファイル名（省略時は自動生成）
@@ -386,6 +502,8 @@ export function saveMapAsPGM(filename) {
 
         // PGMデータに変換
         const pgmData = canvasToPGM(tempCanvas);
+
+        console.log(`saveMapAsPGM: 保存サイズ ${pgmData.length} bytes (${tempCanvas.width}x${tempCanvas.height})`);
 
         // ファイル名を決定
         let finalFilename = filename;
