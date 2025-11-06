@@ -332,9 +332,9 @@ function adjustMetadataForCrop(metadata) {
             // X方向: 右方向が正なので、クロップオフセット分を加算
             metadata.origin.x = metadata._originalOrigin.x + cropOffset.x * resolution;
 
-            // Y方向: ROSは左下原点なので、クロップによって下側が切り取られた場合は調整
-            // クロップオフセットは画像の左上からの距離なので、originへの影響は逆
-            metadata.origin.y = metadata._originalOrigin.y + cropOffset.y * resolution;
+            // Y方向: 画像座標系とROS座標系でY軸の向きが逆なので、符号を反転
+            // 画像の上側がクロップされると、ROS座標系では原点が下方向に移動（Y座標が減少）
+            metadata.origin.y = metadata._originalOrigin.y - cropOffset.y * resolution;
 
             console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin.x}, ${metadata._originalOrigin.y}) → (${metadata.origin.x}, ${metadata.origin.y})`);
         }
