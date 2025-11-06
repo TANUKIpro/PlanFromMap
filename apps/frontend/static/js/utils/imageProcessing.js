@@ -341,6 +341,9 @@ export function hexToRgb(hex) {
  * - 2Dマップビューの初期表示領域の自動調整
  * - 3Dマップのテクスチャ範囲の最適化
  *
+ * 注意: 実際の画像クロップはバックエンドのPython APIで実行されます。
+ * この関数は主にビューポート調整などの補助的な用途で使用されます。
+ *
  * @param {HTMLImageElement} image - 解析する画像
  * @param {number} [marginPercent=0.05] - 検出領域に追加するマージン（デフォルト5%）
  * @returns {Object|null} 有効領域の境界情報、検出失敗時はnull

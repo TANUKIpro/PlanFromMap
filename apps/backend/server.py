@@ -4,11 +4,13 @@ Backend API Server
 Semantic Map Platform のバックエンドAPIサーバー
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from datetime import datetime
 import json
 from pathlib import Path
+import io
+from image_optimizer import optimize_image_bytes
 
 app = Flask(__name__)
 CORS(app)  # CORS有効化
@@ -218,6 +220,77 @@ def get_stats():
     })
 
 
+# ============================================
+# 画像最適化API
+# ============================================
+@app.route('/api/optimize-image', methods=['POST'])
+def optimize_image():
+    """
+    画像の有効領域を抽出して最適化
+
+    リクエスト:
+        - multipart/form-data
+        - file: 画像ファイル
+        - black_threshold: 黒とみなす輝度値の上限 (default: 100)
+        - white_threshold: 白とみなす輝度値の下限 (default: 220)
+
+    レスポンス:
+        - JSON形式で最適化された画像とメタデータを返す
+    """
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "Empty filename"}), 400
+
+    # パラメータ取得
+    black_threshold = int(request.form.get('black_threshold', 100))
+    white_threshold = int(request.form.get('white_threshold', 220))
+
+    try:
+        # ファイルを読み込む
+        image_bytes = file.read()
+
+        # 画像を最適化
+        optimized_bytes, bounds = optimize_image_bytes(
+            image_bytes,
+            black_threshold=black_threshold,
+            white_threshold=white_threshold,
+            output_format='PNG'
+        )
+
+        # Base64エンコード
+        import base64
+        optimized_base64 = base64.b64encode(optimized_bytes).decode('utf-8')
+
+        # レスポンス
+        return jsonify({
+            "success": True,
+            "image": f"data:image/png;base64,{optimized_base64}",
+            "bounds": bounds,
+            "original_size": {
+                "width": bounds['original_width'],
+                "height": bounds['original_height']
+            },
+            "cropped_size": {
+                "width": bounds['cmax'] - bounds['cmin'] + 1,
+                "height": bounds['rmax'] - bounds['rmin'] + 1
+            },
+            "offset": {
+                "x": bounds['cmin'],
+                "y": bounds['rmin']
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("🚀 Backend API Server Starting...")
@@ -232,6 +305,7 @@ if __name__ == '__main__':
     print("  - GET  /api/maps/<id>")
     print("  - POST /api/mapql/query")
     print("  - GET  /api/stats")
+    print("  - POST /api/optimize-image")
     print()
     print("=" * 60)
 
