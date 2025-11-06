@@ -110,14 +110,19 @@ export function toggleRectangleTool(enabled) {
  */
 export function createRectangle(x, y, width, height, rotation = 0, color = null, skipHistory = false) {
     const id = 'rect-' + mapState.rectangleToolState.nextRectangleId;
+    const rectangleNumber = mapState.rectangleToolState.nextRectangleId;
     mapState.rectangleToolState.nextRectangleId++;
 
     // 色が指定されていない場合は、現在の描画色を使用
     const rectangleColor = color || mapState.drawingState.color || RECTANGLE_DEFAULTS.STROKE_COLOR;
 
+    // デフォルトの名前を生成（子レイヤー名と一致）
+    const defaultName = `四角形 ${rectangleNumber}`;
+
     const rectangle = {
         // 基本プロパティ
         id: id,
+        name: defaultName,  // オブジェクト名（レイヤー名と一致）
         x: x,
         y: y,
         width: width || RECTANGLE_DEFAULTS.DEFAULT_WIDTH,
@@ -299,6 +304,40 @@ export function updateRectangle(rectangleId, updates) {
  */
 export function getAllRectangles() {
     return mapState.rectangleToolState.rectangles;
+}
+
+/**
+ * 四角形の名前を変更する（子レイヤー名も同期）
+ *
+ * @param {string} rectangleId - 四角形のID
+ * @param {string} newName - 新しい名前
+ * @returns {boolean} 成功した場合はtrue
+ *
+ * @example
+ * renameRectangle('rect-1', 'テーブル');
+ */
+export function renameRectangle(rectangleId, newName) {
+    const rectangle = getRectangleById(rectangleId);
+    if (!rectangle) return false;
+
+    // 四角形の名前を更新
+    rectangle.name = newName;
+
+    // 対応する子レイヤーの名前も更新
+    const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+    if (rectangleLayer) {
+        const childLayer = rectangleLayer.children.find(c => c.rectangleId === rectangleId);
+        if (childLayer) {
+            childLayer.name = newName;
+        }
+    }
+
+    // レイヤーパネルを更新
+    if (window.updateLayersPanel && typeof window.updateLayersPanel === 'function') {
+        window.updateLayersPanel();
+    }
+
+    return true;
 }
 
 /**

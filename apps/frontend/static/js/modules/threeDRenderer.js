@@ -159,7 +159,10 @@ export function render3DScene() {
     const centerX = width / 2 + view3DState.offsetX;
     const centerY = height / 2 + view3DState.offsetY;
 
-    // グリッドを描画
+    // マップ画像を床面に描画（グリッドの前に）
+    drawMapTexture(ctx, centerX, centerY);
+
+    // グリッドを描画（マップ画像の上に）
     drawGrid(ctx, centerX, centerY);
 
     // すべての四角形を3Dで描画
@@ -173,6 +176,103 @@ export function render3DScene() {
 
     // ViewCubeを更新
     updateViewCube(view3DState.rotation, view3DState.tilt);
+}
+
+/**
+ * マップ画像を床面に描画（テクスチャ）
+ *
+ * @private
+ */
+function drawMapTexture(ctx, centerX, centerY) {
+    if (!mapState.image) return;
+
+    const image = mapState.image;
+    const resolution = mapState.metadata?.resolution || 0.05; // m/pixel
+
+    // マップのサイズをメートルに変換
+    const mapWidthMeters = image.width * resolution;
+    const mapHeightMeters = image.height * resolution;
+
+    // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
+    const originX = mapState.metadata?.origin?.x || 0;
+    const originY = mapState.metadata?.origin?.y || 0;
+
+    // マップの中心座標を計算（実世界座標）
+    // ROSのマップでは、原点が左下なので、マップの中心は origin + size/2
+    const mapCenterX = originX + mapWidthMeters / 2;
+    const mapCenterY = originY + mapHeightMeters / 2;
+
+    // タイルサイズ（メートル）- 画像を細かく分割して描画
+    const tileSize = 0.1; // 10cm単位で分割
+    const tilesX = Math.ceil(mapWidthMeters / tileSize);
+    const tilesY = Math.ceil(mapHeightMeters / tileSize);
+
+    ctx.save();
+
+    // 各タイルを描画
+    for (let ty = 0; ty < tilesY; ty++) {
+        for (let tx = 0; tx < tilesX; tx++) {
+            // タイルの実世界座標（マップの左下が原点）
+            const tileX = originX + tx * tileSize;
+            const tileY = originY + ty * tileSize;
+            const tileZ = 0; // 床面
+
+            // タイルの画像座標（ピクセル）
+            // ROSマップは左下が原点だが、画像は左上が原点なので Y 軸を反転
+            const imgX = tx * tileSize / resolution;
+            const imgY = image.height - (ty + 1) * tileSize / resolution;
+            const imgW = tileSize / resolution;
+            const imgH = tileSize / resolution;
+
+            // 画像範囲チェック
+            if (imgX < 0 || imgY < 0 || imgX >= image.width || imgY >= image.height) continue;
+
+            // 画像から色を取得（中心ピクセル）
+            const sampleX = Math.floor(Math.min(imgX + imgW / 2, image.width - 1));
+            const sampleY = Math.floor(Math.min(imgY + imgH / 2, image.height - 1));
+
+            // 一時的なCanvasを作成して画像データを取得
+            if (!drawMapTexture._tempCanvas) {
+                drawMapTexture._tempCanvas = document.createElement('canvas');
+                drawMapTexture._tempCanvas.width = image.width;
+                drawMapTexture._tempCanvas.height = image.height;
+                drawMapTexture._tempCtx = drawMapTexture._tempCanvas.getContext('2d');
+                drawMapTexture._tempCtx.drawImage(image, 0, 0);
+                drawMapTexture._imageData = drawMapTexture._tempCtx.getImageData(0, 0, image.width, image.height);
+            }
+
+            const pixelIndex = (sampleY * image.width + sampleX) * 4;
+            const r = drawMapTexture._imageData.data[pixelIndex];
+            const g = drawMapTexture._imageData.data[pixelIndex + 1];
+            const b = drawMapTexture._imageData.data[pixelIndex + 2];
+            const color = `rgb(${r}, ${g}, ${b})`;
+
+            // タイルの4つの角を等角投影
+            const corners = [
+                worldToIso(tileX, tileY, tileZ),
+                worldToIso(tileX + tileSize, tileY, tileZ),
+                worldToIso(tileX + tileSize, tileY + tileSize, tileZ),
+                worldToIso(tileX, tileY + tileSize, tileZ)
+            ];
+
+            const screenCorners = corners.map(v => ({
+                x: centerX + v.x * view3DState.scale,
+                y: centerY - v.y * view3DState.scale
+            }));
+
+            // タイルを描画
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
+            ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
+            ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
+            ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    ctx.restore();
 }
 
 /**
