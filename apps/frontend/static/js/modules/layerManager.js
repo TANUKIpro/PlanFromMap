@@ -750,13 +750,24 @@ function selectLayerAndRectangle(layer) {
  * redrawAllLayers();
  */
 export function redrawAllLayers() {
+    console.log('[DEBUG] redrawAllLayers called, layers:', mapState.layerStack.map(l => ({
+        id: l.id,
+        type: l.type,
+        visible: l.visible
+    })));
+
     mapState.layerStack.forEach(layer => {
-        if (!layer.visible) return;
+        if (!layer.visible) {
+            console.log(`[DEBUG] Layer ${layer.id} (${layer.type}) is not visible, skipping`);
+            return;
+        }
 
         if (layer.type === 'image' && mapState.image) {
+            console.log(`[DEBUG] Drawing image layer ${layer.id}`);
             layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
             drawImageLayer(layer);
         } else if (layer.type === 'metadata' && mapState.metadata) {
+            console.log(`[DEBUG] Drawing metadata layer ${layer.id}`);
             layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
             drawMetadataLayer(layer);
         } else if (layer.type === 'drawing') {
@@ -824,6 +835,13 @@ export function drawImageLayer(layer) {
  * drawMetadataLayer(metadataLayer);
  */
 export function drawMetadataLayer(layer) {
+    console.log('[DEBUG] drawMetadataLayer called:', {
+        hasMetadata: !!mapState.metadata,
+        hasImage: !!mapState.image,
+        metadataOverlay: mapState.layers.metadataOverlay,
+        layerVisible: layer.visible
+    });
+
     if (!mapState.metadata || !mapState.image) return;
 
     const layerCtx = layer.ctx;
@@ -846,7 +864,10 @@ export function drawMetadataLayer(layer) {
 
     // メタデータオーバーレイを描画（レイヤーのctxを使用）
     if (mapState.layers.metadataOverlay) {
+        console.log('[DEBUG] Calling drawMetadataOverlayOnContext');
         drawMetadataOverlayOnContext(layerCtx, drawX, drawY, scaledWidth, scaledHeight);
+    } else {
+        console.log('[DEBUG] metadataOverlay is false');
     }
 
     layerCtx.restore();

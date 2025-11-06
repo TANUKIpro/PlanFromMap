@@ -127,6 +127,12 @@ export function drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight) {
  */
 export function drawMetadataOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight) {
     const metadata = mapState.metadata;
+    console.log('[DEBUG] drawMetadataOverlayOnContext called:', {
+        hasMetadata: !!metadata,
+        showOrigin: mapState.overlaySettings.showOrigin,
+        hasOrigin: metadata ? Array.isArray(metadata.origin) : false,
+        origin: metadata?.origin
+    });
     if (!metadata) return;
 
     const resolution = metadata.resolution;
@@ -136,6 +142,7 @@ export function drawMetadataOverlayOnContext(targetCtx, drawX, drawY, scaledWidt
     }
 
     if (mapState.overlaySettings.showOrigin && Array.isArray(metadata.origin)) {
+        console.log('[DEBUG] Calling drawOriginOverlayOnContext');
         drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
     }
 
@@ -348,11 +355,29 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
  * @param {Array<number>} origin - 原点座標 [x, y, theta]
  */
 export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, origin) {
-    if (!Array.isArray(origin) || origin.length < 2) return;
-    if (!mapState.metadata || mapState.metadata.resolution === undefined) return;
+    console.log('[DEBUG] drawOriginOverlayOnContext called:', {
+        origin,
+        drawX,
+        drawY,
+        hasMetadata: !!mapState.metadata,
+        resolution: mapState.metadata?.resolution
+    });
+
+    if (!Array.isArray(origin) || origin.length < 2) {
+        console.log('[DEBUG] Origin check failed');
+        return;
+    }
+    if (!mapState.metadata || mapState.metadata.resolution === undefined) {
+        console.log('[DEBUG] Metadata check failed');
+        return;
+    }
 
     const originCanvas = worldToCanvas(0, 0, drawX, drawY);
-    if (!originCanvas) return;
+    console.log('[DEBUG] originCanvas:', originCanvas);
+    if (!originCanvas) {
+        console.log('[DEBUG] worldToCanvas returned null');
+        return;
+    }
 
     // 原点マーカーの描画要素（十字、矢印、ラベル）のサイズを考慮したマージン
     const margin = 100;
@@ -363,6 +388,17 @@ export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth,
     const canvasHeight = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.height :
                          document.getElementById('mapCanvas').height;
 
+    console.log('[DEBUG] Canvas size:', { canvasWidth, canvasHeight });
+    console.log('[DEBUG] Bounds check:', {
+        x: originCanvas.x,
+        y: originCanvas.y,
+        minX: -margin,
+        maxX: canvasWidth + margin,
+        minY: -margin,
+        maxY: canvasHeight + margin,
+        inBounds: !(originCanvas.x < -margin || originCanvas.x > canvasWidth + margin || originCanvas.y < -margin || originCanvas.y > canvasHeight + margin)
+    });
+
     // キャンバスの表示領域内にあるかチェック（マージン付き）
     if (
         originCanvas.x < -margin ||
@@ -371,8 +407,11 @@ export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth,
         originCanvas.y > canvasHeight + margin
     ) {
         // 表示領域外の場合は描画しない
+        console.log('[DEBUG] Origin is out of bounds');
         return;
     }
+
+    console.log('[DEBUG] Drawing origin marker...');
 
     targetCtx.save();
     targetCtx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
