@@ -26,6 +26,7 @@ import { getAllRectangles, getRectangleById } from '../modules/rectangleManager.
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
 import { initializeViewCube, updateViewCube } from '../ui/viewCube.js';
+import { analyzeMapBounds } from '../utils/imageProcessing.js';
 
 // ================
 // 3Dビュー状態
@@ -179,94 +180,7 @@ export function render3DScene() {
     updateViewCube(view3DState.rotation, view3DState.tilt);
 }
 
-/**
- * pgm画像の有効領域を解析する
- * 中心から外側に向かって正方形を拡大し、黒色ピクセルにぶつかった位置を境界とする
- *
- * @private
- * @returns {Object} {minX, minY, maxX, maxY, centerX, centerY} (ピクセル座標)
- */
-function analyzeMapBounds() {
-    if (!mapState.image) return null;
-
-    const image = mapState.image;
-
-    // 画像データを取得
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = image.width;
-    tempCanvas.height = image.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(image, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
-    const data = imageData.data;
-
-    // 占有格子マップの閾値
-    // 黒色（障害物）: 0-100
-    // 白色（自由空間）: 220-255
-    // グレー（未知領域）: 101-219 は除外
-    const blackThreshold = 100;
-    const whiteThreshold = 220;
-
-    // 有効ピクセル（黒または白）を持つ行と列を記録
-    const validRows = new Set();
-    const validCols = new Set();
-
-    // 全ピクセルをスキャンして有効ピクセルを検出
-    for (let y = 0; y < image.height; y++) {
-        for (let x = 0; x < image.width; x++) {
-            const index = (y * image.width + x) * 4;
-            const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
-
-            // 黒色（障害物）または白色（自由空間）の場合は有効
-            if (gray <= blackThreshold || gray >= whiteThreshold) {
-                validRows.add(y);
-                validCols.add(x);
-            }
-        }
-    }
-
-    // 有効ピクセルが見つからない場合は画像全体を使用
-    if (validRows.size === 0 || validCols.size === 0) {
-        console.warn('有効な領域が見つかりませんでした。画像全体を使用します。');
-        return {
-            minX: 0,
-            minY: 0,
-            maxX: image.width - 1,
-            maxY: image.height - 1,
-            centerX: image.width / 2,
-            centerY: image.height / 2
-        };
-    }
-
-    // 行と列の最小値・最大値を取得
-    const rowArray = Array.from(validRows).sort((a, b) => a - b);
-    const colArray = Array.from(validCols).sort((a, b) => a - b);
-
-    const minY = rowArray[0];
-    const maxY = rowArray[rowArray.length - 1];
-    const minX = colArray[0];
-    const maxX = colArray[colArray.length - 1];
-
-    // マージンを追加（5%）
-    const width = maxX - minX + 1;
-    const height = maxY - minY + 1;
-    const marginX = Math.ceil(width * 0.05);
-    const marginY = Math.ceil(height * 0.05);
-
-    const finalMinX = Math.max(0, minX - marginX);
-    const finalMinY = Math.max(0, minY - marginY);
-    const finalMaxX = Math.min(image.width - 1, maxX + marginX);
-    const finalMaxY = Math.min(image.height - 1, maxY + marginY);
-
-    // 中心座標を計算
-    const centerX = (finalMinX + finalMaxX) / 2;
-    const centerY = (finalMinY + finalMaxY) / 2;
-
-    console.log(`マップ有効領域を検出: [${finalMinX}, ${finalMinY}] - [${finalMaxX}, ${finalMaxY}], 中心: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
-    console.log(`有効ピクセル数: ${validRows.size * validCols.size} / ${image.width * image.height} (行: ${rowArray.length}, 列: ${colArray.length})`);
-
-    return { minX: finalMinX, minY: finalMinY, maxX: finalMaxX, maxY: finalMaxY, centerX, centerY };
-}
+// analyzeMapBounds()関数は utils/imageProcessing.js に移動されました
 
 /**
  * マップ画像を床面に描画（テクスチャ）
@@ -282,7 +196,7 @@ function drawMapTexture(ctx, centerX, centerY) {
 
     // マップの有効領域を解析（初回のみ）
     if (!view3DState.mapBounds) {
-        view3DState.mapBounds = analyzeMapBounds();
+        view3DState.mapBounds = analyzeMapBounds(image);
     }
 
     if (!view3DState.mapBounds) return;
@@ -383,10 +297,11 @@ function drawMapTexture(ctx, centerX, centerY) {
  * @private
  */
 function drawGrid(ctx, centerX, centerY) {
-    const gridSize = 1; // 1メートルグリッド
+    const gridSize = 1; // 1メートルグリッド（2Dマップと同じ）
+    const maxGridCount = 20; // グリッド数の上限（±20メートル = 41本の線）
     let gridCount = 10; // デフォルト
 
-    // マップの有効領域に合わせてグリッド範囲を調整
+    // マップの有効領域に合わせてグリッド範囲を調整（上限あり）
     if (view3DState.mapBounds && mapState.image) {
         const resolution = mapState.metadata?.resolution || 0.05;
         const bounds = view3DState.mapBounds;
@@ -399,9 +314,9 @@ function drawGrid(ctx, centerX, centerY) {
         const boundsWidthMeters = boundsWidth * resolution;
         const boundsHeightMeters = boundsHeight * resolution;
 
-        // 最大サイズに基づいてグリッド数を計算（余裕を持たせて+2）
+        // 最大サイズに基づいてグリッド数を計算（余裕を持たせて+2、ただし上限あり）
         const maxSizeMeters = Math.max(boundsWidthMeters, boundsHeightMeters);
-        gridCount = Math.ceil(maxSizeMeters / gridSize / 2) + 2;
+        gridCount = Math.min(Math.ceil(maxSizeMeters / gridSize / 2) + 2, maxGridCount);
     }
 
     ctx.save();

@@ -18,7 +18,49 @@
 import { mapState } from '../state/mapState.js';
 import { initializeLayers, redrawAllLayers } from './layerManager.js';
 import { displayMetadata, updateOverlayControls } from './metadataDisplay.js';
-import { canvasToPGM, downloadPGM } from '../utils/imageProcessing.js';
+import { canvasToPGM, downloadPGM, analyzeMapBounds } from '../utils/imageProcessing.js';
+
+/**
+ * 有効領域にフィットするようにビューを調整
+ * @private
+ * @param {HTMLImageElement} image - 画像
+ * @param {Object} container - コンテナ要素
+ */
+function fitViewToBounds(image, container) {
+    // 有効領域を検出
+    const bounds = analyzeMapBounds(image);
+    if (!bounds) {
+        console.log('fitViewToBounds: 有効領域が検出できませんでした。デフォルトビューを使用します。');
+        return;
+    }
+
+    // 有効領域のサイズ（ピクセル）
+    const boundsWidth = bounds.maxX - bounds.minX;
+    const boundsHeight = bounds.maxY - bounds.minY;
+
+    // コンテナのサイズ
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+
+    // 有効領域がコンテナにフィットするスケールを計算（余白10%を考慮）
+    const scaleX = (containerWidth * 0.9) / boundsWidth;
+    const scaleY = (containerHeight * 0.9) / boundsHeight;
+    const scale = Math.min(scaleX, scaleY, 2.0); // 最大2倍まで
+
+    // 有効領域の中心をコンテナの中心に配置するオフセットを計算
+    const boundsCenterX = (bounds.minX + bounds.maxX) / 2;
+    const boundsCenterY = (bounds.minY + bounds.maxY) / 2;
+    const offsetX = containerWidth / 2 - boundsCenterX * scale;
+    const offsetY = containerHeight / 2 - boundsCenterY * scale;
+
+    // mapStateを更新
+    mapState.scale = scale;
+    mapState.offsetX = offsetX;
+    mapState.offsetY = offsetY;
+
+    console.log(`fitViewToBounds: スケール=${scale.toFixed(2)}, オフセット=(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
+}
 
 /**
  * PGMフォーマットをパース（P5形式とP2形式に対応）
@@ -166,9 +208,6 @@ export function loadStandardImageFile(file) {
         img.onload = function() {
             mapState.image = img;
             mapState.imageFileName = file.name;
-            mapState.scale = 1.0;
-            mapState.offsetX = 0;
-            mapState.offsetY = 0;
             mapState.layers.image = true;
 
             const container = document.getElementById('mapContainer');
@@ -179,6 +218,9 @@ export function loadStandardImageFile(file) {
             const containerRect = container.getBoundingClientRect();
             canvas.width = containerRect.width;
             canvas.height = containerRect.height;
+
+            // 有効領域にフィットするようにビューを調整
+            fitViewToBounds(img, container);
 
             // プレースホルダーを非表示、新しいレイヤーシステムを表示
             document.getElementById('mapPlaceholder').style.display = 'none';
@@ -263,9 +305,6 @@ export function loadPGMImageFile(file) {
             img.onload = function() {
                 mapState.image = img;
                 mapState.imageFileName = file.name;
-                mapState.scale = 1.0;
-                mapState.offsetX = 0;
-                mapState.offsetY = 0;
                 mapState.layers.image = true;
 
                 const container = document.getElementById('mapContainer');
@@ -276,6 +315,9 @@ export function loadPGMImageFile(file) {
                 const containerRect = container.getBoundingClientRect();
                 canvas.width = containerRect.width;
                 canvas.height = containerRect.height;
+
+                // 有効領域にフィットするようにビューを調整
+                fitViewToBounds(img, container);
 
                 // プレースホルダーを非表示、新しいレイヤーシステムを表示
                 document.getElementById('mapPlaceholder').style.display = 'none';

@@ -328,3 +328,114 @@ export function hexToRgb(hex) {
         b: parseInt(result[3], 16)
     } : null;
 }
+
+/**
+ * マップ画像の有効領域（黒色+白色ピクセル）を検出
+ *
+ * この関数は、占有格子マップ（Occupancy Grid Map）の有効領域を検出します。
+ * 黒色ピクセル（障害物、≤100）と白色ピクセル（自由空間、≥220）を有効領域とし、
+ * グレー（未知領域、101-219）を除外します。
+ *
+ * 用途：
+ * - 大きな余白を持つPGMファイルのテクスチャサイズ最適化
+ * - 2Dマップビューの初期表示領域の自動調整
+ * - 3Dマップのテクスチャ範囲の最適化
+ *
+ * @param {HTMLImageElement} image - 解析する画像
+ * @param {number} [marginPercent=0.05] - 検出領域に追加するマージン（デフォルト5%）
+ * @returns {Object|null} 有効領域の境界情報、検出失敗時はnull
+ * @returns {number} returns.minX - 最小X座標（ピクセル）
+ * @returns {number} returns.minY - 最小Y座標（ピクセル）
+ * @returns {number} returns.maxX - 最大X座標（ピクセル）
+ * @returns {number} returns.maxY - 最大Y座標（ピクセル）
+ * @returns {number} returns.centerX - 中心X座標（ピクセル）
+ * @returns {number} returns.centerY - 中心Y座標（ピクセル）
+ *
+ * @example
+ * const img = new Image();
+ * img.onload = function() {
+ *     const bounds = analyzeMapBounds(img);
+ *     if (bounds) {
+ *         console.log(`有効領域: [${bounds.minX}, ${bounds.minY}] - [${bounds.maxX}, ${bounds.maxY}]`);
+ *     }
+ * };
+ * img.src = 'map.pgm';
+ */
+export function analyzeMapBounds(image, marginPercent = 0.05) {
+    if (!image) return null;
+
+    // 画像データを取得
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(image, 0, 0);
+    const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+    const data = imageData.data;
+
+    // 占有格子マップの閾値
+    // 黒色（障害物）: 0-100
+    // 白色（自由空間）: 220-255
+    // グレー（未知領域）: 101-219 は除外
+    const blackThreshold = 100;
+    const whiteThreshold = 220;
+
+    // 有効ピクセル（黒または白）を持つ行と列を記録
+    const validRows = new Set();
+    const validCols = new Set();
+
+    // 全ピクセルをスキャンして有効ピクセルを検出
+    for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+            const index = (y * image.width + x) * 4;
+            const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
+
+            // 黒色（障害物）または白色（自由空間）の場合は有効
+            if (gray <= blackThreshold || gray >= whiteThreshold) {
+                validRows.add(y);
+                validCols.add(x);
+            }
+        }
+    }
+
+    // 有効ピクセルが見つからない場合は画像全体を使用
+    if (validRows.size === 0 || validCols.size === 0) {
+        console.warn('analyzeMapBounds: 有効な領域が見つかりませんでした。画像全体を使用します。');
+        return {
+            minX: 0,
+            minY: 0,
+            maxX: image.width - 1,
+            maxY: image.height - 1,
+            centerX: image.width / 2,
+            centerY: image.height / 2
+        };
+    }
+
+    // 行と列の最小値・最大値を取得
+    const rowArray = Array.from(validRows).sort((a, b) => a - b);
+    const colArray = Array.from(validCols).sort((a, b) => a - b);
+
+    const minY = rowArray[0];
+    const maxY = rowArray[rowArray.length - 1];
+    const minX = colArray[0];
+    const maxX = colArray[colArray.length - 1];
+
+    // マージンを追加
+    const width = maxX - minX + 1;
+    const height = maxY - minY + 1;
+    const marginX = Math.ceil(width * marginPercent);
+    const marginY = Math.ceil(height * marginPercent);
+
+    const finalMinX = Math.max(0, minX - marginX);
+    const finalMinY = Math.max(0, minY - marginY);
+    const finalMaxX = Math.min(image.width - 1, maxX + marginX);
+    const finalMaxY = Math.min(image.height - 1, maxY + marginY);
+
+    // 中心座標を計算
+    const centerX = (finalMinX + finalMaxX) / 2;
+    const centerY = (finalMinY + finalMaxY) / 2;
+
+    console.log(`analyzeMapBounds: 有効領域を検出 [${finalMinX}, ${finalMinY}] - [${finalMaxX}, ${finalMaxY}], 中心: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+
+    return { minX: finalMinX, minY: finalMinY, maxX: finalMaxX, maxY: finalMaxY, centerX, centerY };
+}
