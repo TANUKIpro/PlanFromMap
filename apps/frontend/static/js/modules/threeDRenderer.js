@@ -181,7 +181,7 @@ export function render3DScene() {
 
 /**
  * pgm画像の有効領域を解析する
- * 情報を持つピクセル（障害物または空き空間）の範囲を検出し、5%のマージンを追加
+ * 中心から外側に向かって正方形を拡大し、黒色ピクセルにぶつかった位置を境界とする
  *
  * @private
  * @returns {Object} {minX, minY, maxX, maxY, centerX, centerY} (ピクセル座標)
@@ -200,58 +200,106 @@ function analyzeMapBounds() {
     const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
     const data = imageData.data;
 
-    // 有効なピクセルを検出（占有格子マップ）
-    // 0 = 障害物（黒）、255 = 空き空間（白）、128周辺 = 未探索（グレー）
-    // 閾値: 未探索と判定する範囲を設定
-    const unknownThreshold = 40; // 128 ± 40 = [88, 168] を未探索とみなす
-    const unknownMin = 128 - unknownThreshold;
-    const unknownMax = 128 + unknownThreshold;
+    // 黒色の閾値（占有格子マップで障害物を表す）
+    const blackThreshold = 50; // 0-50を黒色とみなす
 
-    let minX = image.width;
-    let minY = image.height;
-    let maxX = 0;
-    let maxY = 0;
-    let hasValidPixel = false;
+    // 画像の中心座標
+    const imageCenterX = Math.floor(image.width / 2);
+    const imageCenterY = Math.floor(image.height / 2);
 
-    for (let y = 0; y < image.height; y++) {
-        for (let x = 0; x < image.width; x++) {
-            const index = (y * image.width + x) * 4;
-            const r = data[index];
-            const g = data[index + 1];
-            const b = data[index + 2];
+    // 最大探索距離（対角線の半分）
+    const maxDistance = Math.ceil(Math.sqrt(image.width * image.width + image.height * image.height) / 2);
 
-            // グレースケールの平均値を計算
-            const gray = (r + g + b) / 3;
+    // 各方向で黒色が見つかった距離を記録
+    let foundTop = null;
+    let foundBottom = null;
+    let foundLeft = null;
+    let foundRight = null;
 
-            // 未探索領域（グレー）以外を有効なピクセルとみなす
-            if (gray < unknownMin || gray > unknownMax) {
-                hasValidPixel = true;
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
+    // 中心から外側に向かって探索
+    for (let distance = 0; distance < maxDistance; distance++) {
+        // 上辺をチェック（まだ見つかっていない場合）
+        if (foundTop === null) {
+            const y = imageCenterY - distance;
+            if (y >= 0) {
+                for (let x = Math.max(0, imageCenterX - distance); x <= Math.min(image.width - 1, imageCenterX + distance); x++) {
+                    const index = (y * image.width + x) * 4;
+                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
+                    if (gray < blackThreshold) {
+                        foundTop = y;
+                        break;
+                    }
+                }
             }
+        }
+
+        // 下辺をチェック
+        if (foundBottom === null) {
+            const y = imageCenterY + distance;
+            if (y < image.height) {
+                for (let x = Math.max(0, imageCenterX - distance); x <= Math.min(image.width - 1, imageCenterX + distance); x++) {
+                    const index = (y * image.width + x) * 4;
+                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
+                    if (gray < blackThreshold) {
+                        foundBottom = y;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 左辺をチェック
+        if (foundLeft === null) {
+            const x = imageCenterX - distance;
+            if (x >= 0) {
+                for (let y = Math.max(0, imageCenterY - distance); y <= Math.min(image.height - 1, imageCenterY + distance); y++) {
+                    const index = (y * image.width + x) * 4;
+                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
+                    if (gray < blackThreshold) {
+                        foundLeft = x;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 右辺をチェック
+        if (foundRight === null) {
+            const x = imageCenterX + distance;
+            if (x < image.width) {
+                for (let y = Math.max(0, imageCenterY - distance); y <= Math.min(image.height - 1, imageCenterY + distance); y++) {
+                    const index = (y * image.width + x) * 4;
+                    const gray = (data[index] + data[index + 1] + data[index + 2]) / 3;
+                    if (gray < blackThreshold) {
+                        foundRight = x;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // すべての辺で黒色が見つかったら終了
+        if (foundTop !== null && foundBottom !== null && foundLeft !== null && foundRight !== null) {
+            break;
         }
     }
 
-    // 有効なピクセルが見つからない場合は全体を使用
-    if (!hasValidPixel) {
-        minX = 0;
-        minY = 0;
-        maxX = image.width - 1;
-        maxY = image.height - 1;
-    }
+    // 見つからなかった辺は画像の端を使用
+    if (foundTop === null) foundTop = 0;
+    if (foundBottom === null) foundBottom = image.height - 1;
+    if (foundLeft === null) foundLeft = 0;
+    if (foundRight === null) foundRight = image.width - 1;
 
     // 5%のマージンを追加
-    const width = maxX - minX;
-    const height = maxY - minY;
+    const width = foundRight - foundLeft;
+    const height = foundBottom - foundTop;
     const marginX = Math.ceil(width * 0.05);
     const marginY = Math.ceil(height * 0.05);
 
-    minX = Math.max(0, minX - marginX);
-    minY = Math.max(0, minY - marginY);
-    maxX = Math.min(image.width - 1, maxX + marginX);
-    maxY = Math.min(image.height - 1, maxY + marginY);
+    const minX = Math.max(0, foundLeft - marginX);
+    const minY = Math.max(0, foundTop - marginY);
+    const maxX = Math.min(image.width - 1, foundRight + marginX);
+    const maxY = Math.min(image.height - 1, foundBottom + marginY);
 
     // 中心座標を計算
     const centerX = (minX + maxX) / 2;
@@ -1265,6 +1313,25 @@ export function reset3DView() {
     }
 
     render3DScene();
+}
+
+/**
+ * マップ境界情報を取得する
+ *
+ * @returns {Object|null} マップ境界情報
+ */
+export function getMapBounds() {
+    return view3DState.mapBounds;
+}
+
+/**
+ * マップ境界情報を設定する
+ *
+ * @param {Object|null} bounds - マップ境界情報
+ * @returns {void}
+ */
+export function setMapBounds(bounds) {
+    view3DState.mapBounds = bounds;
 }
 
 // ================

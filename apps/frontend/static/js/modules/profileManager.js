@@ -195,6 +195,12 @@ export function saveProfile(profileName) {
     const trimmedName = profileName.trim();
 
     try {
+        // マップ境界情報を取得（3Dレンダラーから）
+        let mapBounds = null;
+        if (window.getMapBounds && typeof window.getMapBounds === 'function') {
+            mapBounds = window.getMapBounds();
+        }
+
         // 現在の状態をシリアライズ
         const profile = {
             name: trimmedName,
@@ -203,6 +209,7 @@ export function saveProfile(profileName) {
             imageFileName: mapState.imageFileName,
             yamlFileName: mapState.yamlFileName,
             metadata: mapState.metadata,
+            mapBounds: mapBounds, // マップ境界情報を保存
             scale: mapState.scale,
             offsetX: mapState.offsetX,
             offsetY: mapState.offsetY,
@@ -297,6 +304,11 @@ export async function loadProfile(profileName) {
 
         // メタデータを復元
         mapState.metadata = profile.metadata || null;
+
+        // マップ境界情報を復元（3Dレンダラーに設定）
+        if (profile.mapBounds && window.setMapBounds && typeof window.setMapBounds === 'function') {
+            window.setMapBounds(profile.mapBounds);
+        }
 
         // ビューポート設定を復元
         mapState.scale = profile.scale || 1.0;
