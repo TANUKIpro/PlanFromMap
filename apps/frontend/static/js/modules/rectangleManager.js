@@ -20,7 +20,7 @@
 
 import { mapState } from '../state/mapState.js';
 import { RECTANGLE_DEFAULTS } from '../config.js';
-import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES } from '../models/objectTypes.js';
+import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES, getDefaultCommonProperties } from '../models/objectTypes.js';
 
 /**
  * 四角形ツールのオン/オフを切り替える
@@ -130,7 +130,10 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null,
         objectType: OBJECT_TYPES.NONE,  // デフォルトは「なし」
         heightMeters: DEFAULT_3D_PROPERTIES.heightMeters,  // 高さ（メートル）
         frontDirection: DEFAULT_3D_PROPERTIES.frontDirection,  // 前面方向
-        objectProperties: {}  // カテゴリ別のプロパティ（空で初期化）
+        objectProperties: {},  // カテゴリ別のプロパティ（空で初期化）
+
+        // 共通拡張プロパティ
+        commonProperties: getDefaultCommonProperties()  // 全オブジェクト共通の詳細情報
     };
 
     mapState.rectangleToolState.rectangles.push(rectangle);
@@ -275,6 +278,11 @@ export function getRectangleLayer() {
 export function updateRectangle(rectangleId, updates) {
     const rectangle = getRectangleById(rectangleId);
     if (!rectangle) return null;
+
+    // commonPropertiesが更新される場合、updatedAtタイムスタンプを更新
+    if (updates.commonProperties && rectangle.commonProperties) {
+        updates.commonProperties.updatedAt = new Date().toISOString();
+    }
 
     Object.assign(rectangle, updates);
 

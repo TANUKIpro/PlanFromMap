@@ -1,74 +1,101 @@
-/* 3Dビューコンテナ */
-.view-3d-container {
-    position: fixed;
-    bottom: 20px;
-    right: 360px;
-    width: 400px;
-    height: 300px;
-    background: #ffffff;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 900;
+/* ========================================
+   3Dマップビュー（タブ内全画面表示）
+   ======================================== */
+.view-3d-main-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #f7fafc;
     display: flex;
     flex-direction: column;
 }
 
-.view-3d-header {
-    padding: 8px 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #ffffff;
-    border-radius: 6px 6px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.view-3d-header h4 {
-    margin: 0;
-    font-size: 14px;
-}
-
-.view-3d-close {
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-}
-
-.view-3d-canvas {
+.view-3d-main-canvas {
     flex: 1;
     width: 100%;
+    height: 100%;
     cursor: grab;
 }
 
-.view-3d-canvas:active {
+.view-3d-main-canvas:active {
     cursor: grabbing;
 }
 
-.view-3d-controls {
-    padding: 6px;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    gap: 6px;
-    justify-content: center;
+/* ========================================
+   ViewCube（右上）
+   ======================================== */
+.view-cube-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #cbd5e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
 }
 
-.view-3d-controls button {
-    padding: 4px 12px;
+.view-cube-canvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+}
+
+/* ========================================
+   3Dビュー操作ヘルプ
+   ======================================== */
+.view-3d-help {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 5;
+}
+
+.view-3d-help p {
+    margin: 0;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+/* ========================================
+   3Dビューコントロール（下部）
+   ======================================== */
+.view-3d-bottom-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 5;
+}
+
+.control-button {
+    padding: 10px 20px;
     background: #667eea;
     color: #ffffff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.2s ease;
 }
 
-.view-3d-controls button:hover {
+.control-button:hover {
     background: #5568d3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.control-button:active {
+    transform: translateY(0);
 }

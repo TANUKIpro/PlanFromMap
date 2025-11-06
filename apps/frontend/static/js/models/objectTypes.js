@@ -103,6 +103,138 @@ export const DEFAULT_3D_PROPERTIES = {
     frontDirection: 'top'            // 前面方向 'top' | 'right' | 'bottom' | 'left'
 };
 
+/**
+ * 共通の拡張プロパティ（全オブジェクト共通）
+ */
+export const DEFAULT_COMMON_PROPERTIES = {
+    // 識別・メタデータ
+    name: '',                        // オブジェクト名（ユーザー定義）
+    description: '',                 // 説明・メモ
+    tags: [],                        // タグ（検索・フィルタ用）
+    customColor: null,               // カスタム色（nullの場合はデフォルト色を使用）
+
+    // ロボット操作関連
+    isAccessible: true,              // ロボットがアクセス可能か
+    isMovable: false,                // 移動可能か
+    weightKg: 0,                     // 重量（kg）
+
+    // 物理的特性
+    material: '',                    // 材質の詳細説明
+    surfaceType: 'smooth',           // 表面タイプ（smooth/rough/fragile）
+
+    // センサー・ナビゲーション情報
+    hasObstacle: false,              // 障害物としてマークするか
+    isNoGoZone: false,               // 進入禁止エリアか
+
+    // 時間情報（自動設定）
+    createdAt: null,                 // 作成日時（ISO 8601文字列）
+    updatedAt: null                  // 更新日時（ISO 8601文字列）
+};
+
+/**
+ * 共通プロパティのスキーマ（UI生成用）
+ */
+export const COMMON_PROPERTY_SCHEMA = [
+    {
+        section: '基本情報',
+        fields: [
+            {
+                key: 'name',
+                label: 'オブジェクト名',
+                type: 'text',
+                placeholder: '例: キッチンの棚',
+                maxLength: 100
+            },
+            {
+                key: 'description',
+                label: '説明・メモ',
+                type: 'textarea',
+                placeholder: 'オブジェクトの詳細説明やメモを入力',
+                rows: 3,
+                maxLength: 500
+            },
+            {
+                key: 'tags',
+                label: 'タグ',
+                type: 'tags',
+                placeholder: 'タグを入力してEnter',
+                hint: 'カンマまたはEnterで区切って複数入力可能'
+            },
+            {
+                key: 'customColor',
+                label: 'カスタム色',
+                type: 'color',
+                hint: '空欄の場合はカテゴリのデフォルト色を使用'
+            }
+        ]
+    },
+    {
+        section: 'ロボット操作',
+        fields: [
+            {
+                key: 'isAccessible',
+                label: 'アクセス可能',
+                type: 'checkbox',
+                hint: 'ロボットがこのオブジェクトにアクセスできるか'
+            },
+            {
+                key: 'isMovable',
+                label: '移動可能',
+                type: 'checkbox',
+                hint: 'ロボットがこのオブジェクトを移動できるか'
+            },
+            {
+                key: 'weightKg',
+                label: '重量 (kg)',
+                type: 'number',
+                min: 0,
+                max: 1000,
+                step: 0.1,
+                hint: '移動時の参考情報'
+            }
+        ]
+    },
+    {
+        section: '物理的特性',
+        fields: [
+            {
+                key: 'material',
+                label: '材質',
+                type: 'text',
+                placeholder: '例: 木材、金属、プラスチック',
+                maxLength: 50
+            },
+            {
+                key: 'surfaceType',
+                label: '表面タイプ',
+                type: 'select',
+                options: [
+                    { value: 'smooth', label: 'スムーズ（滑らか）' },
+                    { value: 'rough', label: 'ラフ（粗い）' },
+                    { value: 'fragile', label: 'フラジャイル（壊れやすい）' }
+                ]
+            }
+        ]
+    },
+    {
+        section: 'ナビゲーション',
+        fields: [
+            {
+                key: 'hasObstacle',
+                label: '障害物として扱う',
+                type: 'checkbox',
+                hint: 'ロボットの経路計画で障害物として認識'
+            },
+            {
+                key: 'isNoGoZone',
+                label: '進入禁止エリア',
+                type: 'checkbox',
+                hint: 'ロボットがこのエリアに進入できないようにする'
+            }
+        ]
+    }
+];
+
 // ================
 // プロパティスキーマ（UI生成用）
 // ================
@@ -429,4 +561,78 @@ export function getFrontDirectionOptions() {
         { value: 'bottom', label: '下' },
         { value: 'left', label: '左' }
     ];
+}
+
+/**
+ * 共通プロパティのデフォルト値を取得（タイムスタンプ付き）
+ *
+ * @returns {Object} デフォルトの共通プロパティ
+ */
+export function getDefaultCommonProperties() {
+    const now = new Date().toISOString();
+    return {
+        ...JSON.parse(JSON.stringify(DEFAULT_COMMON_PROPERTIES)),
+        createdAt: now,
+        updatedAt: now
+    };
+}
+
+/**
+ * 共通プロパティのスキーマを取得
+ *
+ * @returns {Array} 共通プロパティスキーマ
+ */
+export function getCommonPropertySchema() {
+    return COMMON_PROPERTY_SCHEMA;
+}
+
+/**
+ * 共通プロパティの妥当性を検証
+ *
+ * @param {Object} commonProps - 検証する共通プロパティ
+ * @returns {Object} { valid: boolean, errors: string[] }
+ */
+export function validateCommonProperties(commonProps) {
+    const errors = [];
+
+    if (!commonProps) {
+        return { valid: false, errors: ['共通プロパティが指定されていません'] };
+    }
+
+    // 名前の検証
+    if (commonProps.name && commonProps.name.length > 100) {
+        errors.push('オブジェクト名は100文字以内である必要があります');
+    }
+
+    // 説明の検証
+    if (commonProps.description && commonProps.description.length > 500) {
+        errors.push('説明は500文字以内である必要があります');
+    }
+
+    // タグの検証
+    if (commonProps.tags && !Array.isArray(commonProps.tags)) {
+        errors.push('タグは配列である必要があります');
+    }
+
+    // 重量の検証
+    if (commonProps.weightKg !== undefined) {
+        if (typeof commonProps.weightKg !== 'number' || isNaN(commonProps.weightKg)) {
+            errors.push('重量は数値である必要があります');
+        } else if (commonProps.weightKg < 0) {
+            errors.push('重量は0以上である必要があります');
+        } else if (commonProps.weightKg > 1000) {
+            errors.push('重量は1000kg以下である必要があります');
+        }
+    }
+
+    // 表面タイプの検証
+    const validSurfaceTypes = ['smooth', 'rough', 'fragile'];
+    if (commonProps.surfaceType && !validSurfaceTypes.includes(commonProps.surfaceType)) {
+        errors.push('表面タイプは有効な値である必要があります');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors
+    };
 }

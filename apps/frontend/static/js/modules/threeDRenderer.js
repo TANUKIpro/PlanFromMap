@@ -9,12 +9,14 @@
  * @requires ../modules/rectangleManager.js - 四角形管理
  * @requires ../modules/objectPropertyManager.js - プロパティ管理
  * @requires ../models/objectTypes.js - オブジェクトタイプ定義
+ * @requires ../ui/viewCube.js - ViewCube（視点切り替えコントロール）
  *
  * @exports initialize3DView - 3Dビュー初期化
  * @exports render3DScene - 3Dシーン描画
  * @exports update3DObject - 特定オブジェクト更新
- * @exports toggle3DView - 3Dビュー表示切替
+ * @exports resize3DView - 3Dビューのリサイズ
  * @exports set3DViewRotation - 3Dビューの回転角度設定
+ * @exports reset3DView - 3Dビューのリセット
  * @exports initializePropertyPreview - プロパティプレビュー初期化
  * @exports renderPropertyPreview - プロパティプレビュー描画
  */
@@ -23,6 +25,7 @@ import { mapState } from '../state/mapState.js';
 import { getAllRectangles, getRectangleById } from '../modules/rectangleManager.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
+import { initializeViewCube, updateViewCube } from '../ui/viewCube.js';
 
 // ================
 // 3Dビュー状態
@@ -67,7 +70,27 @@ export function initialize3DView() {
     // イベントリスナーを設定
     setupEventListeners();
 
+    // ViewCubeを初期化
+    const viewCubeCanvas = document.getElementById('viewCubeCanvas');
+    if (viewCubeCanvas) {
+        initializeViewCube(viewCubeCanvas, handleViewCubeChange);
+        console.log('ViewCubeを初期化しました');
+    }
+
     console.log('3Dビューを初期化しました');
+}
+
+/**
+ * ViewCubeからの視点変更を処理
+ *
+ * @private
+ * @param {number} rotation - 回転角度
+ * @param {number} tilt - 傾き角度
+ */
+function handleViewCubeChange(rotation, tilt) {
+    view3DState.rotation = rotation;
+    view3DState.tilt = tilt;
+    render3DScene();
 }
 
 /**
@@ -147,6 +170,9 @@ export function render3DScene() {
 
     // 情報を表示
     drawInfo(ctx);
+
+    // ViewCubeを更新
+    updateViewCube(view3DState.rotation, view3DState.tilt);
 }
 
 /**
@@ -961,23 +987,13 @@ export function update3DObject(rectangleId) {
 }
 
 /**
- * 3Dビューの表示を切り替え
+ * 3Dビューをリサイズする
  *
- * @param {boolean} visible - 表示する場合はtrue
  * @returns {void}
  */
-export function toggle3DView(visible) {
-    view3DState.isVisible = visible;
-
-    const container = document.getElementById('view3DContainer');
-    if (container) {
-        container.style.display = visible ? 'block' : 'none';
-    }
-
-    if (visible) {
-        resizeCanvas();
-        render3DScene();
-    }
+export function resize3DView() {
+    resizeCanvas();
+    render3DScene();
 }
 
 /**
@@ -990,6 +1006,20 @@ export function toggle3DView(visible) {
 export function set3DViewRotation(rotation, tilt) {
     view3DState.rotation = rotation;
     view3DState.tilt = Math.max(0, Math.min(90, tilt));
+    render3DScene();
+}
+
+/**
+ * 3Dビューをリセットする
+ *
+ * @returns {void}
+ */
+export function reset3DView() {
+    view3DState.rotation = 45;
+    view3DState.tilt = 30;
+    view3DState.scale = 20;
+    view3DState.offsetX = 0;
+    view3DState.offsetY = 0;
     render3DScene();
 }
 

@@ -17,7 +17,7 @@
 import { mapState } from './state/mapState.js';
 
 // UI
-import { switchTab } from './ui/tabs.js';
+import { switchTab, switchMapSubTab } from './ui/tabs.js';
 import {
     loadImageFile,
     loadYAMLFile,
@@ -172,13 +172,19 @@ import {
     refreshPropertyPanel
 } from './ui/objectPropertyPanel.js';
 
+import {
+    initializeObjectCatalog,
+    updateObjectCatalog
+} from './ui/objectCatalog.js';
+
 // 3D描画
 import {
     initialize3DView,
     render3DScene,
     update3DObject,
-    toggle3DView,
-    set3DViewRotation
+    resize3DView,
+    set3DViewRotation,
+    reset3DView
 } from './modules/threeDRenderer.js';
 
 // ステータスバー
@@ -199,6 +205,7 @@ import {
 
 // タブ切り替え
 window.switchTab = switchTab;
+window.switchMapSubTab = switchMapSubTab;
 
 // コントロール関数
 window.loadImageFile = loadImageFile;
@@ -328,8 +335,13 @@ window.refreshPropertyPanel = refreshPropertyPanel;
 window.initialize3DView = initialize3DView;
 window.render3DScene = render3DScene;
 window.update3DObject = update3DObject;
-window.toggle3DView = toggle3DView;
+window.resize3DView = resize3DView;
 window.set3DViewRotation = set3DViewRotation;
+window.reset3DView = reset3DView;
+
+// オブジェクトカタログ
+window.initializeObjectCatalog = initializeObjectCatalog;
+window.updateObjectCatalog = updateObjectCatalog;
 
 // ステータスバー
 window.updateStatusBar = updateStatusBar;
@@ -372,6 +384,9 @@ function initializeApp() {
 
     // 3Dビューを初期化
     initialize3DView();
+
+    // オブジェクトカタログを初期化
+    initializeObjectCatalog();
 
     console.log('Application initialized successfully');
 }

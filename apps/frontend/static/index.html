@@ -41,7 +41,18 @@
             <!-- タブコンテンツ -->
             <div id="mapViewer" class="tab-content active">
                 <div class="map-viewer-tab">
-                    <!-- メニューバー -->
+                    <!-- サブタブナビゲーション -->
+                    <div class="map-subtab-navigation">
+                        <button class="map-subtab-button active" onclick="switchMapSubTab('map2D', event)">📍 2D マップ</button>
+                        <button class="map-subtab-button" onclick="switchMapSubTab('map3D', event)">📦 3D マップ</button>
+                        <button class="map-subtab-button" onclick="switchMapSubTab('objectCatalog', event)">📚 オブジェクトカタログ</button>
+                    </div>
+
+                    <!-- サブタブコンテンツコンテナ -->
+                    <div class="map-subtab-content-container">
+                        <!-- 2Dマップサブタブ -->
+                        <div id="map2D" class="map-subtab-content active">
+                            <!-- メニューバー -->
                     <div class="menu-bar">
                         <!-- ファイルメニュー -->
                         <div class="menu-bar__item">
@@ -137,11 +148,6 @@
                                         <span>ステータスバー</span>
                                     </label>
                                 </div>
-                                <div class="menu-bar__dropdown-divider"></div>
-                                <button class="menu-bar__dropdown-item" onclick="toggle3DView(true); closeAllMenus();">
-                                    3Dプレビューを開く
-                                    <span class="menu-bar__shortcut">📦</span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -334,19 +340,6 @@
                             </div>
                         </div>
 
-                        <!-- 3Dビューコンテナ -->
-                        <div class="view-3d-container" id="view3DContainer" style="display: none;">
-                            <div class="view-3d-header">
-                                <h4>📦 3Dプレビュー</h4>
-                                <button class="view-3d-close" onclick="toggle3DView(false)">×</button>
-                            </div>
-                            <canvas id="view3DCanvas" class="view-3d-canvas"></canvas>
-                            <div class="view-3d-controls">
-                                <button onclick="set3DViewRotation(45, 30)" title="リセット">🔄</button>
-                                <button onclick="toggle3DView(false)" title="閉じる">✕</button>
-                            </div>
-                        </div>
-
                         <!-- ステータスバー -->
                         <div class="status-bar" id="statusBar">
                             <div class="status-bar-section">
@@ -370,6 +363,107 @@
                             </div>
                         </div>
                     </div>
+                        </div>
+                        <!-- 2Dマップサブタブ終了 -->
+
+                        <!-- 3Dマップサブタブ -->
+                        <div id="map3D" class="map-subtab-content">
+                            <div class="view-3d-main-container">
+                                <canvas id="view3DCanvas" class="view-3d-main-canvas"></canvas>
+
+                                <!-- ViewCube（右上） -->
+                                <div class="view-cube-container">
+                                    <canvas id="viewCubeCanvas" class="view-cube-canvas"></canvas>
+                                </div>
+
+                                <!-- 3Dビュー操作ヘルプ -->
+                                <div class="view-3d-help">
+                                    <p>🖱️ <strong>ドラッグ:</strong> 回転 | <strong>ホイール:</strong> ズーム | <strong>Ctrl+ドラッグ:</strong> パン</p>
+                                </div>
+
+                                <!-- 3Dビューコントロール -->
+                                <div class="view-3d-bottom-controls">
+                                    <button onclick="reset3DView()" class="control-button" title="ビューをリセット">
+                                        🔄 リセット
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 3Dマップサブタブ終了 -->
+
+                        <!-- オブジェクトカタログサブタブ -->
+                        <div id="objectCatalog" class="map-subtab-content">
+                            <div class="object-catalog-split-container">
+                                <!-- 左パネル: オブジェクト一覧 -->
+                                <div class="object-catalog-left-panel">
+                                    <div class="object-catalog-header">
+                                        <h2>📚 オブジェクトカタログ</h2>
+                                        <p class="object-catalog-description">
+                                            マップ上に配置されたオブジェクトの一覧を表示します。
+                                        </p>
+                                    </div>
+
+                                    <div class="object-catalog-filters">
+                                        <label>
+                                            <span>カテゴリフィルタ:</span>
+                                            <select id="catalogCategoryFilter" class="catalog-filter-select">
+                                                <option value="all">すべて</option>
+                                                <option value="shelf">棚</option>
+                                                <option value="box">箱</option>
+                                                <option value="table">テーブル</option>
+                                                <option value="door">扉</option>
+                                                <option value="wall">壁</option>
+                                                <option value="none">未設定</option>
+                                            </select>
+                                        </label>
+                                    </div>
+
+                                    <div class="object-catalog-list" id="objectCatalogList">
+                                        <p class="catalog-empty-message">オブジェクトが登録されていません。</p>
+                                    </div>
+                                </div>
+
+                                <!-- 右パネル: 3Dプレビュー & 詳細編集 -->
+                                <div class="object-catalog-right-panel">
+                                    <!-- 3Dプレビューセクション -->
+                                    <div class="catalog-preview-section">
+                                        <div class="catalog-preview-header">
+                                            <h3>3Dプレビュー</h3>
+                                        </div>
+                                        <div class="catalog-preview-container">
+                                            <canvas id="catalogPreviewCanvas" class="catalog-preview-canvas"></canvas>
+                                            <p id="catalogPreviewEmpty" class="catalog-preview-empty">
+                                                オブジェクトを選択してください
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- 詳細編集パネル -->
+                                    <div class="catalog-detail-panel" id="catalogDetailPanel" style="display: none;">
+                                        <div class="catalog-detail-header">
+                                            <h3>詳細編集</h3>
+                                            <button class="catalog-detail-close" onclick="closeCatalogDetail()">
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <div class="catalog-detail-content" id="catalogDetailContent">
+                                            <!-- 詳細編集フォームがここに動的生成される -->
+                                        </div>
+                                        <div class="catalog-detail-actions">
+                                            <button class="catalog-action-button cancel" onclick="cancelCatalogEdit()">
+                                                キャンセル
+                                            </button>
+                                            <button class="catalog-action-button save" onclick="saveCatalogEdit()">
+                                                保存
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- オブジェクトカタログサブタブ終了 -->
+                    </div>
+                    <!-- サブタブコンテンツコンテナ終了 -->
                 </div>
             </div>
 
