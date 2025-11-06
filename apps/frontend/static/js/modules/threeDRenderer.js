@@ -292,67 +292,89 @@ function drawMapTexture(ctx, centerX, centerY) {
 
 /**
  * グリッドを描画（床面）
- * マップの有効領域に合わせてグリッドのサイズを調整
+ * テクスチャの有効領域に合わせてグリッドを配置
  * 2Dマップで指定されたグリッド幅を使用
  *
  * @private
  */
 function drawGrid(ctx, centerX, centerY) {
     const gridSize = mapState.gridWidthInMeters || 1; // 2Dマップと同じグリッド幅を使用
-    const maxGridCount = 20; // グリッド数の上限（±20メートル = 41本の線）
-    let gridCount = 10; // デフォルト
 
-    // マップの有効領域に合わせてグリッド範囲を調整（上限あり）
-    if (view3DState.mapBounds && mapState.image) {
-        const resolution = mapState.metadata?.resolution || 0.05;
-        const bounds = view3DState.mapBounds;
+    // マップの有効領域がない場合はデフォルトのグリッドを描画
+    if (!view3DState.mapBounds || !mapState.image) {
+        const defaultGridCount = 10;
+        ctx.save();
+        ctx.strokeStyle = '#cbd5e0';
+        ctx.lineWidth = 1;
 
-        // 有効領域のサイズ（ピクセル）
-        const boundsWidth = bounds.maxX - bounds.minX;
-        const boundsHeight = bounds.maxY - bounds.minY;
+        for (let i = -defaultGridCount; i <= defaultGridCount; i++) {
+            // X方向のグリッド線
+            const startX = worldToIso(i * gridSize, -defaultGridCount * gridSize, 0);
+            const endX = worldToIso(i * gridSize, defaultGridCount * gridSize, 0);
 
-        // 有効領域のサイズ（メートル）
-        const boundsWidthMeters = boundsWidth * resolution;
-        const boundsHeightMeters = boundsHeight * resolution;
+            ctx.beginPath();
+            ctx.moveTo(centerX + startX.x * view3DState.scale, centerY - startX.y * view3DState.scale);
+            ctx.lineTo(centerX + endX.x * view3DState.scale, centerY - endX.y * view3DState.scale);
+            ctx.stroke();
 
-        // 最大サイズに基づいてグリッド数を計算（余裕を持たせて+2、ただし上限あり）
-        const maxSizeMeters = Math.max(boundsWidthMeters, boundsHeightMeters);
-        gridCount = Math.min(Math.ceil(maxSizeMeters / gridSize / 2) + 2, maxGridCount);
+            // Y方向のグリッド線
+            const startY = worldToIso(-defaultGridCount * gridSize, i * gridSize, 0);
+            const endY = worldToIso(defaultGridCount * gridSize, i * gridSize, 0);
+
+            ctx.beginPath();
+            ctx.moveTo(centerX + startY.x * view3DState.scale, centerY - startY.y * view3DState.scale);
+            ctx.lineTo(centerX + endY.x * view3DState.scale, centerY - endY.y * view3DState.scale);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+        return;
     }
+
+    const resolution = mapState.metadata?.resolution || 0.05;
+    const bounds = view3DState.mapBounds;
+    const image = mapState.image;
+
+    // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
+    const originX = mapState.metadata?.origin?.x || 0;
+    const originY = mapState.metadata?.origin?.y || 0;
+
+    // 有効領域の実世界座標を計算
+    // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
+    const boundsMinX = originX + bounds.minX * resolution;
+    const boundsMinY = originY + (image.height - bounds.maxY) * resolution;
+    const boundsMaxX = originX + bounds.maxX * resolution;
+    const boundsMaxY = originY + (image.height - bounds.minY) * resolution;
+
+    // グリッドの開始位置をgridSizeの整数倍に揃える
+    const gridStartX = Math.floor(boundsMinX / gridSize) * gridSize;
+    const gridStartY = Math.floor(boundsMinY / gridSize) * gridSize;
+    const gridEndX = Math.ceil(boundsMaxX / gridSize) * gridSize;
+    const gridEndY = Math.ceil(boundsMaxY / gridSize) * gridSize;
 
     ctx.save();
     ctx.strokeStyle = '#cbd5e0';
     ctx.lineWidth = 1;
 
-    for (let i = -gridCount; i <= gridCount; i++) {
-        // X方向のグリッド線
-        const startX = worldToIso(i * gridSize, -gridCount * gridSize, 0);
-        const endX = worldToIso(i * gridSize, gridCount * gridSize, 0);
+    // X方向のグリッド線（縦線）
+    for (let x = gridStartX; x <= gridEndX; x += gridSize) {
+        const startIso = worldToIso(x, gridStartY, 0);
+        const endIso = worldToIso(x, gridEndY, 0);
 
         ctx.beginPath();
-        ctx.moveTo(
-            centerX + startX.x * view3DState.scale,
-            centerY - startX.y * view3DState.scale
-        );
-        ctx.lineTo(
-            centerX + endX.x * view3DState.scale,
-            centerY - endX.y * view3DState.scale
-        );
+        ctx.moveTo(centerX + startIso.x * view3DState.scale, centerY - startIso.y * view3DState.scale);
+        ctx.lineTo(centerX + endIso.x * view3DState.scale, centerY - endIso.y * view3DState.scale);
         ctx.stroke();
+    }
 
-        // Y方向のグリッド線
-        const startY = worldToIso(-gridCount * gridSize, i * gridSize, 0);
-        const endY = worldToIso(gridCount * gridSize, i * gridSize, 0);
+    // Y方向のグリッド線（横線）
+    for (let y = gridStartY; y <= gridEndY; y += gridSize) {
+        const startIso = worldToIso(gridStartX, y, 0);
+        const endIso = worldToIso(gridEndX, y, 0);
 
         ctx.beginPath();
-        ctx.moveTo(
-            centerX + startY.x * view3DState.scale,
-            centerY - startY.y * view3DState.scale
-        );
-        ctx.lineTo(
-            centerX + endY.x * view3DState.scale,
-            centerY - endY.y * view3DState.scale
-        );
+        ctx.moveTo(centerX + startIso.x * view3DState.scale, centerY - startIso.y * view3DState.scale);
+        ctx.lineTo(centerX + endIso.x * view3DState.scale, centerY - endIso.y * view3DState.scale);
         ctx.stroke();
     }
 
