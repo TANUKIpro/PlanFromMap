@@ -159,7 +159,7 @@ export function drawGridOverlay(drawX, drawY, scaledWidth, scaledHeight, resolut
     const canvas = document.getElementById('mapCanvas');
     const ctx = canvas.getContext('2d');
 
-    const spacingMeters = mapState.gridWidthInMeters || 1;
+    const spacingMeters = mapState.overlaySettings.gridSpacingMeters || 1;
     if (spacingMeters <= 0) return;
 
     const spacingPixels = spacingMeters / resolution;
@@ -209,7 +209,7 @@ export function drawGridOverlay(drawX, drawY, scaledWidth, scaledHeight, resolut
 export function drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution) {
     if (!resolution) return;
 
-    const spacingMeters = mapState.gridWidthInMeters || 1;
+    const spacingMeters = mapState.overlaySettings.gridSpacingMeters || 1;
     if (spacingMeters <= 0) return;
 
     const spacingPixels = spacingMeters / resolution;

@@ -169,8 +169,15 @@ export function render3DScene() {
     // マップ画像を床面に描画（グリッドの前に）
     drawMapTexture(ctx, centerX, centerY);
 
-    // グリッドを描画（マップ画像の上に）
-    drawGrid(ctx, centerX, centerY);
+    // グリッドを描画（マップ画像の上に）- 2Dマップの設定を参照
+    if (mapState.overlaySettings.showGrid) {
+        drawGrid(ctx, centerX, centerY);
+    }
+
+    // 原点を描画 - 2Dマップの設定を参照
+    if (mapState.overlaySettings.showOrigin && mapState.metadata?.origin) {
+        drawOrigin(ctx, centerX, centerY);
+    }
 
     // すべての四角形を3Dで描画
     const rectangles = getAllRectangles();
@@ -303,7 +310,7 @@ function drawMapTexture(ctx, centerX, centerY) {
  * @private
  */
 function drawGrid(ctx, centerX, centerY) {
-    const gridSize = mapState.gridWidthInMeters || 1; // 2Dマップと同じグリッド幅を使用
+    const gridSize = mapState.overlaySettings.gridSpacingMeters || 1; // 2Dマップと同じグリッド幅を使用
 
     // マップの有効領域がない場合はデフォルトのグリッドを描画
     if (!view3DState.mapBounds || !mapState.image) {
@@ -382,6 +389,100 @@ function drawGrid(ctx, centerX, centerY) {
         ctx.lineTo(centerX + endIso.x * view3DState.scale, centerY - endIso.y * view3DState.scale);
         ctx.stroke();
     }
+
+    ctx.restore();
+}
+
+/**
+ * 原点マーカーを描画（床面）
+ * 2Dマップの原点設定に基づいて、3D空間に原点を表示
+ *
+ * @private
+ */
+function drawOrigin(ctx, centerX, centerY) {
+    if (!mapState.metadata?.origin) return;
+
+    // 原点の実世界座標（ROSマップの原点）
+    const originX = Array.isArray(mapState.metadata.origin)
+        ? mapState.metadata.origin[0]
+        : mapState.metadata.origin.x || 0;
+    const originY = Array.isArray(mapState.metadata.origin)
+        ? mapState.metadata.origin[1]
+        : mapState.metadata.origin.y || 0;
+    const originTheta = Array.isArray(mapState.metadata.origin)
+        ? (mapState.metadata.origin[2] || 0)
+        : (mapState.metadata.origin.theta || 0);
+
+    // 原点の位置を等角投影
+    const originIso = worldToIso(originX, originY, 0);
+    const originScreenX = centerX + originIso.x * view3DState.scale;
+    const originScreenY = centerY - originIso.y * view3DState.scale;
+
+    ctx.save();
+
+    // 原点マーカー（十字）を描画
+    ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.lineWidth = 3;
+
+    const crossSize = 15;
+    ctx.beginPath();
+    ctx.moveTo(originScreenX - crossSize, originScreenY);
+    ctx.lineTo(originScreenX + crossSize, originScreenY);
+    ctx.moveTo(originScreenX, originScreenY - crossSize);
+    ctx.lineTo(originScreenX, originScreenY + crossSize);
+    ctx.stroke();
+
+    // 原点からの矢印（方向指示）を描画
+    const arrowLength = 40;
+    const arrowEndX = originX + Math.cos(originTheta) * (arrowLength / view3DState.scale);
+    const arrowEndY = originY + Math.sin(originTheta) * (arrowLength / view3DState.scale);
+    const arrowEndIso = worldToIso(arrowEndX, arrowEndY, 0);
+    const arrowEndScreenX = centerX + arrowEndIso.x * view3DState.scale;
+    const arrowEndScreenY = centerY - arrowEndIso.y * view3DState.scale;
+
+    ctx.beginPath();
+    ctx.moveTo(originScreenX, originScreenY);
+    ctx.lineTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.stroke();
+
+    // 矢印の先端
+    const headLength = 10;
+    const dx = arrowEndScreenX - originScreenX;
+    const dy = arrowEndScreenY - originScreenY;
+    const angle = Math.atan2(dy, dx);
+
+    ctx.beginPath();
+    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.lineTo(
+        arrowEndScreenX - headLength * Math.cos(angle - Math.PI / 6),
+        arrowEndScreenY - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
+    ctx.lineTo(
+        arrowEndScreenX - headLength * Math.cos(angle + Math.PI / 6),
+        arrowEndScreenY - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.stroke();
+
+    // ラベル「原点 (0,0)」を描画
+    const label = '原点 (0,0)';
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
+    const labelPadding = 4;
+    const textWidth = ctx.measureText(label).width;
+    const labelX = originScreenX + 15;
+    const labelY = originScreenY + 15;
+
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.85)';
+    ctx.fillRect(
+        labelX - labelPadding,
+        labelY - labelPadding,
+        textWidth + labelPadding * 2,
+        18
+    );
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'top';
+    ctx.fillText(label, labelX, labelY - 1);
 
     ctx.restore();
 }
