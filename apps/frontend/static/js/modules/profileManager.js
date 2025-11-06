@@ -115,6 +115,37 @@ function canvasToBase64(canvas) {
 }
 
 /**
+ * 四角形オブジェクトをシリアライズする
+ *
+ * @private
+ * @param {Object} rectangle - 四角形オブジェクト
+ * @returns {Object} シリアライズされた四角形オブジェクト
+ */
+function serializeRectangle(rectangle) {
+    return {
+        // 基本プロパティ
+        id: rectangle.id,
+        name: rectangle.name,
+        x: rectangle.x,
+        y: rectangle.y,
+        width: rectangle.width,
+        height: rectangle.height,
+        rotation: rectangle.rotation,
+        color: rectangle.color,
+        selected: rectangle.selected,
+
+        // オブジェクト情報
+        objectType: rectangle.objectType,
+        heightMeters: rectangle.heightMeters,
+        frontDirection: rectangle.frontDirection,
+        objectProperties: JSON.parse(JSON.stringify(rectangle.objectProperties || {})),
+
+        // 共通拡張プロパティ
+        commonProperties: JSON.parse(JSON.stringify(rectangle.commonProperties || {}))
+    };
+}
+
+/**
  * レイヤースタックをシリアライズする
  *
  * @private
@@ -205,6 +236,7 @@ export function saveProfile(profileName) {
         const profile = {
             name: trimmedName,
             timestamp: Date.now(),
+            version: '1.0', // プロファイル形式のバージョン
             image: imageToBase64(mapState.image),
             imageFileName: mapState.imageFileName,
             yamlFileName: mapState.yamlFileName,
@@ -224,7 +256,7 @@ export function saveProfile(profileName) {
             },
             rectangleToolState: {
                 enabled: mapState.rectangleToolState.enabled,
-                rectangles: mapState.rectangleToolState.rectangles,
+                rectangles: mapState.rectangleToolState.rectangles.map(serializeRectangle),
                 nextRectangleId: mapState.rectangleToolState.nextRectangleId
             }
         };
@@ -347,6 +379,40 @@ export async function loadProfile(profileName) {
             mapState.rectangleToolState.enabled = false;
             mapState.rectangleToolState.rectangles = profile.rectangleToolState.rectangles || [];
             mapState.rectangleToolState.nextRectangleId = profile.rectangleToolState.nextRectangleId || 1;
+
+            // 古いプロファイルとの互換性を保つため、
+            // objectType, heightMeters, frontDirection, objectProperties, commonPropertiesが
+            // 存在しない場合はデフォルト値で初期化
+            mapState.rectangleToolState.rectangles = mapState.rectangleToolState.rectangles.map(rect => {
+                // デフォルト値をインポート（動的にインポートできないので、ここで定義）
+                const OBJECT_TYPES_NONE = 'none';
+                const DEFAULT_HEIGHT = 0.5;
+                const DEFAULT_FRONT_DIRECTION = 'top';
+
+                return {
+                    ...rect,
+                    objectType: rect.objectType !== undefined ? rect.objectType : OBJECT_TYPES_NONE,
+                    heightMeters: rect.heightMeters !== undefined ? rect.heightMeters : DEFAULT_HEIGHT,
+                    frontDirection: rect.frontDirection !== undefined ? rect.frontDirection : DEFAULT_FRONT_DIRECTION,
+                    objectProperties: rect.objectProperties !== undefined ? rect.objectProperties : {},
+                    commonProperties: rect.commonProperties !== undefined ? rect.commonProperties : {
+                        name: rect.name || '',
+                        description: '',
+                        tags: [],
+                        customColor: null,
+                        isAccessible: true,
+                        isMovable: false,
+                        weightKg: 0,
+                        material: '',
+                        surfaceType: 'smooth',
+                        hasObstacle: false,
+                        isNoGoZone: false,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                };
+            });
+
             // 選択状態はクリア
             mapState.rectangleToolState.selectedRectangleId = null;
             mapState.rectangleToolState.rectangles.forEach(r => r.selected = false);
@@ -514,15 +580,18 @@ export function exportProfileToFile(profileName) {
  *
  * @export
  * @param {File} file - インポートするファイル
- * @returns {Promise<boolean>} インポートに成功したかどうか
+ * @returns {Promise<{success: boolean, name?: string}>} インポート結果とプロファイル名
  *
  * @example
- * await importProfileFromFile(file);
+ * const result = await importProfileFromFile(file);
+ * if (result.success) {
+ *   console.log('インポートしたプロファイル:', result.name);
+ * }
  */
 export async function importProfileFromFile(file) {
     if (!file) {
         console.error('importProfileFromFile: ファイルが指定されていません');
-        return false;
+        return { success: false };
     }
 
     try {
@@ -531,14 +600,14 @@ export async function importProfileFromFile(file) {
 
         if (!profile.name) {
             alert('無効なプロファイルファイルです');
-            return false;
+            return { success: false };
         }
 
         // プロファイルサイズをチェック
         const profileSize = calculateProfileSize(profile);
         if (profileSize > MAX_PROFILE_SIZE) {
             alert('プロファイルのサイズが大きすぎます（最大5MB）');
-            return false;
+            return { success: false };
         }
 
         // LocalStorageに保存
@@ -553,11 +622,11 @@ export async function importProfileFromFile(file) {
         }
 
         console.log('importProfileFromFile: インポート成功', profile.name);
-        return true;
+        return { success: true, name: profile.name };
     } catch (error) {
         console.error('importProfileFromFile: エラー', error);
         alert('プロファイルのインポートに失敗しました');
-        return false;
+        return { success: false };
     }
 }
 
