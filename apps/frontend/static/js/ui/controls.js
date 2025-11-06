@@ -453,13 +453,22 @@ export async function handleProfileFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const success = await importProfileFromFile(file);
-    if (success) {
-        showSuccess('プロファイルをインポートしました');
+    const result = await importProfileFromFile(file);
+    if (result && result.success && result.name) {
+        showSuccess(`プロファイル「${result.name}」をインポートしました`);
+
         // プロファイル管理モーダルが開いている場合はリストを更新
         const modal = document.getElementById('profileManagerModal');
         if (modal && modal.style.display !== 'none') {
             updateProfileList();
+        }
+
+        // インポートしたプロファイルを自動的に読み込むか確認
+        if (confirm(`インポートしたプロファイル「${result.name}」を読み込みますか？`)) {
+            await loadSelectedProfile(result.name, {
+                showMessage: true,
+                closeModal: false // モーダルは開いたままにする
+            });
         }
     }
 
