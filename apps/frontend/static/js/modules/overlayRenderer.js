@@ -20,9 +20,10 @@ import { mapState } from '../state/mapState.js';
  * @param {number} worldY - 実世界Y座標
  * @param {number} drawX - 描画開始X座標
  * @param {number} drawY - 描画開始Y座標
+ * @param {boolean} debug - デバッグログを出力するか
  * @returns {{x: number, y: number}|null} キャンバス座標
  */
-function worldToCanvas(worldX, worldY, drawX, drawY) {
+function worldToCanvas(worldX, worldY, drawX, drawY, debug = false) {
     if (!mapState.metadata || !Array.isArray(mapState.metadata.origin)) {
         return null;
     }
@@ -32,6 +33,11 @@ function worldToCanvas(worldX, worldY, drawX, drawY) {
     const [originX, originY] = mapState.metadata.origin;
     const pixelX = (worldX - originX) / resolution;
     const pixelY = mapState.image.height - (worldY - originY) / resolution;
+
+    if (debug) {
+        console.log(`worldToCanvas: world(${worldX}, ${worldY}) → pixel(${pixelX.toFixed(1)}, ${pixelY.toFixed(1)}) → canvas(${(drawX + pixelX * mapState.scale).toFixed(1)}, ${(drawY + pixelY * mapState.scale).toFixed(1)})`);
+        console.log(`  origin=(${originX.toFixed(3)}, ${originY.toFixed(3)}), resolution=${resolution}, imageHeight=${mapState.image.height}, scale=${mapState.scale.toFixed(2)}`);
+    }
 
     if (!isFinite(pixelX) || !isFinite(pixelY)) {
         return null;
@@ -262,8 +268,12 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
     const canvas = document.getElementById('mapCanvas');
     const ctx = canvas.getContext('2d');
 
-    const originCanvas = worldToCanvas(0, 0, drawX, drawY);
-    if (!originCanvas) return;
+    // デバッグ情報を出力（原点の座標変換）
+    const originCanvas = worldToCanvas(0, 0, drawX, drawY, true);
+    if (!originCanvas) {
+        console.warn('drawOriginOverlay: 原点(0,0)の座標変換に失敗しました');
+        return;
+    }
 
     if (
         originCanvas.x < drawX - 1 ||
@@ -272,8 +282,11 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
         originCanvas.y > drawY + scaledHeight + 1
     ) {
         // 表示領域外の場合は描画しない
+        console.warn(`drawOriginOverlay: 原点が表示領域外です canvas=(${originCanvas.x.toFixed(1)}, ${originCanvas.y.toFixed(1)}), 領域=(${drawX.toFixed(1)}, ${drawY.toFixed(1)}, ${(drawX + scaledWidth).toFixed(1)}, ${(drawY + scaledHeight).toFixed(1)})`);
         return;
     }
+
+    console.log(`drawOriginOverlay: 原点を描画します canvas=(${originCanvas.x.toFixed(1)}, ${originCanvas.y.toFixed(1)})`);
 
     ctx.save();
     ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
@@ -347,8 +360,11 @@ export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth,
     if (!Array.isArray(origin) || origin.length < 2) return;
     if (!mapState.metadata || mapState.metadata.resolution === undefined) return;
 
-    const originCanvas = worldToCanvas(0, 0, drawX, drawY);
-    if (!originCanvas) return;
+    // デバッグ情報を出力（原点の座標変換）- コンテキスト版では簡略化
+    const originCanvas = worldToCanvas(0, 0, drawX, drawY, false);
+    if (!originCanvas) {
+        return;
+    }
 
     if (
         originCanvas.x < drawX - 1 ||

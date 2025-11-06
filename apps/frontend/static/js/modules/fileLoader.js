@@ -325,18 +325,32 @@ function adjustMetadataForCrop(metadata) {
                 metadata._originalOrigin = { ...metadata.origin };
             }
 
-            // ROSマップは左下が原点、画像は左上が原点なので Y 軸の変換に注意
-            // クロップによって画像が小さくなった場合、originも調整する必要がある
             const originalHeight = mapState.originalImageSize?.height || mapState.image.height;
+            const croppedHeight = mapState.image.height;
+
+            console.log(`adjustMetadataForCrop: 元の画像サイズ=${originalHeight}, クロップ後=${croppedHeight}, オフセット=(${cropOffset.x}, ${cropOffset.y})`);
+
+            // クロップ後の画像の左下隅のROS座標を計算
+            //
+            // 座標系の定義:
+            // - ROS座標系: 左下が原点、X右+、Y上+
+            // - 画像座標系: 左上が原点、X右+、Y下+
+            //
+            // 元の画像のピクセル座標(px, py)のROS座標:
+            //   worldX = origin.x + px * resolution
+            //   worldY = origin.y + (H - py) * resolution
+            //
+            // クロップ後の画像の左下隅（ピクセル座標(0, H_cropped)）は、
+            // 元の画像の(cropOffset.x, cropOffset.y + H_cropped)に対応する
 
             // X方向: 右方向が正なので、クロップオフセット分を加算
             metadata.origin.x = metadata._originalOrigin.x + cropOffset.x * resolution;
 
-            // Y方向: 画像座標系とROS座標系でY軸の向きが逆なので、符号を反転
-            // 画像の上側がクロップされると、ROS座標系では原点が下方向に移動（Y座標が減少）
-            metadata.origin.y = metadata._originalOrigin.y - cropOffset.y * resolution;
+            // Y方向: クロップ後の画像の左下隅のROS座標を計算
+            // 元の画像の(cropOffset.x, cropOffset.y + croppedHeight)のROS Y座標
+            metadata.origin.y = metadata._originalOrigin.y + (originalHeight - cropOffset.y - croppedHeight) * resolution;
 
-            console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin.x}, ${metadata._originalOrigin.y}) → (${metadata.origin.x}, ${metadata.origin.y})`);
+            console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin.x.toFixed(3)}, ${metadata._originalOrigin.y.toFixed(3)}) → (${metadata.origin.x.toFixed(3)}, ${metadata.origin.y.toFixed(3)})`);
         }
     }
 }
