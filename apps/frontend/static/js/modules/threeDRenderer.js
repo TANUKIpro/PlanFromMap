@@ -1042,6 +1042,24 @@ export function initializePropertyPreview() {
 export function renderPropertyPreview(rectangleId) {
     if (!previewState.ctx || !previewState.canvas) return;
 
+    // パネルが表示された後、親要素のサイズに合わせてcanvasを再設定
+    // 初期化時はパネルがdisplay:noneのためサイズが0x0になっているので、
+    // 描画の度にサイズをチェックして必要に応じて更新する
+    const container = previewState.canvas.parentElement;
+    if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        // サイズが変更されている、またはcanvasが0x0の場合は更新
+        if (previewState.canvas.width !== containerWidth ||
+            previewState.canvas.height !== containerHeight ||
+            previewState.canvas.width === 0 ||
+            previewState.canvas.height === 0) {
+            previewState.canvas.width = containerWidth;
+            previewState.canvas.height = containerHeight;
+        }
+    }
+
     const ctx = previewState.ctx;
     const width = previewState.canvas.width;
     const height = previewState.canvas.height;
