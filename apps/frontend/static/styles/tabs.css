@@ -191,9 +191,10 @@
 /* 左パネル: オブジェクト一覧 */
 .object-catalog-left-panel {
     flex: 0 0 400px;
+    min-width: 250px;
+    max-width: 800px;
     display: flex;
     flex-direction: column;
-    border-right: 2px solid #e2e8f0;
     overflow-y: auto;
     background: #fafafa;
 }
@@ -303,9 +304,27 @@
     margin: 3px 0;
 }
 
+/* リサイザー */
+.object-catalog-resizer {
+    width: 4px;
+    background: #e2e8f0;
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.object-catalog-resizer:hover {
+    background: #cbd5e0;
+}
+
+.object-catalog-resizer:active {
+    background: #667eea;
+}
+
 /* 右パネル: 3Dプレビュー & 詳細編集 */
 .object-catalog-right-panel {
     flex: 1;
+    min-width: 300px;
     display: flex;
     flex-direction: column;
     background: white;

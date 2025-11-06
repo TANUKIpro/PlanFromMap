@@ -395,7 +395,7 @@
                         <div id="objectCatalog" class="map-subtab-content">
                             <div class="object-catalog-split-container">
                                 <!-- 左パネル: オブジェクト一覧 -->
-                                <div class="object-catalog-left-panel">
+                                <div class="object-catalog-left-panel" id="catalogLeftPanel">
                                     <div class="object-catalog-header">
                                         <h2>📚 オブジェクトカタログ</h2>
                                         <p class="object-catalog-description">
@@ -423,8 +423,11 @@
                                     </div>
                                 </div>
 
+                                <!-- リサイザー -->
+                                <div class="object-catalog-resizer" id="catalogResizer"></div>
+
                                 <!-- 右パネル: 3Dプレビュー & 詳細編集 -->
-                                <div class="object-catalog-right-panel">
+                                <div class="object-catalog-right-panel" id="catalogRightPanel">
                                     <!-- 3Dプレビューセクション -->
                                     <div class="catalog-preview-section">
                                         <div class="catalog-preview-header">
