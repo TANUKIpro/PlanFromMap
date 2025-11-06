@@ -20,7 +20,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
-import { getAllRectangles } from '../modules/rectangleManager.js';
+import { getAllRectangles, getRectangleById } from '../modules/rectangleManager.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
 
@@ -1005,7 +1005,10 @@ const previewState = {
     ctx: null,
     rotation: 45,
     tilt: 30,
-    scale: 30
+    scale: 30,
+    minScale: 10,
+    maxScale: 100,
+    currentRectangleId: null  // 現在表示中のrectangleId
 };
 
 /**
@@ -1030,7 +1033,32 @@ export function initializePropertyPreview() {
         previewState.canvas.height = container.clientHeight;
     }
 
+    // ホイールイベントでズーム（スケール変更）
+    canvas.addEventListener('wheel', handlePreviewWheel, { passive: false });
+
     console.log('プロパティプレビューを初期化しました');
+}
+
+/**
+ * プレビュー用ホイールイベントハンドラ（ズーム）
+ *
+ * @private
+ */
+function handlePreviewWheel(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ホイールの方向に応じてスケールを変更
+    const delta = e.deltaY > 0 ? -2 : 2;
+    previewState.scale = Math.max(
+        previewState.minScale,
+        Math.min(previewState.maxScale, previewState.scale + delta)
+    );
+
+    // 現在表示中のオブジェクトを再描画
+    if (previewState.currentRectangleId) {
+        renderPropertyPreview(previewState.currentRectangleId);
+    }
 }
 
 /**
@@ -1041,6 +1069,27 @@ export function initializePropertyPreview() {
  */
 export function renderPropertyPreview(rectangleId) {
     if (!previewState.ctx || !previewState.canvas) return;
+
+    // 現在表示中のrectangleIdを保存（ズーム時の再描画用）
+    previewState.currentRectangleId = rectangleId;
+
+    // パネルが表示された後、親要素のサイズに合わせてcanvasを再設定
+    // 初期化時はパネルがdisplay:noneのためサイズが0x0になっているので、
+    // 描画の度にサイズをチェックして必要に応じて更新する
+    const container = previewState.canvas.parentElement;
+    if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        // サイズが変更されている、またはcanvasが0x0の場合は更新
+        if (previewState.canvas.width !== containerWidth ||
+            previewState.canvas.height !== containerHeight ||
+            previewState.canvas.width === 0 ||
+            previewState.canvas.height === 0) {
+            previewState.canvas.width = containerWidth;
+            previewState.canvas.height = containerHeight;
+        }
+    }
 
     const ctx = previewState.ctx;
     const width = previewState.canvas.width;
@@ -1062,26 +1111,37 @@ export function renderPropertyPreview(rectangleId) {
     if (!coords3D) return;
 
     // 四角形オブジェクトを取得
-    import('../modules/rectangleManager.js').then(({ getRectangleById }) => {
-        const rectangle = getRectangleById(rectangleId);
-        if (!rectangle) return;
+    const rectangle = getRectangleById(rectangleId);
+    if (!rectangle) return;
 
-        // オブジェクトタイプに応じた色
-        const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
-            ? OBJECT_TYPE_COLORS[rectangle.objectType]
-            : OBJECT_TYPE_COLORS.none;
+    // オブジェクトタイプに応じた色
+    const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+        ? OBJECT_TYPE_COLORS[rectangle.objectType]
+        : OBJECT_TYPE_COLORS.none;
 
-        // グリッドを描画（簡易版）
-        drawPreviewGrid(ctx, centerX, centerY);
+    // グリッドを描画（簡易版）
+    drawPreviewGrid(ctx, centerX, centerY);
 
-        // オブジェクトタイプに応じた3Dモデルを描画
-        drawPreviewModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+    // プレビュー用に座標を調整（原点中心に配置）
+    // マップ上の絶対座標ではなく、オブジェクト単体を中央に表示
+    const previewCoords = {
+        x: 0,  // 原点中心
+        y: 0,  // 原点中心
+        z: coords3D.height / 2,  // 高さの半分（底面からの中心）
+        width: coords3D.width,
+        depth: coords3D.depth,
+        height: coords3D.height,
+        rotation: 0,  // プレビューでは回転なし
+        frontDirection: rectangle.frontDirection || 'top'
+    };
 
-        // 前面方向を矢印で表示
-        if (rectangle.objectType !== OBJECT_TYPES.NONE) {
-            drawPreviewFrontDirection(ctx, coords3D, rectangle.frontDirection, centerX, centerY);
-        }
-    });
+    // オブジェクトタイプに応じた3Dモデルを描画
+    drawPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+
+    // 前面方向を矢印で表示
+    if (rectangle.objectType !== OBJECT_TYPES.NONE) {
+        drawPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
+    }
 }
 
 /**

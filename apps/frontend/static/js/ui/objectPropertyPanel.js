@@ -74,13 +74,27 @@ export function initializePropertyPanel() {
  * @private
  */
 function setupEventListeners() {
-    // プロパティパネル上でのホイールイベントを捕捉して、マップのズームを防ぐ
     const panel = document.getElementById('objectPropertyPanel');
     if (panel) {
+        // プロパティパネル上でのホイールイベントを捕捉して、マップのズームを防ぐ
         panel.addEventListener('wheel', (e) => {
             // プロパティパネル内でのスクロールは許可するが、イベントの伝播を停止
             e.stopPropagation();
         }, { passive: true });
+
+        // パネル内のクリック・マウスダウンイベントの伝播を防止
+        // これにより、パネル内をクリックしてもマップがクリックされない
+        panel.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        panel.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
+
+        panel.addEventListener('mouseup', (e) => {
+            e.stopPropagation();
+        });
     }
 
     // カテゴリ選択
