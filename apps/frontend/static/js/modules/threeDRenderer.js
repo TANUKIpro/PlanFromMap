@@ -42,7 +42,8 @@ const view3DState = {
     offsetY: 0,            // Y方向オフセット
     isDragging: false,
     lastMouseX: 0,
-    lastMouseY: 0
+    lastMouseY: 0,
+    mapBounds: null        // マップの有効領域 {minX, minY, maxX, maxY, centerX, centerY}
 };
 
 // ================
@@ -179,7 +180,91 @@ export function render3DScene() {
 }
 
 /**
+ * pgm画像の有効領域を解析する
+ * 情報を持つピクセル（障害物または空き空間）の範囲を検出し、5%のマージンを追加
+ *
+ * @private
+ * @returns {Object} {minX, minY, maxX, maxY, centerX, centerY} (ピクセル座標)
+ */
+function analyzeMapBounds() {
+    if (!mapState.image) return null;
+
+    const image = mapState.image;
+
+    // 画像データを取得
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(image, 0, 0);
+    const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+    const data = imageData.data;
+
+    // 有効なピクセルを検出（占有格子マップ）
+    // 0 = 障害物（黒）、255 = 空き空間（白）、128周辺 = 未探索（グレー）
+    // 閾値: 未探索と判定する範囲を設定
+    const unknownThreshold = 40; // 128 ± 40 = [88, 168] を未探索とみなす
+    const unknownMin = 128 - unknownThreshold;
+    const unknownMax = 128 + unknownThreshold;
+
+    let minX = image.width;
+    let minY = image.height;
+    let maxX = 0;
+    let maxY = 0;
+    let hasValidPixel = false;
+
+    for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+            const index = (y * image.width + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+
+            // グレースケールの平均値を計算
+            const gray = (r + g + b) / 3;
+
+            // 未探索領域（グレー）以外を有効なピクセルとみなす
+            if (gray < unknownMin || gray > unknownMax) {
+                hasValidPixel = true;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+
+    // 有効なピクセルが見つからない場合は全体を使用
+    if (!hasValidPixel) {
+        minX = 0;
+        minY = 0;
+        maxX = image.width - 1;
+        maxY = image.height - 1;
+    }
+
+    // 5%のマージンを追加
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const marginX = Math.ceil(width * 0.05);
+    const marginY = Math.ceil(height * 0.05);
+
+    minX = Math.max(0, minX - marginX);
+    minY = Math.max(0, minY - marginY);
+    maxX = Math.min(image.width - 1, maxX + marginX);
+    maxY = Math.min(image.height - 1, maxY + marginY);
+
+    // 中心座標を計算
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    console.log(`マップ有効領域を検出: [${minX}, ${minY}] - [${maxX}, ${maxY}], 中心: (${centerX.toFixed(1)}, ${centerY.toFixed(1)})`);
+
+    return { minX, minY, maxX, maxY, centerX, centerY };
+}
+
+/**
  * マップ画像を床面に描画（テクスチャ）
+ * 有効領域のみを描画し、カメラ中心はマップの重心
  *
  * @private
  */
@@ -189,62 +274,72 @@ function drawMapTexture(ctx, centerX, centerY) {
     const image = mapState.image;
     const resolution = mapState.metadata?.resolution || 0.05; // m/pixel
 
-    // マップのサイズをメートルに変換
-    const mapWidthMeters = image.width * resolution;
-    const mapHeightMeters = image.height * resolution;
+    // マップの有効領域を解析（初回のみ）
+    if (!view3DState.mapBounds) {
+        view3DState.mapBounds = analyzeMapBounds();
+    }
+
+    if (!view3DState.mapBounds) return;
+
+    const bounds = view3DState.mapBounds;
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
     const originX = mapState.metadata?.origin?.x || 0;
     const originY = mapState.metadata?.origin?.y || 0;
 
-    // マップの中心座標を計算（実世界座標）
-    // ROSのマップでは、原点が左下なので、マップの中心は origin + size/2
-    const mapCenterX = originX + mapWidthMeters / 2;
-    const mapCenterY = originY + mapHeightMeters / 2;
+    // 有効領域の実世界座標を計算
+    // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
+    const boundsMinX = originX + bounds.minX * resolution;
+    const boundsMinY = originY + (image.height - bounds.maxY) * resolution;
+    const boundsMaxX = originX + bounds.maxX * resolution;
+    const boundsMaxY = originY + (image.height - bounds.minY) * resolution;
+
+    // 有効領域のサイズ（メートル）
+    const boundsWidthMeters = boundsMaxX - boundsMinX;
+    const boundsHeightMeters = boundsMaxY - boundsMinY;
 
     // タイルサイズ（メートル）- 画像を細かく分割して描画
     const tileSize = 0.1; // 10cm単位で分割
-    const tilesX = Math.ceil(mapWidthMeters / tileSize);
-    const tilesY = Math.ceil(mapHeightMeters / tileSize);
+    const tilesX = Math.ceil(boundsWidthMeters / tileSize);
+    const tilesY = Math.ceil(boundsHeightMeters / tileSize);
+
+    // 画像データをキャッシュ（初回のみ）
+    if (!drawMapTexture._imageData) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = image.width;
+        tempCanvas.height = image.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(image, 0, 0);
+        drawMapTexture._imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+    }
+
+    const imageData = drawMapTexture._imageData;
 
     ctx.save();
 
     // 各タイルを描画
     for (let ty = 0; ty < tilesY; ty++) {
         for (let tx = 0; tx < tilesX; tx++) {
-            // タイルの実世界座標（マップの左下が原点）
-            const tileX = originX + tx * tileSize;
-            const tileY = originY + ty * tileSize;
+            // タイルの実世界座標（有効領域内）
+            const tileX = boundsMinX + tx * tileSize;
+            const tileY = boundsMinY + ty * tileSize;
             const tileZ = 0; // 床面
 
             // タイルの画像座標（ピクセル）
-            // ROSマップは左下が原点だが、画像は左上が原点なので Y 軸を反転
-            const imgX = tx * tileSize / resolution;
-            const imgY = image.height - (ty + 1) * tileSize / resolution;
-            const imgW = tileSize / resolution;
-            const imgH = tileSize / resolution;
+            const imgX = bounds.minX + tx * tileSize / resolution;
+            const imgY = image.height - (bounds.minY + (ty + 1) * tileSize / resolution);
 
             // 画像範囲チェック
             if (imgX < 0 || imgY < 0 || imgX >= image.width || imgY >= image.height) continue;
 
             // 画像から色を取得（中心ピクセル）
-            const sampleX = Math.floor(Math.min(imgX + imgW / 2, image.width - 1));
-            const sampleY = Math.floor(Math.min(imgY + imgH / 2, image.height - 1));
-
-            // 一時的なCanvasを作成して画像データを取得
-            if (!drawMapTexture._tempCanvas) {
-                drawMapTexture._tempCanvas = document.createElement('canvas');
-                drawMapTexture._tempCanvas.width = image.width;
-                drawMapTexture._tempCanvas.height = image.height;
-                drawMapTexture._tempCtx = drawMapTexture._tempCanvas.getContext('2d');
-                drawMapTexture._tempCtx.drawImage(image, 0, 0);
-                drawMapTexture._imageData = drawMapTexture._tempCtx.getImageData(0, 0, image.width, image.height);
-            }
+            const sampleX = Math.floor(Math.min(imgX, image.width - 1));
+            const sampleY = Math.floor(Math.min(imgY, image.height - 1));
 
             const pixelIndex = (sampleY * image.width + sampleX) * 4;
-            const r = drawMapTexture._imageData.data[pixelIndex];
-            const g = drawMapTexture._imageData.data[pixelIndex + 1];
-            const b = drawMapTexture._imageData.data[pixelIndex + 2];
+            const r = imageData.data[pixelIndex];
+            const g = imageData.data[pixelIndex + 1];
+            const b = imageData.data[pixelIndex + 2];
             const color = `rgb(${r}, ${g}, ${b})`;
 
             // タイルの4つの角を等角投影
@@ -277,12 +372,31 @@ function drawMapTexture(ctx, centerX, centerY) {
 
 /**
  * グリッドを描画（床面）
+ * マップの有効領域に合わせてグリッドのサイズを調整
  *
  * @private
  */
 function drawGrid(ctx, centerX, centerY) {
     const gridSize = 1; // 1メートルグリッド
-    const gridCount = 10;
+    let gridCount = 10; // デフォルト
+
+    // マップの有効領域に合わせてグリッド範囲を調整
+    if (view3DState.mapBounds && mapState.image) {
+        const resolution = mapState.metadata?.resolution || 0.05;
+        const bounds = view3DState.mapBounds;
+
+        // 有効領域のサイズ（ピクセル）
+        const boundsWidth = bounds.maxX - bounds.minX;
+        const boundsHeight = bounds.maxY - bounds.minY;
+
+        // 有効領域のサイズ（メートル）
+        const boundsWidthMeters = boundsWidth * resolution;
+        const boundsHeightMeters = boundsHeight * resolution;
+
+        // 最大サイズに基づいてグリッド数を計算（余裕を持たせて+2）
+        const maxSizeMeters = Math.max(boundsWidthMeters, boundsHeightMeters);
+        gridCount = Math.ceil(maxSizeMeters / gridSize / 2) + 2;
+    }
 
     ctx.save();
     ctx.strokeStyle = '#cbd5e0';
@@ -950,6 +1064,7 @@ function drawInfo(ctx) {
 
 /**
  * ワールド座標を等角投影座標に変換
+ * カメラの中心はマップの有効領域の重心
  *
  * @param {number} x - X座標（メートル）
  * @param {number} y - Y座標（メートル）
@@ -959,13 +1074,35 @@ function drawInfo(ctx) {
  * @private
  */
 function worldToIso(x, y, z) {
+    // マップの重心を中心とするように座標をオフセット
+    let offsetX = x;
+    let offsetY = y;
+
+    if (view3DState.mapBounds && mapState.image) {
+        const resolution = mapState.metadata?.resolution || 0.05;
+        const originX = mapState.metadata?.origin?.x || 0;
+        const originY = mapState.metadata?.origin?.y || 0;
+        const imageHeight = mapState.image.height;
+
+        // 有効領域の中心座標（実世界座標）
+        const centerPixelX = view3DState.mapBounds.centerX;
+        const centerPixelY = view3DState.mapBounds.centerY;
+
+        const centerWorldX = originX + centerPixelX * resolution;
+        const centerWorldY = originY + (imageHeight - centerPixelY) * resolution;
+
+        // 座標を重心からの相対位置に変換
+        offsetX = x - centerWorldX;
+        offsetY = y - centerWorldY;
+    }
+
     // 等角投影の変換行列
     // 回転を考慮
     const rad = view3DState.rotation * Math.PI / 180;
     const tiltRad = view3DState.tilt * Math.PI / 180;
 
-    const rotX = x * Math.cos(rad) - y * Math.sin(rad);
-    const rotY = x * Math.sin(rad) + y * Math.cos(rad);
+    const rotX = offsetX * Math.cos(rad) - offsetY * Math.sin(rad);
+    const rotY = offsetX * Math.sin(rad) + offsetY * Math.cos(rad);
 
     return {
         x: rotX,
@@ -1120,6 +1257,13 @@ export function reset3DView() {
     view3DState.scale = 20;
     view3DState.offsetX = 0;
     view3DState.offsetY = 0;
+    view3DState.mapBounds = null; // マップ境界をリセット
+
+    // キャッシュをクリア
+    if (drawMapTexture._imageData) {
+        drawMapTexture._imageData = null;
+    }
+
     render3DScene();
 }
 
