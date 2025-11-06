@@ -319,10 +319,10 @@ function adjustMetadataForCrop(metadata) {
 
     // クロップオフセットがある場合、メタデータのorigin座標を調整
     if (cropOffset.x !== 0 || cropOffset.y !== 0) {
-        if (metadata.origin) {
+        if (Array.isArray(metadata.origin) && metadata.origin.length >= 2) {
             // 元のorigin座標を保存（デバッグ用）
             if (!metadata._originalOrigin) {
-                metadata._originalOrigin = { ...metadata.origin };
+                metadata._originalOrigin = [...metadata.origin];
             }
 
             const originalHeight = mapState.originalImageSize?.height || mapState.image.height;
@@ -344,13 +344,13 @@ function adjustMetadataForCrop(metadata) {
             // 元の画像の(cropOffset.x, cropOffset.y + H_cropped)に対応する
 
             // X方向: 右方向が正なので、クロップオフセット分を加算
-            metadata.origin.x = metadata._originalOrigin.x + cropOffset.x * resolution;
+            metadata.origin[0] = metadata._originalOrigin[0] + cropOffset.x * resolution;
 
             // Y方向: クロップ後の画像の左下隅のROS座標を計算
             // 元の画像の(cropOffset.x, cropOffset.y + croppedHeight)のROS Y座標
-            metadata.origin.y = metadata._originalOrigin.y + (originalHeight - cropOffset.y - croppedHeight) * resolution;
+            metadata.origin[1] = metadata._originalOrigin[1] + (originalHeight - cropOffset.y - croppedHeight) * resolution;
 
-            console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin.x.toFixed(3)}, ${metadata._originalOrigin.y.toFixed(3)}) → (${metadata.origin.x.toFixed(3)}, ${metadata.origin.y.toFixed(3)})`);
+            console.log(`adjustMetadataForCrop: origin調整 (${metadata._originalOrigin[0].toFixed(3)}, ${metadata._originalOrigin[1].toFixed(3)}) → (${metadata.origin[0].toFixed(3)}, ${metadata.origin[1].toFixed(3)})`);
         }
     }
 }
