@@ -15,6 +15,8 @@
  * @exports update3DObject - 特定オブジェクト更新
  * @exports toggle3DView - 3Dビュー表示切替
  * @exports set3DViewRotation - 3Dビューの回転角度設定
+ * @exports initializePropertyPreview - プロパティプレビュー初期化
+ * @exports renderPropertyPreview - プロパティプレビュー描画
  */
 
 import { mapState } from '../state/mapState.js';
@@ -546,4 +548,278 @@ export function set3DViewRotation(rotation, tilt) {
     view3DState.rotation = rotation;
     view3DState.tilt = Math.max(0, Math.min(90, tilt));
     render3DScene();
+}
+
+// ================
+// プロパティプレビュー
+// ================
+
+/**
+ * プロパティプレビュー用の状態
+ */
+const previewState = {
+    canvas: null,
+    ctx: null,
+    rotation: 45,
+    tilt: 30,
+    scale: 30
+};
+
+/**
+ * プロパティプレビューを初期化する
+ *
+ * @returns {void}
+ */
+export function initializePropertyPreview() {
+    const canvas = document.getElementById('propertyPreviewCanvas');
+    if (!canvas) {
+        console.error('initializePropertyPreview: プレビューCanvas要素が見つかりません');
+        return;
+    }
+
+    previewState.canvas = canvas;
+    previewState.ctx = canvas.getContext('2d');
+
+    // Canvasサイズを設定
+    const container = canvas.parentElement;
+    if (container) {
+        previewState.canvas.width = container.clientWidth;
+        previewState.canvas.height = container.clientHeight;
+    }
+
+    console.log('プロパティプレビューを初期化しました');
+}
+
+/**
+ * プロパティプレビューを描画する
+ *
+ * @param {string} rectangleId - 描画する四角形のID
+ * @returns {void}
+ */
+export function renderPropertyPreview(rectangleId) {
+    if (!previewState.ctx || !previewState.canvas) return;
+
+    const ctx = previewState.ctx;
+    const width = previewState.canvas.width;
+    const height = previewState.canvas.height;
+
+    // キャンバスをクリア
+    ctx.clearRect(0, 0, width, height);
+
+    // 背景を描画
+    ctx.fillStyle = '#f7fafc';
+    ctx.fillRect(0, 0, width, height);
+
+    // 中心点を設定
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // 四角形の3D座標を取得
+    const coords3D = get3DCoordinates(rectangleId);
+    if (!coords3D) return;
+
+    // 四角形オブジェクトを取得
+    import('../modules/rectangleManager.js').then(({ getRectangleById }) => {
+        const rectangle = getRectangleById(rectangleId);
+        if (!rectangle) return;
+
+        // オブジェクトタイプに応じた色
+        const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+            ? OBJECT_TYPE_COLORS[rectangle.objectType]
+            : OBJECT_TYPE_COLORS.none;
+
+        // グリッドを描画（簡易版）
+        drawPreviewGrid(ctx, centerX, centerY);
+
+        // 直方体を描画
+        drawPreviewBox(ctx, coords3D, color, centerX, centerY);
+
+        // 前面方向を矢印で表示
+        if (rectangle.objectType !== OBJECT_TYPES.NONE) {
+            drawPreviewFrontDirection(ctx, coords3D, rectangle.frontDirection, centerX, centerY);
+        }
+    });
+}
+
+/**
+ * プレビュー用グリッド描画
+ * @private
+ */
+function drawPreviewGrid(ctx, centerX, centerY) {
+    const gridSize = 1;
+    const gridCount = 3;
+
+    ctx.save();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+
+    for (let i = -gridCount; i <= gridCount; i++) {
+        // X方向
+        const startX = worldToPreviewIso(i * gridSize, -gridCount * gridSize, 0);
+        const endX = worldToPreviewIso(i * gridSize, gridCount * gridSize, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + startX.x * previewState.scale, centerY - startX.y * previewState.scale);
+        ctx.lineTo(centerX + endX.x * previewState.scale, centerY - endX.y * previewState.scale);
+        ctx.stroke();
+
+        // Y方向
+        const startY = worldToPreviewIso(-gridCount * gridSize, i * gridSize, 0);
+        const endY = worldToPreviewIso(gridCount * gridSize, i * gridSize, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + startY.x * previewState.scale, centerY - startY.y * previewState.scale);
+        ctx.lineTo(centerX + endY.x * previewState.scale, centerY - endY.y * previewState.scale);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+/**
+ * プレビュー用ボックス描画
+ * @private
+ */
+function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
+    const { x, y, z, width, depth, height } = coords3D;
+
+    // 8つの頂点を計算
+    const vertices = [
+        worldToPreviewIso(x - width/2, y - depth/2, z - height/2),
+        worldToPreviewIso(x + width/2, y - depth/2, z - height/2),
+        worldToPreviewIso(x + width/2, y + depth/2, z - height/2),
+        worldToPreviewIso(x - width/2, y + depth/2, z - height/2),
+        worldToPreviewIso(x - width/2, y - depth/2, z + height/2),
+        worldToPreviewIso(x + width/2, y - depth/2, z + height/2),
+        worldToPreviewIso(x + width/2, y + depth/2, z + height/2),
+        worldToPreviewIso(x - width/2, y + depth/2, z + height/2),
+    ];
+
+    const screen = vertices.map(v => ({
+        x: centerX + v.x * previewState.scale,
+        y: centerY - v.y * previewState.scale
+    }));
+
+    ctx.save();
+
+    // 上面
+    ctx.fillStyle = lightenColor(color, 20);
+    ctx.beginPath();
+    ctx.moveTo(screen[4].x, screen[4].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 左面
+    ctx.fillStyle = darkenColor(color, 10);
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[3].x, screen[3].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.lineTo(screen[4].x, screen[4].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 右面
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[2].x, screen[2].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
+ * プレビュー用前面方向矢印描画
+ * @private
+ */
+function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, centerY) {
+    const { x, y, z, width, depth } = coords3D;
+
+    let arrowStart, arrowEnd;
+
+    switch (frontDirection) {
+        case 'top':
+            arrowStart = worldToPreviewIso(x, y - depth/2, z);
+            arrowEnd = worldToPreviewIso(x, y - depth/2 - 0.3, z);
+            break;
+        case 'right':
+            arrowStart = worldToPreviewIso(x + width/2, y, z);
+            arrowEnd = worldToPreviewIso(x + width/2 + 0.3, y, z);
+            break;
+        case 'bottom':
+            arrowStart = worldToPreviewIso(x, y + depth/2, z);
+            arrowEnd = worldToPreviewIso(x, y + depth/2 + 0.3, z);
+            break;
+        case 'left':
+            arrowStart = worldToPreviewIso(x - width/2, y, z);
+            arrowEnd = worldToPreviewIso(x - width/2 - 0.3, y, z);
+            break;
+        default:
+            return;
+    }
+
+    const startScreen = {
+        x: centerX + arrowStart.x * previewState.scale,
+        y: centerY - arrowStart.y * previewState.scale
+    };
+    const endScreen = {
+        x: centerX + arrowEnd.x * previewState.scale,
+        y: centerY - arrowEnd.y * previewState.scale
+    };
+
+    ctx.save();
+    ctx.strokeStyle = '#2d3748';
+    ctx.fillStyle = '#2d3748';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(startScreen.x, startScreen.y);
+    ctx.lineTo(endScreen.x, endScreen.y);
+    ctx.stroke();
+
+    const angle = Math.atan2(endScreen.y - startScreen.y, endScreen.x - startScreen.x);
+    const arrowSize = 6;
+    ctx.beginPath();
+    ctx.moveTo(endScreen.x, endScreen.y);
+    ctx.lineTo(
+        endScreen.x - arrowSize * Math.cos(angle - Math.PI / 6),
+        endScreen.y - arrowSize * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.lineTo(
+        endScreen.x - arrowSize * Math.cos(angle + Math.PI / 6),
+        endScreen.y - arrowSize * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * プレビュー用等角投影変換
+ * @private
+ */
+function worldToPreviewIso(x, y, z) {
+    const rad = previewState.rotation * Math.PI / 180;
+    const tiltRad = previewState.tilt * Math.PI / 180;
+
+    const rotX = x * Math.cos(rad) - y * Math.sin(rad);
+    const rotY = x * Math.sin(rad) + y * Math.cos(rad);
+
+    return {
+        x: rotX,
+        y: z - rotY * Math.sin(tiltRad)
+    };
 }

@@ -37,6 +37,7 @@ import {
     getPropertySchema
 } from '../models/objectTypes.js';
 import { showSuccess, showError, showWarning } from './toast.js';
+import { initializePropertyPreview, renderPropertyPreview } from '../modules/threeDRenderer.js';
 
 // ================
 // 初期化
@@ -60,6 +61,9 @@ export function initializePropertyPanel() {
 
     // イベントリスナーを設定
     setupEventListeners();
+
+    // プレビューを初期化
+    initializePropertyPreview();
 
     console.log('オブジェクトプロパティパネルを初期化しました');
 }
@@ -184,6 +188,9 @@ export function updatePropertyPanel(rectangleId) {
 
     // カテゴリ別詳細設定を更新
     updateDetailedSettings(rectangle);
+
+    // プレビューを更新
+    renderPropertyPreview(rectangleId);
 }
 
 /**
@@ -338,6 +345,8 @@ function createNumberInput(field, currentValue, rectangle) {
             const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
             if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
         }
+        // プレビューを更新
+        renderPropertyPreview(rectangle.id);
     });
 
     wrapper.appendChild(input);
@@ -360,6 +369,8 @@ function createNumberInput(field, currentValue, rectangle) {
                 const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
                 if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
             }
+            // プレビューを更新
+            renderPropertyPreview(rectangle.id);
         });
 
         input.addEventListener('input', (e) => {
@@ -399,6 +410,8 @@ function createCheckbox(field, currentValue, rectangle) {
             const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
             if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
         }
+        // プレビューを更新
+        renderPropertyPreview(rectangle.id);
     });
 
     wrapper.appendChild(input);
@@ -431,6 +444,8 @@ function createSelect(field, currentValue, rectangle) {
             const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
             if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
         }
+        // プレビューを更新
+        renderPropertyPreview(rectangle.id);
     });
 
     return select;
@@ -466,6 +481,8 @@ function createRadioGroup(field, currentValue, rectangle) {
                     const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
                     if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
                 }
+                // プレビューを更新
+                renderPropertyPreview(rectangle.id);
             }
         });
 
@@ -504,6 +521,9 @@ function handleCategoryChange(event) {
     // パネルを再描画（詳細設定が変わるため）
     updatePropertyPanel(selectedRect.id);
 
+    // プレビューを更新
+    renderPropertyPreview(selectedRect.id);
+
     showSuccess(`カテゴリを「${OBJECT_TYPE_LABELS[newType]}」に変更しました`);
 }
 
@@ -540,6 +560,9 @@ function handleHeightBlur(event) {
     if (!success) {
         // エラーの場合は元の値に戻す
         event.target.value = selectedRect.heightMeters.toFixed(2);
+    } else {
+        // プレビューを更新
+        renderPropertyPreview(selectedRect.id);
     }
 }
 
@@ -554,6 +577,9 @@ function handleFrontDirectionChange(event) {
 
     const direction = event.target.value;
     setFrontDirection(selectedRect.id, direction);
+
+    // プレビューを更新
+    renderPropertyPreview(selectedRect.id);
 }
 
 /**
