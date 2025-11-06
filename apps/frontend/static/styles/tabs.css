@@ -190,7 +190,7 @@
 
 /* 左パネル: オブジェクト一覧 */
 .object-catalog-left-panel {
-    flex: 0 0 400px;
+    flex: 1;
     min-width: 250px;
     max-width: 800px;
     display: flex;
@@ -363,6 +363,16 @@
 .catalog-preview-canvas {
     width: 100%;
     height: 100%;
+}
+
+.catalog-preview-viewcube {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 120px;
+    height: 120px;
+    cursor: pointer;
+    pointer-events: all;
 }
 
 .catalog-preview-empty {

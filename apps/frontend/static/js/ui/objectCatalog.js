@@ -15,6 +15,7 @@ import { getAllRectangles, getRectangleById, updateRectangle } from '../modules/
 import { OBJECT_TYPES, OBJECT_TYPE_LABELS, OBJECT_TYPE_COLORS, getCommonPropertySchema, validateCommonProperties } from '../models/objectTypes.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { mapState } from '../state/mapState.js';
+import { initializeViewCube } from '../ui/viewCube.js';
 
 // カタログの状態
 const catalogState = {
@@ -58,6 +59,13 @@ export function initializeObjectCatalog() {
 
     // リサイザーを初期化
     initializeCatalogResizer();
+
+    // ViewCubeを初期化
+    const viewCubeCanvas = document.getElementById('catalogPreviewViewCube');
+    if (viewCubeCanvas) {
+        initializeViewCube(viewCubeCanvas, handleCatalogViewCubeChange);
+        console.log('カタログプレビュー用ViewCubeを初期化しました');
+    }
 
     // グローバル関数としてエクスポート（HTMLから呼び出されるため）
     window.closeCatalogDetail = closeCatalogDetail;
@@ -228,6 +236,23 @@ function selectCatalogItem(rectangleId) {
 }
 
 /**
+ * カタログ用ViewCubeからの視点変更を処理
+ *
+ * @private
+ * @param {number} rotation - 回転角度
+ * @param {number} tilt - 傾き角度
+ */
+function handleCatalogViewCubeChange(rotation, tilt) {
+    catalogState.rotation = rotation;
+    catalogState.tilt = tilt;
+
+    // 現在選択中のオブジェクトを再描画
+    if (catalogState.selectedRectangleId) {
+        updatePreview(catalogState.selectedRectangleId);
+    }
+}
+
+/**
  * 3Dプレビューを更新する
  *
  * @param {string} rectangleId - 四角形のID
@@ -269,9 +294,9 @@ function updatePreview(rectangleId) {
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 中心点を設定
+    // 中心点を設定（配置面を下にして、モデル全体が見えるようにする）
     const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    const centerY = canvas.height * 0.65; // 配置面を画面の下半分に配置
 
     // 四角形の3D座標を取得
     const coords3D = get3DCoordinates(rectangleId);

@@ -1273,6 +1273,13 @@ export function initializePropertyPreview() {
     // ホイールイベントでズーム（スケール変更）
     canvas.addEventListener('wheel', handlePreviewWheel, { passive: false });
 
+    // ViewCubeを初期化
+    const viewCubeCanvas = document.getElementById('propertyPreviewViewCube');
+    if (viewCubeCanvas) {
+        initializeViewCube(viewCubeCanvas, handlePreviewViewCubeChange);
+        console.log('プロパティプレビュー用ViewCubeを初期化しました');
+    }
+
     console.log('プロパティプレビューを初期化しました');
 }
 
@@ -1291,6 +1298,23 @@ function handlePreviewWheel(e) {
         previewState.minScale,
         Math.min(previewState.maxScale, previewState.scale + delta)
     );
+
+    // 現在表示中のオブジェクトを再描画
+    if (previewState.currentRectangleId) {
+        renderPropertyPreview(previewState.currentRectangleId);
+    }
+}
+
+/**
+ * プレビュー用ViewCubeからの視点変更を処理
+ *
+ * @private
+ * @param {number} rotation - 回転角度
+ * @param {number} tilt - 傾き角度
+ */
+function handlePreviewViewCubeChange(rotation, tilt) {
+    previewState.rotation = rotation;
+    previewState.tilt = tilt;
 
     // 現在表示中のオブジェクトを再描画
     if (previewState.currentRectangleId) {
@@ -1339,9 +1363,9 @@ export function renderPropertyPreview(rectangleId) {
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, width, height);
 
-    // 中心点を設定
+    // 中心点を設定（配置面を下にして、モデル全体が見えるようにする）
     const centerX = width / 2;
-    const centerY = height / 2;
+    const centerY = height * 0.65; // 配置面を画面の下半分に配置
 
     // 四角形の3D座標を取得
     const coords3D = get3DCoordinates(rectangleId);
