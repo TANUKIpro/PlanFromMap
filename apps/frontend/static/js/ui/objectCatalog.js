@@ -29,7 +29,11 @@ const catalogState = {
     tilt: 30,           // 傾き角度（度）
     scale: 80,          // スケール
     minScale: 20,
-    maxScale: 200
+    maxScale: 200,
+    // ドラッグ状態
+    isDragging: false,
+    lastMouseX: 0,
+    lastMouseY: 0
 };
 
 /**
@@ -56,6 +60,13 @@ export function initializeObjectCatalog() {
             previewCanvas.width = container.clientWidth;
             previewCanvas.height = container.clientHeight;
         }
+
+        // マウスイベントリスナーを設定
+        previewCanvas.addEventListener('mousedown', handlePreviewMouseDown);
+        previewCanvas.addEventListener('mousemove', handlePreviewMouseMove);
+        previewCanvas.addEventListener('mouseup', handlePreviewMouseUp);
+        previewCanvas.addEventListener('mouseleave', handlePreviewMouseUp);
+        previewCanvas.addEventListener('wheel', handlePreviewWheel, { passive: false });
     }
 
     // リサイザーを初期化
@@ -254,6 +265,84 @@ function handleCatalogViewCubeChange(rotation, tilt) {
 }
 
 /**
+ * プレビューキャンバスのマウスダウンハンドラ
+ *
+ * @private
+ * @param {MouseEvent} e - マウスイベント
+ */
+function handlePreviewMouseDown(e) {
+    if (!catalogState.selectedRectangleId) return;
+
+    catalogState.isDragging = true;
+    catalogState.lastMouseX = e.clientX;
+    catalogState.lastMouseY = e.clientY;
+    catalogState.previewCanvas.style.cursor = 'grabbing';
+}
+
+/**
+ * プレビューキャンバスのマウスムーブハンドラ
+ *
+ * @private
+ * @param {MouseEvent} e - マウスイベント
+ */
+function handlePreviewMouseMove(e) {
+    if (!catalogState.isDragging || !catalogState.selectedRectangleId) {
+        if (catalogState.selectedRectangleId) {
+            catalogState.previewCanvas.style.cursor = 'grab';
+        }
+        return;
+    }
+
+    const deltaX = e.clientX - catalogState.lastMouseX;
+    const deltaY = e.clientY - catalogState.lastMouseY;
+
+    // 回転を更新
+    catalogState.rotation += deltaX * 0.5;
+    catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt - deltaY * 0.5));
+
+    catalogState.lastMouseX = e.clientX;
+    catalogState.lastMouseY = e.clientY;
+
+    // プレビューを再描画
+    updatePreview(catalogState.selectedRectangleId);
+}
+
+/**
+ * プレビューキャンバスのマウスアップハンドラ
+ *
+ * @private
+ */
+function handlePreviewMouseUp() {
+    catalogState.isDragging = false;
+    if (catalogState.selectedRectangleId) {
+        catalogState.previewCanvas.style.cursor = 'grab';
+    }
+}
+
+/**
+ * プレビューキャンバスのホイールハンドラ（ズーム）
+ *
+ * @private
+ * @param {WheelEvent} e - ホイールイベント
+ */
+function handlePreviewWheel(e) {
+    if (!catalogState.selectedRectangleId) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ホイールの方向に応じてスケールを変更
+    const delta = e.deltaY > 0 ? -5 : 5;
+    catalogState.scale = Math.max(
+        catalogState.minScale,
+        Math.min(catalogState.maxScale, catalogState.scale + delta)
+    );
+
+    // プレビューを再描画
+    updatePreview(catalogState.selectedRectangleId);
+}
+
+/**
  * 3Dプレビューを更新する
  *
  * @param {string} rectangleId - 四角形のID
@@ -349,6 +438,11 @@ function updatePreview(rectangleId) {
     previewState.rotation = originalRotation;
     previewState.tilt = originalTilt;
     previewState.scale = originalScale;
+
+    // カーソルスタイルを設定
+    if (!catalogState.isDragging) {
+        canvas.style.cursor = 'grab';
+    }
 }
 
 /**
@@ -359,6 +453,7 @@ function updatePreview(rectangleId) {
 function clearPreview() {
     if (catalogState.previewCtx && catalogState.previewCanvas) {
         catalogState.previewCtx.clearRect(0, 0, catalogState.previewCanvas.width, catalogState.previewCanvas.height);
+        catalogState.previewCanvas.style.cursor = 'default';
     }
 
     const emptyMessage = document.getElementById('catalogPreviewEmpty');
