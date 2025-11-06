@@ -20,7 +20,7 @@
  */
 
 import { mapState } from '../state/mapState.js';
-import { getAllRectangles } from '../modules/rectangleManager.js';
+import { getAllRectangles, getRectangleById } from '../modules/rectangleManager.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
 
@@ -1062,26 +1062,24 @@ export function renderPropertyPreview(rectangleId) {
     if (!coords3D) return;
 
     // 四角形オブジェクトを取得
-    import('../modules/rectangleManager.js').then(({ getRectangleById }) => {
-        const rectangle = getRectangleById(rectangleId);
-        if (!rectangle) return;
+    const rectangle = getRectangleById(rectangleId);
+    if (!rectangle) return;
 
-        // オブジェクトタイプに応じた色
-        const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
-            ? OBJECT_TYPE_COLORS[rectangle.objectType]
-            : OBJECT_TYPE_COLORS.none;
+    // オブジェクトタイプに応じた色
+    const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+        ? OBJECT_TYPE_COLORS[rectangle.objectType]
+        : OBJECT_TYPE_COLORS.none;
 
-        // グリッドを描画（簡易版）
-        drawPreviewGrid(ctx, centerX, centerY);
+    // グリッドを描画（簡易版）
+    drawPreviewGrid(ctx, centerX, centerY);
 
-        // オブジェクトタイプに応じた3Dモデルを描画
-        drawPreviewModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+    // オブジェクトタイプに応じた3Dモデルを描画
+    drawPreviewModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
 
-        // 前面方向を矢印で表示
-        if (rectangle.objectType !== OBJECT_TYPES.NONE) {
-            drawPreviewFrontDirection(ctx, coords3D, rectangle.frontDirection, centerX, centerY);
-        }
-    });
+    // 前面方向を矢印で表示
+    if (rectangle.objectType !== OBJECT_TYPES.NONE) {
+        drawPreviewFrontDirection(ctx, coords3D, rectangle.frontDirection, centerX, centerY);
+    }
 }
 
 /**
