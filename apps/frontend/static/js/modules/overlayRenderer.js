@@ -127,57 +127,20 @@ export function drawMetadataOverlay(drawX, drawY, scaledWidth, scaledHeight) {
  */
 export function drawMetadataOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight) {
     const metadata = mapState.metadata;
-    console.log('[DEBUG] drawMetadataOverlayOnContext called:', {
-        hasMetadata: !!metadata,
-        showOrigin: mapState.overlaySettings.showOrigin,
-        hasOrigin: metadata ? Array.isArray(metadata.origin) : false,
-        origin: metadata?.origin
-    });
     if (!metadata) return;
 
     const resolution = metadata.resolution;
 
-    // グリッド描画
     if (mapState.overlaySettings.showGrid && resolution) {
-        console.log('[DEBUG] About to draw grid');
-        try {
-            drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution);
-            console.log('[DEBUG] Grid drawing completed');
-        } catch (error) {
-            console.error('[DEBUG] Error drawing grid:', error);
-        }
+        drawGridOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, resolution);
     }
 
-    // 原点描画
     if (mapState.overlaySettings.showOrigin && Array.isArray(metadata.origin)) {
-        console.log('[DEBUG] About to draw origin, condition check:', {
-            showOrigin: mapState.overlaySettings.showOrigin,
-            isArray: Array.isArray(metadata.origin),
-            origin: metadata.origin
-        });
-        try {
-            drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
-            console.log('[DEBUG] Origin drawing completed');
-        } catch (error) {
-            console.error('[DEBUG] Error drawing origin:', error);
-        }
-    } else {
-        console.log('[DEBUG] Origin drawing skipped:', {
-            showOrigin: mapState.overlaySettings.showOrigin,
-            isArray: Array.isArray(metadata.origin),
-            hasOrigin: !!metadata.origin
-        });
+        drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, metadata.origin);
     }
 
-    // スケールバー描画
     if (mapState.overlaySettings.showScaleBar && resolution) {
-        console.log('[DEBUG] About to draw scale bar');
-        try {
-            drawScaleBarOnContext(targetCtx, resolution);
-            console.log('[DEBUG] Scale bar drawing completed');
-        } catch (error) {
-            console.error('[DEBUG] Error drawing scale bar:', error);
-        }
+        drawScaleBarOnContext(targetCtx, resolution);
     }
 }
 
@@ -302,19 +265,9 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
     const originCanvas = worldToCanvas(0, 0, drawX, drawY);
     if (!originCanvas) return;
 
-    // 原点マーカーの描画要素（十字、矢印、ラベル）のサイズを考慮したマージン
-    const margin = 100;
-
-    // キャンバスの表示領域内にあるかチェック（マージン付き）
-    if (
-        originCanvas.x < -margin ||
-        originCanvas.x > canvas.width + margin ||
-        originCanvas.y < -margin ||
-        originCanvas.y > canvas.height + margin
-    ) {
-        // 表示領域外の場合は描画しない
-        return;
-    }
+    // 原点マーカーは常に描画する（範囲外チェックを削除）
+    // 理由: ROSマップでは原点（世界座標0,0）が画像の外側にあることは正常
+    // パン/ズーム操作で原点が画面内に入った時に表示されるべき
 
     ctx.save();
     ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
@@ -385,63 +338,15 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
  * @param {Array<number>} origin - 原点座標 [x, y, theta]
  */
 export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth, scaledHeight, origin) {
-    console.log('[DEBUG] drawOriginOverlayOnContext called:', {
-        origin,
-        drawX,
-        drawY,
-        hasMetadata: !!mapState.metadata,
-        resolution: mapState.metadata?.resolution
-    });
-
-    if (!Array.isArray(origin) || origin.length < 2) {
-        console.log('[DEBUG] Origin check failed');
-        return;
-    }
-    if (!mapState.metadata || mapState.metadata.resolution === undefined) {
-        console.log('[DEBUG] Metadata check failed');
-        return;
-    }
+    if (!Array.isArray(origin) || origin.length < 2) return;
+    if (!mapState.metadata || mapState.metadata.resolution === undefined) return;
 
     const originCanvas = worldToCanvas(0, 0, drawX, drawY);
-    console.log('[DEBUG] originCanvas:', originCanvas);
-    if (!originCanvas) {
-        console.log('[DEBUG] worldToCanvas returned null');
-        return;
-    }
+    if (!originCanvas) return;
 
-    // 原点マーカーの描画要素（十字、矢印、ラベル）のサイズを考慮したマージン
-    const margin = 100;
-
-    // レイヤーシステムのキャンバスサイズを取得
-    const canvasWidth = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.width :
-                        document.getElementById('mapCanvas').width;
-    const canvasHeight = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.height :
-                         document.getElementById('mapCanvas').height;
-
-    console.log('[DEBUG] Canvas size:', { canvasWidth, canvasHeight });
-    console.log('[DEBUG] Bounds check:', {
-        x: originCanvas.x,
-        y: originCanvas.y,
-        minX: -margin,
-        maxX: canvasWidth + margin,
-        minY: -margin,
-        maxY: canvasHeight + margin,
-        inBounds: !(originCanvas.x < -margin || originCanvas.x > canvasWidth + margin || originCanvas.y < -margin || originCanvas.y > canvasHeight + margin)
-    });
-
-    // キャンバスの表示領域内にあるかチェック（マージン付き）
-    if (
-        originCanvas.x < -margin ||
-        originCanvas.x > canvasWidth + margin ||
-        originCanvas.y < -margin ||
-        originCanvas.y > canvasHeight + margin
-    ) {
-        // 表示領域外の場合は描画しない
-        console.log('[DEBUG] Origin is out of bounds');
-        return;
-    }
-
-    console.log('[DEBUG] Drawing origin marker...');
+    // 原点マーカーは常に描画する（範囲外チェックを削除）
+    // 理由: ROSマップでは原点（世界座標0,0）が画像の外側にあることは正常
+    // パン/ズーム操作で原点が画面内に入った時に表示されるべき
 
     targetCtx.save();
     targetCtx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
