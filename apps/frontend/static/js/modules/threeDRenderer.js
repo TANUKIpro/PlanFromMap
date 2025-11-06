@@ -1077,22 +1077,44 @@ export function renderPropertyPreview(rectangleId) {
 
     // 四角形の3D座標を取得
     const coords3D = get3DCoordinates(rectangleId);
-    if (!coords3D) return;
+    if (!coords3D) {
+        console.warn('renderPropertyPreview: coords3Dがnull');
+        return;
+    }
 
     // 四角形オブジェクトを取得
     const rectangle = getRectangleById(rectangleId);
-    if (!rectangle) return;
+    if (!rectangle) {
+        console.warn('renderPropertyPreview: rectangleがnull');
+        return;
+    }
+
+    // デバッグログ
+    console.log('=== renderPropertyPreview デバッグ ===');
+    console.log('rectangleId:', rectangleId);
+    console.log('coords3D:', coords3D);
+    console.log('rectangle.objectType:', rectangle.objectType);
+    console.log('rectangle.heightMeters:', rectangle.heightMeters);
+    console.log('rectangle.frontDirection:', rectangle.frontDirection);
+    console.log('rectangle.objectProperties:', rectangle.objectProperties);
+    console.log('canvas size:', width, 'x', height);
+    console.log('centerX, centerY:', centerX, centerY);
+    console.log('previewState.scale:', previewState.scale);
 
     // オブジェクトタイプに応じた色
     const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
         ? OBJECT_TYPE_COLORS[rectangle.objectType]
         : OBJECT_TYPE_COLORS.none;
 
+    console.log('color:', color);
+
     // グリッドを描画（簡易版）
     drawPreviewGrid(ctx, centerX, centerY);
 
     // オブジェクトタイプに応じた3Dモデルを描画
+    console.log('drawPreviewModel呼び出し前');
     drawPreviewModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+    console.log('drawPreviewModel呼び出し後');
 
     // 前面方向を矢印で表示
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
@@ -1204,24 +1226,33 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
  * @private
  */
 function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
+    console.log('drawPreviewModel: objectType =', objectType);
+    console.log('drawPreviewModel: coords3D =', coords3D);
+
     switch (objectType) {
         case OBJECT_TYPES.SHELF:
+            console.log('→ drawPreviewShelf呼び出し');
             drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
             break;
         case OBJECT_TYPES.BOX:
+            console.log('→ drawPreviewBox_Hollowed呼び出し');
             drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
             break;
         case OBJECT_TYPES.TABLE:
+            console.log('→ drawPreviewTable呼び出し');
             drawPreviewTable(ctx, coords3D, color, centerX, centerY);
             break;
         case OBJECT_TYPES.DOOR:
+            console.log('→ drawPreviewDoor呼び出し');
             drawPreviewDoor(ctx, coords3D, color, centerX, centerY);
             break;
         case OBJECT_TYPES.WALL:
+            console.log('→ drawPreviewWall呼び出し');
             drawPreviewWall(ctx, coords3D, color, centerX, centerY);
             break;
         case OBJECT_TYPES.NONE:
         default:
+            console.log('→ drawPreviewBox呼び出し (デフォルト)');
             drawPreviewBox(ctx, coords3D, color, centerX, centerY);
             break;
     }
@@ -1232,8 +1263,16 @@ function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, fr
  * @private
  */
 function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
+    console.log('drawPreviewShelf開始');
+    console.log('  coords3D:', coords3D);
+    console.log('  centerX, centerY:', centerX, centerY);
+    console.log('  previewState.scale:', previewState.scale);
+
     const { x, y, z, width, depth, height } = coords3D;
     const thickness = 0.05; // 壁の厚さ
+
+    console.log('  x, y, z:', x, y, z);
+    console.log('  width, depth, height:', width, depth, height);
 
     // 8つの頂点を計算
     const vertices = [
@@ -1247,10 +1286,14 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
         worldToPreviewIso(x - width/2, y + depth/2, z + height/2),
     ];
 
+    console.log('  vertices[0]:', vertices[0]);
+
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
         y: centerY - v.y * previewState.scale
     }));
+
+    console.log('  screen[0]:', screen[0]);
 
     ctx.save();
 
