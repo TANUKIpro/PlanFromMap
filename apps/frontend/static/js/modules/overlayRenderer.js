@@ -265,11 +265,15 @@ export function drawOriginOverlay(drawX, drawY, scaledWidth, scaledHeight, origi
     const originCanvas = worldToCanvas(0, 0, drawX, drawY);
     if (!originCanvas) return;
 
+    // 原点マーカーの描画要素（十字、矢印、ラベル）のサイズを考慮したマージン
+    const margin = 100;
+
+    // キャンバスの表示領域内にあるかチェック（マージン付き）
     if (
-        originCanvas.x < drawX - 1 ||
-        originCanvas.x > drawX + scaledWidth + 1 ||
-        originCanvas.y < drawY - 1 ||
-        originCanvas.y > drawY + scaledHeight + 1
+        originCanvas.x < -margin ||
+        originCanvas.x > canvas.width + margin ||
+        originCanvas.y < -margin ||
+        originCanvas.y > canvas.height + margin
     ) {
         // 表示領域外の場合は描画しない
         return;
@@ -350,11 +354,21 @@ export function drawOriginOverlayOnContext(targetCtx, drawX, drawY, scaledWidth,
     const originCanvas = worldToCanvas(0, 0, drawX, drawY);
     if (!originCanvas) return;
 
+    // 原点マーカーの描画要素（十字、矢印、ラベル）のサイズを考慮したマージン
+    const margin = 100;
+
+    // レイヤーシステムのキャンバスサイズを取得
+    const canvasWidth = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.width :
+                        document.getElementById('mapCanvas').width;
+    const canvasHeight = mapState.layerStack.length > 0 ? mapState.layerStack[0].canvas.height :
+                         document.getElementById('mapCanvas').height;
+
+    // キャンバスの表示領域内にあるかチェック（マージン付き）
     if (
-        originCanvas.x < drawX - 1 ||
-        originCanvas.x > drawX + scaledWidth + 1 ||
-        originCanvas.y < drawY - 1 ||
-        originCanvas.y > drawY + scaledHeight + 1
+        originCanvas.x < -margin ||
+        originCanvas.x > canvasWidth + margin ||
+        originCanvas.y < -margin ||
+        originCanvas.y > canvasHeight + margin
     ) {
         // 表示領域外の場合は描画しない
         return;
