@@ -15,6 +15,8 @@ import { getAllRectangles, getRectangleById, updateRectangle } from '../modules/
 import { OBJECT_TYPES, OBJECT_TYPE_LABELS, OBJECT_TYPE_COLORS, getCommonPropertySchema, validateCommonProperties } from '../models/objectTypes.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { mapState } from '../state/mapState.js';
+import { initializeViewCube } from '../ui/viewCube.js';
+import { getPreviewState, drawPreviewModel, drawPreviewFrontDirection } from '../modules/threeDRenderer.js';
 
 // カタログの状態
 const catalogState = {
@@ -27,7 +29,11 @@ const catalogState = {
     tilt: 30,           // 傾き角度（度）
     scale: 80,          // スケール
     minScale: 20,
-    maxScale: 200
+    maxScale: 200,
+    // ドラッグ状態
+    isDragging: false,
+    lastMouseX: 0,
+    lastMouseY: 0
 };
 
 /**
@@ -54,10 +60,24 @@ export function initializeObjectCatalog() {
             previewCanvas.width = container.clientWidth;
             previewCanvas.height = container.clientHeight;
         }
+
+        // マウスイベントリスナーを設定
+        previewCanvas.addEventListener('mousedown', handlePreviewMouseDown);
+        previewCanvas.addEventListener('mousemove', handlePreviewMouseMove);
+        previewCanvas.addEventListener('mouseup', handlePreviewMouseUp);
+        previewCanvas.addEventListener('mouseleave', handlePreviewMouseUp);
+        previewCanvas.addEventListener('wheel', handlePreviewWheel, { passive: false });
     }
 
     // リサイザーを初期化
     initializeCatalogResizer();
+
+    // ViewCubeを初期化
+    const viewCubeCanvas = document.getElementById('catalogPreviewViewCube');
+    if (viewCubeCanvas) {
+        initializeViewCube(viewCubeCanvas, handleCatalogViewCubeChange);
+        console.log('カタログプレビュー用ViewCubeを初期化しました');
+    }
 
     // グローバル関数としてエクスポート（HTMLから呼び出されるため）
     window.closeCatalogDetail = closeCatalogDetail;
@@ -228,6 +248,101 @@ function selectCatalogItem(rectangleId) {
 }
 
 /**
+ * カタログ用ViewCubeからの視点変更を処理
+ *
+ * @private
+ * @param {number} rotation - 回転角度
+ * @param {number} tilt - 傾き角度
+ */
+function handleCatalogViewCubeChange(rotation, tilt) {
+    catalogState.rotation = rotation;
+    catalogState.tilt = tilt;
+
+    // 現在選択中のオブジェクトを再描画
+    if (catalogState.selectedRectangleId) {
+        updatePreview(catalogState.selectedRectangleId);
+    }
+}
+
+/**
+ * プレビューキャンバスのマウスダウンハンドラ
+ *
+ * @private
+ * @param {MouseEvent} e - マウスイベント
+ */
+function handlePreviewMouseDown(e) {
+    if (!catalogState.selectedRectangleId) return;
+
+    catalogState.isDragging = true;
+    catalogState.lastMouseX = e.clientX;
+    catalogState.lastMouseY = e.clientY;
+    catalogState.previewCanvas.style.cursor = 'grabbing';
+}
+
+/**
+ * プレビューキャンバスのマウスムーブハンドラ
+ *
+ * @private
+ * @param {MouseEvent} e - マウスイベント
+ */
+function handlePreviewMouseMove(e) {
+    if (!catalogState.isDragging || !catalogState.selectedRectangleId) {
+        if (catalogState.selectedRectangleId) {
+            catalogState.previewCanvas.style.cursor = 'grab';
+        }
+        return;
+    }
+
+    const deltaX = e.clientX - catalogState.lastMouseX;
+    const deltaY = e.clientY - catalogState.lastMouseY;
+
+    // 回転を更新
+    catalogState.rotation += deltaX * 0.5;
+    catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt - deltaY * 0.5));
+
+    catalogState.lastMouseX = e.clientX;
+    catalogState.lastMouseY = e.clientY;
+
+    // プレビューを再描画
+    updatePreview(catalogState.selectedRectangleId);
+}
+
+/**
+ * プレビューキャンバスのマウスアップハンドラ
+ *
+ * @private
+ */
+function handlePreviewMouseUp() {
+    catalogState.isDragging = false;
+    if (catalogState.selectedRectangleId) {
+        catalogState.previewCanvas.style.cursor = 'grab';
+    }
+}
+
+/**
+ * プレビューキャンバスのホイールハンドラ（ズーム）
+ *
+ * @private
+ * @param {WheelEvent} e - ホイールイベント
+ */
+function handlePreviewWheel(e) {
+    if (!catalogState.selectedRectangleId) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // ホイールの方向に応じてスケールを変更
+    const delta = e.deltaY > 0 ? -5 : 5;
+    catalogState.scale = Math.max(
+        catalogState.minScale,
+        Math.min(catalogState.maxScale, catalogState.scale + delta)
+    );
+
+    // プレビューを再描画
+    updatePreview(catalogState.selectedRectangleId);
+}
+
+/**
  * 3Dプレビューを更新する
  *
  * @param {string} rectangleId - 四角形のID
@@ -269,9 +384,9 @@ function updatePreview(rectangleId) {
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 中心点を設定
+    // 中心点を設定（配置面を下にして、モデル全体が見えるようにする）
     const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    const centerY = canvas.height * 0.65; // 配置面を画面の下半分に配置
 
     // 四角形の3D座標を取得
     const coords3D = get3DCoordinates(rectangleId);
@@ -285,6 +400,16 @@ function updatePreview(rectangleId) {
     const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
         ? OBJECT_TYPE_COLORS[rectangle.objectType]
         : OBJECT_TYPE_COLORS.none;
+
+    // threeDRenderer.jsのpreviewStateを一時的に設定
+    const previewState = getPreviewState();
+    const originalRotation = previewState.rotation;
+    const originalTilt = previewState.tilt;
+    const originalScale = previewState.scale;
+
+    previewState.rotation = catalogState.rotation;
+    previewState.tilt = catalogState.tilt;
+    previewState.scale = catalogState.scale;
 
     // グリッドを描画
     drawCatalogPreviewGrid(ctx, centerX, centerY);
@@ -301,12 +426,22 @@ function updatePreview(rectangleId) {
         frontDirection: rectangle.frontDirection || 'top'
     };
 
-    // オブジェクトタイプに応じた3Dモデルを描画
-    drawCatalogPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+    // threeDRenderer.jsの描画関数を使用（メタデータを反映）
+    drawPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
 
     // 前面方向を矢印で表示
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
-        drawCatalogPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
+        drawPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
+    }
+
+    // previewStateを元に戻す
+    previewState.rotation = originalRotation;
+    previewState.tilt = originalTilt;
+    previewState.scale = originalScale;
+
+    // カーソルスタイルを設定
+    if (!catalogState.isDragging) {
+        canvas.style.cursor = 'grab';
     }
 }
 
@@ -318,6 +453,7 @@ function updatePreview(rectangleId) {
 function clearPreview() {
     if (catalogState.previewCtx && catalogState.previewCanvas) {
         catalogState.previewCtx.clearRect(0, 0, catalogState.previewCanvas.width, catalogState.previewCanvas.height);
+        catalogState.previewCanvas.style.cursor = 'default';
     }
 
     const emptyMessage = document.getElementById('catalogPreviewEmpty');

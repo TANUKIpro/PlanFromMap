@@ -19,6 +19,11 @@
  * @exports reset3DView - 3Dビューのリセット
  * @exports initializePropertyPreview - プロパティプレビュー初期化
  * @exports renderPropertyPreview - プロパティプレビュー描画
+ * @exports drawPreviewGrid - プレビュー用グリッド描画
+ * @exports drawPreviewModel - プレビュー用3Dモデル描画
+ * @exports drawPreviewFrontDirection - プレビュー用前面方向矢印描画
+ * @exports worldToPreviewIso - プレビュー用等角投影変換
+ * @exports getPreviewState - プレビュー状態取得
  */
 
 import { mapState } from '../state/mapState.js';
@@ -1339,9 +1344,9 @@ export function renderPropertyPreview(rectangleId) {
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, width, height);
 
-    // 中心点を設定
+    // 中心点を設定（配置面を下にして、モデル全体が見えるようにする）
     const centerX = width / 2;
-    const centerY = height / 2;
+    const centerY = height * 0.65; // 配置面を画面の下半分に配置
 
     // 四角形の3D座標を取得
     const coords3D = get3DCoordinates(rectangleId);
@@ -1379,6 +1384,14 @@ export function renderPropertyPreview(rectangleId) {
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
         drawPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
     }
+}
+
+/**
+ * プレビュー状態を取得する（外部から設定可能）
+ * @returns {Object} プレビュー状態オブジェクト
+ */
+export function getPreviewState() {
+    return previewState;
 }
 
 /**
@@ -1483,9 +1496,16 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
 
 /**
  * オブジェクトタイプに応じたプレビューモデルを描画
- * @private
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} coords3D - 3D座標
+ * @param {string} color - オブジェクトの色
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ * @param {string} objectType - オブジェクトタイプ
+ * @param {string} frontDirection - 前面方向
+ * @param {Object} objectProperties - オブジェクトプロパティ
  */
-function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
+export function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
     switch (objectType) {
         case OBJECT_TYPES.SHELF:
             drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
@@ -1941,9 +1961,13 @@ function drawPreviewWall(ctx, coords3D, color, centerX, centerY) {
 
 /**
  * プレビュー用前面方向矢印描画
- * @private
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} coords3D - 3D座標
+ * @param {string} frontDirection - 前面方向
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
  */
-function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, centerY) {
+export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, centerY) {
     const { x, y, z, width, depth } = coords3D;
 
     let arrowStart, arrowEnd;
@@ -2008,9 +2032,12 @@ function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, cente
 
 /**
  * プレビュー用等角投影変換
- * @private
+ * @param {number} x - X座標
+ * @param {number} y - Y座標
+ * @param {number} z - Z座標
+ * @returns {Object} 変換後の2D座標 {x, y}
  */
-function worldToPreviewIso(x, y, z) {
+export function worldToPreviewIso(x, y, z) {
     const rad = previewState.rotation * Math.PI / 180;
     const tiltRad = previewState.tilt * Math.PI / 180;
 
