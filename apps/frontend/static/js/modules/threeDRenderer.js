@@ -293,11 +293,12 @@ function drawMapTexture(ctx, centerX, centerY) {
 /**
  * グリッドを描画（床面）
  * マップの有効領域に合わせてグリッドのサイズを調整
+ * 2Dマップで指定されたグリッド幅を使用
  *
  * @private
  */
 function drawGrid(ctx, centerX, centerY) {
-    const gridSize = 1; // 1メートルグリッド（2Dマップと同じ）
+    const gridSize = mapState.gridWidthInMeters || 1; // 2Dマップと同じグリッド幅を使用
     const maxGridCount = 20; // グリッド数の上限（±20メートル = 41本の線）
     let gridCount = 10; // デフォルト
 
@@ -1360,11 +1361,12 @@ export function renderPropertyPreview(rectangleId) {
 
 /**
  * プレビュー用グリッド描画
+ * 2Dマップと同じグリッド幅を使用
  * @private
  */
 function drawPreviewGrid(ctx, centerX, centerY) {
-    const gridSize = 1;
-    const gridCount = 3;
+    const gridSize = mapState.gridWidthInMeters || 1; // 2Dマップと同じグリッド幅を使用
+    const gridCount = 5; // プレビュー範囲を拡大（3→5）
 
     ctx.save();
     ctx.strokeStyle = '#e2e8f0';
