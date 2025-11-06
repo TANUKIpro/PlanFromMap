@@ -4,6 +4,8 @@
  *
  * @requires ../modules/rectangleManager.js - 四角形管理
  * @requires ../models/objectTypes.js - オブジェクトタイプ定義
+ * @requires ../modules/objectPropertyManager.js - オブジェクトプロパティ管理
+ * @requires ../state/mapState.js - グローバル状態管理
  *
  * @exports updateObjectCatalog - カタログを更新
  * @exports initializeObjectCatalog - カタログを初期化
@@ -11,13 +13,21 @@
 
 import { getAllRectangles, getRectangleById, updateRectangle } from '../modules/rectangleManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_LABELS, OBJECT_TYPE_COLORS, getCommonPropertySchema, validateCommonProperties } from '../models/objectTypes.js';
+import { get3DCoordinates } from '../modules/objectPropertyManager.js';
+import { mapState } from '../state/mapState.js';
 
 // カタログの状態
 const catalogState = {
     selectedRectangleId: null,
     previewCanvas: null,
     previewCtx: null,
-    editingData: null  // 編集中のデータのコピー
+    editingData: null,  // 編集中のデータのコピー
+    // プレビュー用の3D設定
+    rotation: 45,       // 回転角度（度）
+    tilt: 30,           // 傾き角度（度）
+    scale: 80,          // スケール
+    minScale: 20,
+    maxScale: 200
 };
 
 /**
@@ -45,6 +55,9 @@ export function initializeObjectCatalog() {
             previewCanvas.height = container.clientHeight;
         }
     }
+
+    // リサイザーを初期化
+    initializeCatalogResizer();
 
     // グローバル関数としてエクスポート（HTMLから呼び出されるため）
     window.closeCatalogDetail = closeCatalogDetail;
@@ -132,10 +145,10 @@ function createCatalogItem(rectangle) {
     const id = document.createElement('span');
     id.className = 'catalog-object-id';
 
-    // commonPropertiesにnameがある場合はそれを表示
+    // commonPropertiesにnameがある場合はそれを表示（子レイヤー名）
     let displayName = rectangle.id;
-    if (rectangle.commonProperties && rectangle.commonProperties.name) {
-        displayName = `${rectangle.commonProperties.name} (${rectangle.id})`;
+    if (rectangle.commonProperties && rectangle.commonProperties.name && rectangle.commonProperties.name.trim()) {
+        displayName = rectangle.commonProperties.name;
     }
     id.textContent = displayName;
 
@@ -230,6 +243,19 @@ function updatePreview(rectangleId) {
     const canvas = catalogState.previewCanvas;
     const ctx = catalogState.previewCtx;
 
+    // キャンバスサイズを親要素に合わせて調整
+    const container = canvas.parentElement;
+    if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        if (canvas.width !== containerWidth || canvas.height !== containerHeight ||
+            canvas.width === 0 || canvas.height === 0) {
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+        }
+    }
+
     // キャンバスをクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -239,82 +265,49 @@ function updatePreview(rectangleId) {
         emptyMessage.style.display = 'none';
     }
 
-    // 簡易的な3D描画（アイソメトリック投影）
+    // 背景を描画
+    ctx.fillStyle = '#f7fafc';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 中心点を設定
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    // スケーリング（キャンバスに収まるように）
-    const maxDim = Math.max(rectangle.width, rectangle.height, rectangle.heightMeters * 100);
-    const scale = Math.min(canvas.width, canvas.height) * 0.6 / maxDim;
+    // 四角形の3D座標を取得
+    const coords3D = get3DCoordinates(rectangleId);
+    if (!coords3D) {
+        // 3D座標が取得できない場合は簡易描画
+        drawSimplePreview(ctx, rectangle, centerX, centerY);
+        return;
+    }
 
-    const w = rectangle.width * scale;
-    const h = rectangle.height * scale;
-    const height3D = (rectangle.heightMeters || 0.5) * 100 * scale;
+    // オブジェクトタイプに応じた色
+    const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+        ? OBJECT_TYPE_COLORS[rectangle.objectType]
+        : OBJECT_TYPE_COLORS.none;
 
-    // アイソメトリック変換
-    const iso = (x, y, z) => {
-        const isoX = centerX + (x - y) * Math.cos(Math.PI / 6);
-        const isoY = centerY + (x + y) * Math.sin(Math.PI / 6) - z;
-        return { x: isoX, y: isoY };
+    // グリッドを描画
+    drawCatalogPreviewGrid(ctx, centerX, centerY);
+
+    // プレビュー用に座標を調整（原点中心に配置）
+    const previewCoords = {
+        x: 0,  // 原点中心
+        y: 0,  // 原点中心
+        z: coords3D.height / 2,  // 高さの半分（底面からの中心）
+        width: coords3D.width,
+        depth: coords3D.depth,
+        height: coords3D.height,
+        rotation: 0,  // プレビューでは回転なし
+        frontDirection: rectangle.frontDirection || 'top'
     };
 
-    // 色を取得
-    const color = rectangle.color || '#667eea';
+    // オブジェクトタイプに応じた3Dモデルを描画
+    drawCatalogPreviewModel(ctx, previewCoords, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
 
-    // 底面
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    const p1 = iso(-w/2, -h/2, 0);
-    const p2 = iso(w/2, -h/2, 0);
-    const p3 = iso(w/2, h/2, 0);
-    const p4 = iso(-w/2, h/2, 0);
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.lineTo(p3.x, p3.y);
-    ctx.lineTo(p4.x, p4.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 上面
-    ctx.fillStyle = adjustBrightness(color, 1.2);
-    ctx.beginPath();
-    const p5 = iso(-w/2, -h/2, height3D);
-    const p6 = iso(w/2, -h/2, height3D);
-    const p7 = iso(w/2, h/2, height3D);
-    const p8 = iso(-w/2, h/2, height3D);
-    ctx.moveTo(p5.x, p5.y);
-    ctx.lineTo(p6.x, p6.y);
-    ctx.lineTo(p7.x, p7.y);
-    ctx.lineTo(p8.x, p8.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 右側面
-    ctx.fillStyle = adjustBrightness(color, 0.8);
-    ctx.beginPath();
-    ctx.moveTo(p2.x, p2.y);
-    ctx.lineTo(p3.x, p3.y);
-    ctx.lineTo(p7.x, p7.y);
-    ctx.lineTo(p6.x, p6.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 左側面
-    ctx.fillStyle = adjustBrightness(color, 0.6);
-    ctx.beginPath();
-    ctx.moveTo(p4.x, p4.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.lineTo(p5.x, p5.y);
-    ctx.lineTo(p8.x, p8.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.globalAlpha = 1.0;
+    // 前面方向を矢印で表示
+    if (rectangle.objectType !== OBJECT_TYPES.NONE) {
+        drawCatalogPreviewFrontDirection(ctx, previewCoords, rectangle.frontDirection, centerX, centerY);
+    }
 }
 
 /**
@@ -333,28 +326,6 @@ function clearPreview() {
     }
 }
 
-/**
- * 色の明度を調整する
- *
- * @param {string} color - 16進数カラーコード
- * @param {number} factor - 明度調整係数（1.0より大きいと明るく、小さいと暗く）
- * @returns {string} 調整後のカラーコード
- */
-function adjustBrightness(color, factor) {
-    // #RRGGBBを分解
-    const hex = color.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-
-    // 調整
-    r = Math.min(255, Math.floor(r * factor));
-    g = Math.min(255, Math.floor(g * factor));
-    b = Math.min(255, Math.floor(b * factor));
-
-    // 16進数に戻す
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
 
 /**
  * 詳細編集パネルを表示する
@@ -623,4 +594,490 @@ function saveCatalogEdit() {
 
     // パネルを閉じる
     closeCatalogDetail();
+}
+
+// ========================================
+// カタログリサイザー
+// ========================================
+
+/**
+ * カタログリサイザーを初期化する
+ *
+ * @returns {void}
+ */
+function initializeCatalogResizer() {
+    const resizer = document.getElementById('catalogResizer');
+    const leftPanel = document.getElementById('catalogLeftPanel');
+    const rightPanel = document.getElementById('catalogRightPanel');
+
+    if (!resizer || !leftPanel || !rightPanel) {
+        console.warn('カタログリサイザーの初期化に失敗しました: 必要な要素が見つかりません');
+        return;
+    }
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    const handleMouseDown = (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = leftPanel.getBoundingClientRect().width;
+
+        // リサイズ中のカーソルを設定
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        // イベントリスナーを追加
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        e.preventDefault();
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - startX;
+        const newWidth = startWidth + deltaX;
+
+        // 最小・最大幅の制約
+        const minWidth = 250;
+        const maxWidth = 800;
+        const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+        // 左パネルの幅を更新
+        leftPanel.style.flexBasis = `${constrainedWidth}px`;
+
+        e.preventDefault();
+    };
+
+    const handleMouseUp = () => {
+        if (!isResizing) return;
+
+        isResizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        // イベントリスナーを削除
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+
+        // プレビューキャンバスをリサイズ
+        if (catalogState.selectedRectangleId) {
+            // キャンバスサイズを再調整するために再描画
+            setTimeout(() => {
+                updatePreview(catalogState.selectedRectangleId);
+            }, 50);
+        }
+    };
+
+    // リサイザーにマウスダウンイベントを設定
+    resizer.addEventListener('mousedown', handleMouseDown);
+}
+
+// ========================================
+// カタログプレビュー用ヘルパー関数
+// ========================================
+
+/**
+ * カタログ用のアイソメトリック投影変換
+ * 3D座標(x, y, z) → 2D画面座標(x, y)
+ *
+ * @param {number} x - X座標（メートル）
+ * @param {number} y - Y座標（メートル）
+ * @param {number} z - Z座標（メートル）
+ * @returns {Object} 2D座標 {x, y}
+ */
+function worldToCatalogIso(x, y, z) {
+    const rad = catalogState.rotation * Math.PI / 180;
+    const tiltRad = catalogState.tilt * Math.PI / 180;
+
+    // 回転
+    const rotX = x * Math.cos(rad) - y * Math.sin(rad);
+    const rotY = x * Math.sin(rad) + y * Math.cos(rad);
+
+    // アイソメトリック投影
+    return {
+        x: rotX,
+        y: z - rotY * Math.sin(tiltRad)
+    };
+}
+
+/**
+ * カタログプレビュー用グリッド描画
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ */
+function drawCatalogPreviewGrid(ctx, centerX, centerY) {
+    const gridSize = mapState.gridWidthInMeters || 1; // 2Dマップと同じグリッド幅を使用
+    const gridCount = 5; // プレビュー範囲
+
+    ctx.save();
+    ctx.strokeStyle = '#cbd5e0';
+    ctx.lineWidth = 1;
+
+    for (let i = -gridCount; i <= gridCount; i++) {
+        // X方向
+        const startX = worldToCatalogIso(i * gridSize, -gridCount * gridSize, 0);
+        const endX = worldToCatalogIso(i * gridSize, gridCount * gridSize, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + startX.x * catalogState.scale, centerY - startX.y * catalogState.scale);
+        ctx.lineTo(centerX + endX.x * catalogState.scale, centerY - endX.y * catalogState.scale);
+        ctx.stroke();
+
+        // Y方向
+        const startY = worldToCatalogIso(-gridCount * gridSize, i * gridSize, 0);
+        const endY = worldToCatalogIso(gridCount * gridSize, i * gridSize, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + startY.x * catalogState.scale, centerY - startY.y * catalogState.scale);
+        ctx.lineTo(centerX + endY.x * catalogState.scale, centerY - endY.y * catalogState.scale);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+/**
+ * 簡易プレビュー描画（フォールバック用）
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} rectangle - 四角形オブジェクト
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ */
+function drawSimplePreview(ctx, rectangle, centerX, centerY) {
+    // 簡易的な3D描画（アイソメトリック投影）
+    const maxDim = Math.max(rectangle.width, rectangle.height, (rectangle.heightMeters || 0.5) * 100);
+    const scale = Math.min(catalogState.previewCanvas.width, catalogState.previewCanvas.height) * 0.6 / maxDim;
+
+    const w = rectangle.width * scale;
+    const h = rectangle.height * scale;
+    const height3D = (rectangle.heightMeters || 0.5) * 100 * scale;
+
+    // アイソメトリック変換
+    const iso = (x, y, z) => {
+        const isoX = centerX + (x - y) * Math.cos(Math.PI / 6);
+        const isoY = centerY + (x + y) * Math.sin(Math.PI / 6) - z;
+        return { x: isoX, y: isoY };
+    };
+
+    // 色を取得
+    const color = rectangle.color || OBJECT_TYPE_COLORS[rectangle.objectType] || '#667eea';
+
+    ctx.save();
+    ctx.strokeStyle = '#2d3748';
+
+    // 底面
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    const p1 = iso(-w/2, -h/2, 0);
+    const p2 = iso(w/2, -h/2, 0);
+    const p3 = iso(w/2, h/2, 0);
+    const p4 = iso(-w/2, h/2, 0);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 上面
+    ctx.fillStyle = lightenColor(color, 20);
+    ctx.beginPath();
+    const p5 = iso(-w/2, -h/2, height3D);
+    const p6 = iso(w/2, -h/2, height3D);
+    const p7 = iso(w/2, h/2, height3D);
+    const p8 = iso(-w/2, h/2, height3D);
+    ctx.moveTo(p5.x, p5.y);
+    ctx.lineTo(p6.x, p6.y);
+    ctx.lineTo(p7.x, p7.y);
+    ctx.lineTo(p8.x, p8.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 右側面
+    ctx.fillStyle = darkenColor(color, 20);
+    ctx.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p7.x, p7.y);
+    ctx.lineTo(p6.x, p6.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 左側面
+    ctx.fillStyle = darkenColor(color, 40);
+    ctx.beginPath();
+    ctx.moveTo(p4.x, p4.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p5.x, p5.y);
+    ctx.lineTo(p8.x, p8.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+}
+
+/**
+ * カタログプレビュー用3Dモデル描画
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} coords3D - 3D座標
+ * @param {string} color - オブジェクトの色
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ * @param {string} objectType - オブジェクトタイプ
+ * @param {string} frontDirection - 前面方向
+ * @param {Object} objectProperties - オブジェクトプロパティ
+ */
+function drawCatalogPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
+    // オブジェクトタイプに応じた描画
+    switch (objectType) {
+        case OBJECT_TYPES.SHELF:
+            drawCatalogPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
+            break;
+        case OBJECT_TYPES.BOX:
+            drawCatalogPreviewBox(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
+            break;
+        case OBJECT_TYPES.TABLE:
+            drawCatalogPreviewTable(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
+            break;
+        case OBJECT_TYPES.DOOR:
+            drawCatalogPreviewDoor(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
+            break;
+        case OBJECT_TYPES.WALL:
+            drawCatalogPreviewWall(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties);
+            break;
+        default:
+            // デフォルトは標準ボックス
+            drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+            break;
+    }
+}
+
+/**
+ * 標準ボックス描画
+ */
+function drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY) {
+    const { x, y, z, width, depth, height } = coords3D;
+
+    // 8つの頂点を計算
+    const vertices = [
+        worldToCatalogIso(x - width/2, y - depth/2, z - height/2),
+        worldToCatalogIso(x + width/2, y - depth/2, z - height/2),
+        worldToCatalogIso(x + width/2, y + depth/2, z - height/2),
+        worldToCatalogIso(x - width/2, y + depth/2, z - height/2),
+        worldToCatalogIso(x - width/2, y - depth/2, z + height/2),
+        worldToCatalogIso(x + width/2, y - depth/2, z + height/2),
+        worldToCatalogIso(x + width/2, y + depth/2, z + height/2),
+        worldToCatalogIso(x - width/2, y + depth/2, z + height/2),
+    ];
+
+    const screen = vertices.map(v => ({
+        x: centerX + v.x * catalogState.scale,
+        y: centerY - v.y * catalogState.scale
+    }));
+
+    ctx.save();
+    ctx.strokeStyle = '#2d3748';
+    ctx.lineWidth = 1;
+
+    // 上面
+    ctx.fillStyle = lightenColor(color, 20);
+    ctx.beginPath();
+    ctx.moveTo(screen[4].x, screen[4].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 右側面
+    ctx.fillStyle = darkenColor(color, 20);
+    ctx.beginPath();
+    ctx.moveTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[2].x, screen[2].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 左側面
+    ctx.fillStyle = darkenColor(color, 40);
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[4].x, screen[4].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.lineTo(screen[3].x, screen[3].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
+ * 棚モデル描画（簡易版）
+ */
+function drawCatalogPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, properties) {
+    // 標準ボックスとして描画（簡易版）
+    drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+}
+
+/**
+ * 箱モデル描画（簡易版）
+ */
+function drawCatalogPreviewBox(ctx, coords3D, color, centerX, centerY, frontDirection, properties) {
+    // 標準ボックスとして描画（簡易版）
+    drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+}
+
+/**
+ * テーブルモデル描画（簡易版）
+ */
+function drawCatalogPreviewTable(ctx, coords3D, color, centerX, centerY, frontDirection, properties) {
+    // 標準ボックスとして描画（簡易版）
+    drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+}
+
+/**
+ * 扉モデル描画（簡易版）
+ */
+function drawCatalogPreviewDoor(ctx, coords3D, color, centerX, centerY, frontDirection, properties) {
+    // 標準ボックスとして描画（簡易版）
+    drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+}
+
+/**
+ * 壁モデル描画（簡易版）
+ */
+function drawCatalogPreviewWall(ctx, coords3D, color, centerX, centerY, frontDirection, properties) {
+    // 標準ボックスとして描画（簡易版）
+    drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY);
+}
+
+/**
+ * 前面方向矢印描画
+ */
+function drawCatalogPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, centerY) {
+    if (!frontDirection) return;
+
+    const { x, y, z, width, depth, height } = coords3D;
+    const arrowSize = Math.min(width, depth) * 0.3;
+
+    ctx.save();
+    ctx.strokeStyle = '#f56565';
+    ctx.fillStyle = '#f56565';
+    ctx.lineWidth = 2;
+
+    // 前面方向に応じた矢印の位置と向きを計算
+    let arrowBase, arrowTip;
+
+    switch (frontDirection) {
+        case 'top':
+            arrowBase = worldToCatalogIso(x, y - depth/2, z);
+            arrowTip = worldToCatalogIso(x, y - depth/2 - arrowSize, z);
+            break;
+        case 'bottom':
+            arrowBase = worldToCatalogIso(x, y + depth/2, z);
+            arrowTip = worldToCatalogIso(x, y + depth/2 + arrowSize, z);
+            break;
+        case 'left':
+            arrowBase = worldToCatalogIso(x - width/2, y, z);
+            arrowTip = worldToCatalogIso(x - width/2 - arrowSize, y, z);
+            break;
+        case 'right':
+            arrowBase = worldToCatalogIso(x + width/2, y, z);
+            arrowTip = worldToCatalogIso(x + width/2 + arrowSize, y, z);
+            break;
+        default:
+            return;
+    }
+
+    const screenBase = {
+        x: centerX + arrowBase.x * catalogState.scale,
+        y: centerY - arrowBase.y * catalogState.scale
+    };
+    const screenTip = {
+        x: centerX + arrowTip.x * catalogState.scale,
+        y: centerY - arrowTip.y * catalogState.scale
+    };
+
+    // 矢印を描画
+    ctx.beginPath();
+    ctx.moveTo(screenBase.x, screenBase.y);
+    ctx.lineTo(screenTip.x, screenTip.y);
+    ctx.stroke();
+
+    // 矢印の先端
+    const angle = Math.atan2(screenTip.y - screenBase.y, screenTip.x - screenBase.x);
+    const arrowHeadSize = 8;
+
+    ctx.beginPath();
+    ctx.moveTo(screenTip.x, screenTip.y);
+    ctx.lineTo(
+        screenTip.x - arrowHeadSize * Math.cos(angle - Math.PI / 6),
+        screenTip.y - arrowHeadSize * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.lineTo(
+        screenTip.x - arrowHeadSize * Math.cos(angle + Math.PI / 6),
+        screenTip.y - arrowHeadSize * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * 色を明るくする
+ *
+ * @param {string} color - 16進数カラーコード
+ * @param {number} amount - 明るくする量（0-255）
+ * @returns {string} 調整後のカラーコード
+ */
+function lightenColor(color, amount) {
+    const hex = color.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    r = Math.min(255, r + amount);
+    g = Math.min(255, g + amount);
+    b = Math.min(255, b + amount);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * 色を暗くする
+ *
+ * @param {string} color - 16進数カラーコード
+ * @param {number} amount - 暗くする量（0-255）
+ * @returns {string} 調整後のカラーコード
+ */
+function darkenColor(color, amount) {
+    const hex = color.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    r = Math.max(0, r - amount);
+    g = Math.max(0, g - amount);
+    b = Math.max(0, b - amount);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
