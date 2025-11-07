@@ -33,6 +33,7 @@
             <!-- タブナビゲーション -->
             <div class="tab-navigation">
                 <button class="tab-button active" onclick="switchTab('mapViewer', event)">🗺️ マップビューア</button>
+                <button class="tab-button" onclick="switchTab('objectCatalog', event)">📚 オブジェクトカタログ</button>
                 <button class="tab-button" onclick="switchTab('operations', event)">🚪 操作カタログ</button>
                 <button class="tab-button" onclick="switchTab('mapql', event)">🔍 MapQLクエリ</button>
             </div>
@@ -44,7 +45,6 @@
                     <div class="map-subtab-navigation">
                         <button class="map-subtab-button active" onclick="switchMapSubTab('map2D', event)">📍 2D マップ</button>
                         <button class="map-subtab-button" onclick="switchMapSubTab('map3D', event)">📦 3D マップ</button>
-                        <button class="map-subtab-button" onclick="switchMapSubTab('objectCatalog', event)">📚 オブジェクトカタログ</button>
                     </div>
 
                     <!-- サブタブコンテンツコンテナ -->
@@ -384,84 +384,82 @@
                             </div>
                         </div>
                         <!-- 3Dマップサブタブ終了 -->
-
-                        <!-- オブジェクトカタログサブタブ -->
-                        <div id="objectCatalog" class="map-subtab-content">
-                            <div class="object-catalog-split-container">
-                                <!-- 左パネル: オブジェクト一覧 -->
-                                <div class="object-catalog-left-panel" id="catalogLeftPanel">
-                                    <div class="object-catalog-header">
-                                        <h2>📚 オブジェクトカタログ</h2>
-                                        <p class="object-catalog-description">
-                                            マップ上に配置されたオブジェクトの一覧を表示します。
-                                        </p>
-                                    </div>
-
-                                    <div class="object-catalog-filters">
-                                        <label>
-                                            <span>カテゴリフィルタ:</span>
-                                            <select id="catalogCategoryFilter" class="catalog-filter-select">
-                                                <option value="all">すべて</option>
-                                                <option value="shelf">棚</option>
-                                                <option value="box">箱</option>
-                                                <option value="table">テーブル</option>
-                                                <option value="door">扉</option>
-                                                <option value="wall">壁</option>
-                                                <option value="none">未設定</option>
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <div class="object-catalog-list" id="objectCatalogList">
-                                        <p class="catalog-empty-message">オブジェクトが登録されていません。</p>
-                                    </div>
-                                </div>
-
-                                <!-- リサイザー -->
-                                <div class="object-catalog-resizer" id="catalogResizer"></div>
-
-                                <!-- 右パネル: 3Dプレビュー & 詳細編集 -->
-                                <div class="object-catalog-right-panel" id="catalogRightPanel">
-                                    <!-- 3Dプレビューセクション -->
-                                    <div class="catalog-preview-section">
-                                        <div class="catalog-preview-header">
-                                            <h3>3Dプレビュー</h3>
-                                        </div>
-                                        <div class="catalog-preview-container">
-                                            <canvas id="catalogPreviewCanvas" class="catalog-preview-canvas"></canvas>
-                                            <canvas id="catalogPreviewViewCube" class="catalog-preview-viewcube"></canvas>
-                                            <p id="catalogPreviewEmpty" class="catalog-preview-empty">
-                                                オブジェクトを選択してください
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <!-- 詳細編集パネル -->
-                                    <div class="catalog-detail-panel" id="catalogDetailPanel" style="display: none;">
-                                        <div class="catalog-detail-header">
-                                            <h3>詳細編集</h3>
-                                            <button class="catalog-detail-close" onclick="closeCatalogDetail()">
-                                                ✕
-                                            </button>
-                                        </div>
-                                        <div class="catalog-detail-content" id="catalogDetailContent">
-                                            <!-- 詳細編集フォームがここに動的生成される -->
-                                        </div>
-                                        <div class="catalog-detail-actions">
-                                            <button class="catalog-action-button cancel" onclick="cancelCatalogEdit()">
-                                                キャンセル
-                                            </button>
-                                            <button class="catalog-action-button save" onclick="saveCatalogEdit()">
-                                                保存
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- オブジェクトカタログサブタブ終了 -->
                     </div>
                     <!-- サブタブコンテンツコンテナ終了 -->
+                </div>
+            </div>
+
+            <div id="objectCatalog" class="tab-content">
+                <div class="object-catalog-split-container">
+                    <!-- 左パネル: オブジェクト一覧 -->
+                    <div class="object-catalog-left-panel" id="catalogLeftPanel">
+                        <div class="object-catalog-header">
+                            <h2>📚 オブジェクトカタログ</h2>
+                            <p class="object-catalog-description">
+                                マップ上に配置されたオブジェクトの一覧を表示します。
+                            </p>
+                        </div>
+
+                        <div class="object-catalog-filters">
+                            <label>
+                                <span>カテゴリフィルタ:</span>
+                                <select id="catalogCategoryFilter" class="catalog-filter-select">
+                                    <option value="all">すべて</option>
+                                    <option value="shelf">棚</option>
+                                    <option value="box">箱</option>
+                                    <option value="table">テーブル</option>
+                                    <option value="door">扉</option>
+                                    <option value="wall">壁</option>
+                                    <option value="none">未設定</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="object-catalog-list" id="objectCatalogList">
+                            <p class="catalog-empty-message">オブジェクトが登録されていません。</p>
+                        </div>
+                    </div>
+
+                    <!-- リサイザー -->
+                    <div class="object-catalog-resizer" id="catalogResizer"></div>
+
+                    <!-- 右パネル: 3Dプレビュー & 詳細編集 -->
+                    <div class="object-catalog-right-panel" id="catalogRightPanel">
+                        <!-- 3Dプレビューセクション -->
+                        <div class="catalog-preview-section">
+                            <div class="catalog-preview-header">
+                                <h3>3Dプレビュー</h3>
+                            </div>
+                            <div class="catalog-preview-container">
+                                <canvas id="catalogPreviewCanvas" class="catalog-preview-canvas"></canvas>
+                                <canvas id="catalogPreviewViewCube" class="catalog-preview-viewcube"></canvas>
+                                <p id="catalogPreviewEmpty" class="catalog-preview-empty">
+                                    オブジェクトを選択してください
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 詳細編集パネル -->
+                        <div class="catalog-detail-panel" id="catalogDetailPanel" style="display: none;">
+                            <div class="catalog-detail-header">
+                                <h3>詳細編集</h3>
+                                <button class="catalog-detail-close" onclick="closeCatalogDetail()">
+                                    ✕
+                                </button>
+                            </div>
+                            <div class="catalog-detail-content" id="catalogDetailContent">
+                                <!-- 詳細編集フォームがここに動的生成される -->
+                            </div>
+                            <div class="catalog-detail-actions">
+                                <button class="catalog-action-button cancel" onclick="cancelCatalogEdit()">
+                                    キャンセル
+                                </button>
+                                <button class="catalog-action-button save" onclick="saveCatalogEdit()">
+                                    保存
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -46,6 +46,16 @@ export function switchTab(tabId, event) {
             }
         }, 50);
     }
+
+    // オブジェクトカタログタブに切り替えた時の処理
+    if (tabId === 'objectCatalog') {
+        setTimeout(() => {
+            // カタログを更新（updateObjectCatalogが利用可能な場合）
+            if (window.updateObjectCatalog && typeof window.updateObjectCatalog === 'function') {
+                window.updateObjectCatalog();
+            }
+        }, 50);
+    }
 }
 
 /**
@@ -86,14 +96,6 @@ export function switchMapSubTab(subTabId, event) {
             // 3Dシーンを再描画（render3DSceneが利用可能な場合）
             if (window.render3DScene && typeof window.render3DScene === 'function') {
                 window.render3DScene();
-            }
-        }, 50);
-    } else if (subTabId === 'objectCatalog') {
-        // オブジェクトカタログに切り替えた時の処理
-        setTimeout(() => {
-            // カタログを更新（updateObjectCatalogが利用可能な場合）
-            if (window.updateObjectCatalog && typeof window.updateObjectCatalog === 'function') {
-                window.updateObjectCatalog();
             }
         }, 50);
     }
