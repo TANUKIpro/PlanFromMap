@@ -10,6 +10,7 @@
 import { mapState } from '../state/mapState.js';
 import { canvasToWorld } from '../utils/coordinates.js';
 import { updateCursorPosition } from './statusBar.js';
+import { isUIElement } from '../utils/dom.js';
 
 /**
  * すべてのイベントリスナーをセットアップする
@@ -440,36 +441,4 @@ function handleMouseLeave() {
  * @param {HTMLElement} element - チェックする要素
  * @returns {boolean} UIコントロール要素かどうか
  */
-function isUIElement(element) {
-    if (!element) return false;
-
-    // ボタン、入力、スライダーなどのUI要素
-    if (element.tagName === 'BUTTON' ||
-        element.tagName === 'INPUT' ||
-        element.tagName === 'SELECT' ||
-        element.tagName === 'TEXTAREA' ||
-        element.tagName === 'A') {
-        return true;
-    }
-
-    // パネルやツールバーなどのクラスをチェック
-    if (element.classList) {
-        if (element.classList.contains('panel') ||
-            element.classList.contains('tool-button') ||
-            element.classList.contains('drawing-tools-palette') ||
-            element.classList.contains('drawing-options') ||
-            element.classList.contains('layer-item') ||
-            element.classList.contains('layer-controls') ||
-            element.id === 'layersPanel' ||
-            element.id === 'drawingToolsPalette') {
-            return true;
-        }
-    }
-
-    // 親要素をチェック
-    if (element.parentElement && element.parentElement !== document.body) {
-        return isUIElement(element.parentElement);
-    }
-
-    return false;
-}
+// isUIElement は utils/dom.js からインポート
