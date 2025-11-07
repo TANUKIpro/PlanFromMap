@@ -198,6 +198,63 @@ export function handleYAMLFileSelect(event) {
 }
 
 /**
+ * マップファイル（PGM + YAML）を同時選択した際の処理
+ * @export
+ * @param {Event} event - ファイル選択イベント
+ */
+export function handleMapFilesSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    let pgmFile = null;
+    let yamlFile = null;
+
+    // ファイルを識別
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.endsWith('.pgm')) {
+            pgmFile = file;
+        } else if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) {
+            yamlFile = file;
+        }
+    }
+
+    // PGMファイルとYAMLファイルの両方が選択されているか確認
+    if (!pgmFile && !yamlFile) {
+        alert('PGMファイルまたはYAMLファイルを選択してください');
+        return;
+    }
+
+    // PGMファイルを読み込み（存在する場合）
+    if (pgmFile) {
+        console.log('handleMapFilesSelect: PGMファイルを読み込み中...', pgmFile.name);
+        loadPGMImageFile(pgmFile).then(() => {
+            // PGM読み込みが完了したら、YAMLファイルを読み込む（存在する場合）
+            if (yamlFile) {
+                console.log('handleMapFilesSelect: YAMLファイルを読み込み中...', yamlFile.name);
+                loadYAMLMetadataFile(yamlFile);
+            }
+        }).catch(error => {
+            console.error('handleMapFilesSelect: PGMファイルの読み込みエラー', error);
+            // エラーが発生してもYAMLファイルを読み込む
+            if (yamlFile) {
+                console.log('handleMapFilesSelect: YAMLファイルを読み込み中...', yamlFile.name);
+                loadYAMLMetadataFile(yamlFile);
+            }
+        });
+    } else if (yamlFile) {
+        // PGMファイルがない場合はYAMLファイルのみを読み込む
+        console.log('handleMapFilesSelect: YAMLファイルのみを読み込み中...', yamlFile.name);
+        loadYAMLMetadataFile(yamlFile);
+    }
+
+    // ファイル入力をリセット
+    event.target.value = '';
+}
+
+/**
  * バックエンドAPIで画像を最適化
  * @private
  * @param {File} file - 画像ファイル

@@ -101,3 +101,117 @@
 .control-button:active {
     transform: translateY(0);
 }
+
+/* ========================================
+   選択オブジェクト情報パネル
+   ======================================== */
+.view-3d-selected-info {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    overflow: hidden;
+}
+
+.view-3d-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+}
+
+.view-3d-info-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.view-3d-info-close {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.view-3d-info-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.view-3d-info-body {
+    padding: 16px;
+}
+
+.view-3d-info-field {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.view-3d-info-field:last-child {
+    margin-bottom: 0;
+}
+
+.view-3d-info-label {
+    font-size: 13px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.view-3d-info-value {
+    font-size: 13px;
+    color: #1a202c;
+    font-weight: 600;
+}
+
+.view-3d-info-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
+    background: #f7fafc;
+}
+
+.view-3d-info-button {
+    flex: 1;
+    padding: 8px 12px;
+    background: #ffffff;
+    color: #4a5568;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.view-3d-info-button:hover {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+}
+
+.view-3d-info-button.primary {
+    background: #667eea;
+    color: #ffffff;
+    border-color: #667eea;
+}
+
+.view-3d-info-button.primary:hover {
+    background: #5568d3;
+    border-color: #5568d3;
+}

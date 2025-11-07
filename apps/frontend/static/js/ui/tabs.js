@@ -4,6 +4,7 @@
  * @requires ../state/mapState.js - マップの状態管理
  * @exports switchTab - タブ切り替え関数
  * @exports switchMapSubTab - マップビューアのサブタブ切り替え関数
+ * @exports switchPropertyTab - オブジェクトプロパティパネルのタブ切り替え関数
  */
 
 import { mapState } from '../state/mapState.js';
@@ -98,5 +99,33 @@ export function switchMapSubTab(subTabId, event) {
                 window.render3DScene();
             }
         }, 50);
+    }
+}
+
+/**
+ * オブジェクトプロパティパネルのタブを切り替える
+ * @param {string} tabName - 切り替え先のタブ名（'basic' または 'robot'）
+ */
+export function switchPropertyTab(tabName) {
+    // すべてのタブボタンを非アクティブに
+    document.querySelectorAll('.property-tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // すべてのタブコンテンツを非アクティブに
+    document.querySelectorAll('.property-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // 選択されたタブボタンをアクティブに
+    const targetButton = document.querySelector(`.property-tab-button[data-tab="${tabName}"]`);
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+
+    // 選択されたタブコンテンツをアクティブに
+    const targetContent = document.getElementById(`propertyTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (targetContent) {
+        targetContent.classList.add('active');
     }
 }
