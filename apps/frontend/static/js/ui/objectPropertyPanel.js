@@ -43,12 +43,9 @@ import { initializePropertyPreview, renderPropertyPreview } from '../modules/thr
 // 初期化
 // ================
 
-// パネルの幅を管理する変数
-let panelWidth = 320;
-
 /**
  * プロパティパネルを初期化する
- * イベントリスナーを設定し、初期状態ではデフォルト表示
+ * イベントリスナーを設定し、初期状態では非表示にする
  *
  * @returns {void}
  */
@@ -59,82 +56,16 @@ export function initializePropertyPanel() {
         return;
     }
 
-    // CSS変数を初期化
-    updatePropertyPanelWidth(panelWidth);
+    // 初期状態では非表示
+    hidePropertyPanel();
 
     // イベントリスナーを設定
     setupEventListeners();
-
-    // リサイザーを初期化
-    initializeResizer();
 
     // プレビューを初期化
     initializePropertyPreview();
 
     console.log('オブジェクトプロパティパネルを初期化しました');
-}
-
-/**
- * パネル幅のCSS変数を更新
- *
- * @private
- * @param {number} width - パネルの幅（ピクセル）
- */
-function updatePropertyPanelWidth(width) {
-    document.documentElement.style.setProperty('--property-panel-width', `${width}px`);
-}
-
-/**
- * リサイザーを初期化する
- *
- * @private
- */
-function initializeResizer() {
-    const resizer = document.getElementById('propertyPanelResizer');
-    const panel = document.getElementById('objectPropertyPanel');
-
-    if (!resizer || !panel) return;
-
-    let startX = 0;
-    let startWidth = 0;
-
-    const handleMouseMove = (e) => {
-        const deltaX = startX - e.clientX;
-        const newWidth = Math.max(250, Math.min(600, startWidth + deltaX));
-
-        panel.style.width = `${newWidth}px`;
-        panelWidth = newWidth;
-        updatePropertyPanelWidth(newWidth);
-        e.preventDefault();
-    };
-
-    const handleMouseUp = (e) => {
-        resizer.classList.remove('resizing');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-
-        // イベントリスナーを削除
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        e.preventDefault();
-    };
-
-    const handleMouseDown = (e) => {
-        startX = e.clientX;
-        startWidth = panel.offsetWidth;
-        resizer.classList.add('resizing');
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-
-        // イベントリスナーを動的に追加
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    resizer.addEventListener('mousedown', handleMouseDown);
 }
 
 /**
@@ -203,27 +134,7 @@ function setupEventListeners() {
 // ================
 
 /**
- * プロパティパネル全体の表示・非表示を切り替える
- *
- * @param {boolean} visible - 表示する場合true
- * @returns {void}
- *
- * @example
- * togglePropertyPanelVisibility(true);
- */
-export function togglePropertyPanelVisibility(visible) {
-    const panel = document.getElementById('objectPropertyPanel');
-    if (!panel) return;
-
-    if (visible) {
-        panel.classList.remove('hidden');
-    } else {
-        panel.classList.add('hidden');
-    }
-}
-
-/**
- * プロパティパネルを表示する（選択時）
+ * プロパティパネルを表示する
  *
  * @param {string} rectangleId - 表示する四角形のID
  * @returns {void}
@@ -238,31 +149,34 @@ export function showPropertyPanel(rectangleId) {
     const rectangle = getRectangleById(rectangleId);
     if (!rectangle) {
         console.error(`showPropertyPanel: 四角形が見つかりません: ${rectangleId}`);
+        hidePropertyPanel();
         return;
     }
+
+    // パネルを表示
+    panel.style.display = 'block';
+    panel.classList.add('visible');
 
     // パネルの内容を更新
     updatePropertyPanel(rectangleId);
 }
 
 /**
- * プロパティパネルを非表示にする（選択解除時）
- * 注: パネル全体は非表示にせず、内容のみクリア
+ * プロパティパネルを非表示にする
  *
  * @returns {void}
  */
 export function hidePropertyPanel() {
-    // パネル自体は常に表示されているので、何もしない
-    // 選択情報のみクリア
-    const infoElement = document.getElementById('selectedObjectInfo');
-    if (infoElement) {
-        infoElement.textContent = '選択: -';
-    }
+    const panel = document.getElementById('objectPropertyPanel');
+    if (!panel) return;
+
+    panel.style.display = 'none';
+    panel.classList.remove('visible');
 }
 
 /**
  * 現在選択中の四角形でパネルを更新する
- * 選択されていない場合は内容をクリア
+ * 選択されていない場合は非表示にする
  *
  * @returns {void}
  */

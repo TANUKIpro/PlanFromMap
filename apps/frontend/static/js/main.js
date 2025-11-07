@@ -168,8 +168,7 @@ import {
     showPropertyPanel,
     hidePropertyPanel,
     updatePropertyPanel,
-    refreshPropertyPanel,
-    togglePropertyPanelVisibility
+    refreshPropertyPanel
 } from './ui/objectPropertyPanel.js';
 
 import {
@@ -331,7 +330,6 @@ window.showPropertyPanel = showPropertyPanel;
 window.hidePropertyPanel = hidePropertyPanel;
 window.updatePropertyPanel = updatePropertyPanel;
 window.refreshPropertyPanel = refreshPropertyPanel;
-window.togglePropertyPanelVisibility = togglePropertyPanelVisibility;
 
 // 3D描画
 window.initialize3DView = initialize3DView;
@@ -354,11 +352,6 @@ window.updateCursorPosition = updateCursorPosition;
 window.updateSelectedLayer = updateSelectedLayer;
 window.updateMetadataStatus = updateMetadataStatus;
 window.toggleStatusBar = toggleStatusBar;
-
-// オブジェクトプロパティパネル制御のためのヘルパー関数
-window.toggleObjectPropertyPanel = function(visible) {
-    togglePropertyPanelVisibility(visible);
-};
 
 // =====================================
 // 初期化処理
