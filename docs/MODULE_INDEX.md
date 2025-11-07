@@ -489,6 +489,6 @@ After (リファクタリング後):
 ## 関連ドキュメント
 
 - [AI_GUIDELINES.md](./AI_GUIDELINES.md) - 生成AI向け開発ガイドライン
-- [README.md](./README.md) - プロジェクト概要
-- [MAP-EDITOR.md](./docs/MAP-EDITOR.md) - 2Dマップエディタ - オブジェクトプロパティ管理
-- [OPERATION-CATALOG.md](./docs/OPERATION-CATALOG.md) - 操作カタログ仕様
+- [README.md](../README.md) - プロジェクト概要
+- [MAP-EDITOR.md](./MAP-EDITOR.md) - 2Dマップエディタ - オブジェクトプロパティ管理
+- [OPERATION-CATALOG.md](./OPERATION-CATALOG.md) - 操作カタログ仕様

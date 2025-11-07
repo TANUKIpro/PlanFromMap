@@ -757,5 +757,5 @@ function draw3DModel(ctx, coords3D, color, objectType, frontDirection, propertie
 
 - [OPERATION-CATALOG.md](./OPERATION-CATALOG.md) - 操作カタログ仕様
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - システムアーキテクチャ
-- [MODULE_INDEX.md](../MODULE_INDEX.md) - モジュール索引
-- [AI_GUIDELINES.md](../AI_GUIDELINES.md) - 開発ガイドライン
+- [MODULE_INDEX.md](./MODULE_INDEX.md) - モジュール索引
+- [AI_GUIDELINES.md](./AI_GUIDELINES.md) - 開発ガイドライン

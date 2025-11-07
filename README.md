@@ -42,15 +42,56 @@ RoboCup@Home DSPL向けの意味地図プラットフォーム。HSRが効率的
 
 ### クイックスタート
 
-#### Pythonでの起動（推奨・最速）
+#### uvでの起動（推奨・最新）
 
-ローカルPCで素早く動作を確認したい場合は、Pythonコマンドで起動できます。
+uvは高速なPythonパッケージマネージャーです。最新の依存関係管理を使用します。
 
 ##### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/your-org/semantic-map-platform.git
-cd semantic-map-platform
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
+```
+
+##### 2. uvのインストール
+
+```bash
+# Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+##### 3. 依存関係のインストール
+
+```bash
+uv sync
+```
+
+##### 4. サーバーの起動
+
+```bash
+uv run python server.py
+```
+
+##### 5. ブラウザでアクセス
+
+```
+http://localhost:5173
+```
+
+バックエンドAPI(port:3000)とフロントエンド(port:5173)が起動します。
+
+#### pipでの起動（従来の方法）
+
+uvを使用しない場合は、従来のpipでも起動できます。
+
+##### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
 ```
 
 ##### 2. Python依存関係のインストール
@@ -71,52 +112,7 @@ python server.py
 http://localhost:5173
 ```
 
-バックエンドAPI(port:3000)とフロントエンド(port:5173)が起動します。
-
-詳細な手順は [QUICKSTART.md](QUICKSTART.md) を参照してください。
-
-#### Node.jsでの起動（フル機能版）
-
-##### 1. リポジトリのクローン
-
-```bash
-git clone https://github.com/your-org/semantic-map-platform.git
-cd semantic-map-platform
-```
-
-##### 2. 依存関係のインストール
-
-```bash
-# Node.js依存関係
-npm install
-
-# Python依存関係
-pip install -r requirements.txt
-
-# 開発環境のセットアップ
-npm run setup
-```
-
-##### 3. 開発サーバーの起動
-
-```bash
-# すべてのサービスを起動
-npm run dev
-
-# 個別起動
-npm run dev:backend   # APIサーバー (http://localhost:3000)
-npm run dev:frontend  # Webアプリ (http://localhost:5173)
-```
-
-##### 4. 初期データのインポート
-
-```bash
-# サンプル地図データのロード
-npm run seed:maps
-
-# 操作カタログのプリセット登録
-npm run seed:catalog
-```
+詳細な手順は [QUICKSTART.md](docs/QUICKSTART.md) を参照してください。
 
 ### プロジェクト構造
 
@@ -151,8 +147,8 @@ semantic-map-platform/
 - [2Dマップエディタ - オブジェクトプロパティ管理](docs/MAP-EDITOR.md) - 家具・オブジェクト情報の付与と3D表現
 
 ### 開発者向け
-- [生成AI向けガイドライン](AI_GUIDELINES.md) - 生成AIと協働開発するための完全ガイド
-- [モジュール索引](MODULE_INDEX.md) - 全モジュールの詳細と依存関係
+- [生成AI向けガイドライン](docs/AI_GUIDELINES.md) - 生成AIと協働開発するための完全ガイド
+- [モジュール索引](docs/MODULE_INDEX.md) - 全モジュールの詳細と依存関係
 
 #### システム設計
 - [アーキテクチャ設計](docs/ARCHITECTURE.md)
@@ -259,15 +255,56 @@ This platform pre-defines operation specifications such as "how to open doors", 
 
 ### Quick Start
 
-#### Python Launch (Recommended - Fastest)
+#### uv Launch (Recommended - Modern)
 
-For quick testing on a local PC, you can launch using Python commands.
+uv is a fast Python package manager. It uses the latest dependency management.
 
 ##### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/semantic-map-platform.git
-cd semantic-map-platform
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
+```
+
+##### 2. Install uv
+
+```bash
+# Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+##### 3. Install dependencies
+
+```bash
+uv sync
+```
+
+##### 4. Start the server
+
+```bash
+uv run python server.py
+```
+
+##### 5. Access in browser
+
+```
+http://localhost:5173
+```
+
+This will start both the backend API (port:3000) and frontend (port:5173).
+
+#### pip Launch (Traditional Method)
+
+If you don't want to use uv, you can use traditional pip.
+
+##### 1. Clone the repository
+
+```bash
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
 ```
 
 ##### 2. Install Python dependencies
@@ -288,52 +325,7 @@ python server.py
 http://localhost:5173
 ```
 
-This will start both the backend API (port:3000) and frontend (port:5173).
-
-For detailed instructions, see [QUICKSTART.md](QUICKSTART.md).
-
-#### Node.js Launch (Full Features)
-
-##### 1. Clone the repository
-
-```bash
-git clone https://github.com/your-org/semantic-map-platform.git
-cd semantic-map-platform
-```
-
-##### 2. Install dependencies
-
-```bash
-# Node.js dependencies
-npm install
-
-# Python dependencies
-pip install -r requirements.txt
-
-# Setup development environment
-npm run setup
-```
-
-##### 3. Start development server
-
-```bash
-# Start all services
-npm run dev
-
-# Individual launch
-npm run dev:backend   # API server (http://localhost:3000)
-npm run dev:frontend  # Web app (http://localhost:5173)
-```
-
-##### 4. Import initial data
-
-```bash
-# Load sample map data
-npm run seed:maps
-
-# Register operation catalog presets
-npm run seed:catalog
-```
+For detailed instructions, see [QUICKSTART.md](docs/QUICKSTART.md).
 
 ### Project Structure
 
@@ -365,8 +357,8 @@ semantic-map-platform/
 ### Documentation
 
 #### For Developers
-- [AI Guidelines](AI_GUIDELINES.md) - Complete guide for collaborative development with generative AI
-- [Module Index](MODULE_INDEX.md) - Detailed information and dependencies of all modules
+- [AI Guidelines](docs/AI_GUIDELINES.md) - Complete guide for collaborative development with generative AI
+- [Module Index](docs/MODULE_INDEX.md) - Detailed information and dependencies of all modules
 
 #### System Design
 - [Architecture Design](docs/ARCHITECTURE.md)
@@ -374,24 +366,23 @@ semantic-map-platform/
 
 ### Main Commands
 
-#### Python Version (Simple & Fast)
+#### Using uv (Recommended)
 
 | Command | Description |
 |---------|-------------|
+| `uv sync` | Install/update dependencies |
+| `uv run python server.py` | Start server (backend + frontend) |
+| `uv run python apps/backend/server.py` | Start backend only |
+| `uv run python apps/frontend/server.py` | Start frontend only |
+
+#### Using pip (Traditional)
+
+| Command | Description |
+|---------|-------------|
+| `pip install -r requirements.txt` | Install dependencies |
 | `python server.py` | Start server (backend + frontend) |
 | `python apps/backend/server.py` | Start backend only |
 | `python apps/frontend/server.py` | Start frontend only |
-
-#### Node.js Version (Full Features)
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run test` | Run tests |
-| `npm run lint` | Code quality check |
-| `npm run catalog:add` | Interactively add operation specs |
-| `npm run map:import` | Import occupancy grid map |
 
 ### HSR Integration
 

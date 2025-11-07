@@ -428,4 +428,4 @@ addLayer(newLayer);
 ## 関連ドキュメント
 
 - [MODULE_INDEX.md](./MODULE_INDEX.md) - モジュール詳細
-- [README.md](./README.md) - プロジェクト概要
+- [README.md](../README.md) - プロジェクト概要
