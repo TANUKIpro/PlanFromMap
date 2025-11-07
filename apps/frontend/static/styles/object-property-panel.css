@@ -14,22 +14,43 @@
 .object-property-panel {
     position: fixed;
     top: 60px;
-    right: 20px;
+    right: 0;
+    bottom: 0;
     width: 320px;
-    max-height: calc(100vh - 80px);
+    min-width: 250px;
+    max-width: 600px;
     background: #ffffff;
-    border: 1px solid #d0d0d0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-left: 1px solid #d0d0d0;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
     overflow-x: hidden;
-    display: none;
+    display: block;
     z-index: 1000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-.object-property-panel.visible {
-    display: block;
+.object-property-panel.hidden {
+    display: none;
+}
+
+/* リサイザー */
+.property-panel-resizer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 1001;
+}
+
+.property-panel-resizer:hover {
+    background: #667eea;
+}
+
+.property-panel-resizer.resizing {
+    background: #667eea;
 }
 
 /* パネルヘッダー */
@@ -314,15 +335,13 @@
 @media (max-width: 768px) {
     .object-property-panel {
         width: 280px;
-        right: 10px;
+        right: 0;
         top: 50px;
-        max-height: calc(100vh - 60px);
     }
 }
 
 @media (max-height: 600px) {
     .object-property-panel {
-        max-height: calc(100vh - 40px);
         top: 40px;
     }
 
@@ -338,17 +357,20 @@
 /* アニメーション */
 @keyframes slideIn {
     from {
-        opacity: 0;
-        transform: translateX(20px);
+        transform: translateX(100%);
     }
     to {
-        opacity: 1;
         transform: translateX(0);
     }
 }
 
-.object-property-panel.visible {
-    animation: slideIn 0.3s ease-out;
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(100%);
+    }
 }
 
 /* 空の状態 */

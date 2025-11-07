@@ -7,9 +7,9 @@
    レイヤーパネル
    ======================================== */
 .layers-panel {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
-    right: 0;
+    right: var(--property-panel-width, 320px);
     width: 280px;
     max-height: 400px;
     background: rgba(255, 255, 255, 0.95);
@@ -17,14 +17,14 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    z-index: 10;
+    z-index: 999;
     overflow: visible;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, right 0.3s ease;
 }
 
 /* 隠れた状態 */
 .layers-panel.hidden {
-    transform: translateX(100%);
+    transform: translateX(calc(100% + var(--property-panel-width, 320px)));
 }
 
 /* トグルボタン */
