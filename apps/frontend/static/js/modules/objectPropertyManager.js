@@ -380,8 +380,9 @@ export function get3DCoordinates(rectangleId) {
 
     // マップの解像度と原点を取得
     const resolution = mapState.metadata?.resolution || 0.05; // m/pixel
-    const originX = mapState.metadata?.origin?.x || 0;
-    const originY = mapState.metadata?.origin?.y || 0;
+    // metadata.originは配列形式 [x, y, theta]
+    const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+    const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
 
     // 画像の高さ（Y軸反転のため必要）
     const imageHeight = mapState.image?.height || 0;
