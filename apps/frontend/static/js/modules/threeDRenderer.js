@@ -219,8 +219,9 @@ function drawMapTexture(ctx, centerX, centerY) {
     const bounds = view3DState.mapBounds;
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
-    const originX = mapState.metadata?.origin?.x || 0;
-    const originY = mapState.metadata?.origin?.y || 0;
+    // metadata.originは配列形式 [x, y, theta]
+    const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+    const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
 
     // 有効領域の実世界座標を計算
     // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
@@ -351,8 +352,9 @@ function drawGrid(ctx, centerX, centerY) {
     const image = mapState.image;
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
-    const originX = mapState.metadata?.origin?.x || 0;
-    const originY = mapState.metadata?.origin?.y || 0;
+    // metadata.originは配列形式 [x, y, theta]
+    const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+    const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
 
     // 有効領域の実世界座標を計算
     // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
@@ -1140,8 +1142,9 @@ function worldToIso(x, y, z) {
 
     if (view3DState.mapBounds && mapState.image) {
         const resolution = mapState.metadata?.resolution || 0.05;
-        const originX = mapState.metadata?.origin?.x || 0;
-        const originY = mapState.metadata?.origin?.y || 0;
+        // metadata.originは配列形式 [x, y, theta]
+        const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+        const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
         const imageHeight = mapState.image.height;
 
         // 有効領域の中心座標（実世界座標）
