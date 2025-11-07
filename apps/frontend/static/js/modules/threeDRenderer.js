@@ -2235,14 +2235,14 @@ export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX
 function applyRotation(localX, localY, rotation) {
     if (!rotation) return { x: localX, y: localY };
 
-    // 回転を適用（反時計回り）
+    // 標準的な2D回転行列を適用（反時計回り）
     const rad = rotation * Math.PI / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
 
     return {
-        x: localX * cos + localY * sin,  // Y軸が反転しているため符号を調整
-        y: -localX * sin + localY * cos
+        x: localX * cos - localY * sin,
+        y: localX * sin + localY * cos
     };
 }
 
@@ -2261,7 +2261,7 @@ export function worldToPreviewIso(x, y, z) {
     const rotY = x * Math.sin(rad) + y * Math.cos(rad);
 
     return {
-        x: rotX,  // X軸反転を削除（グリッドとオブジェクトの座標系を一致させる）
+        x: -rotX,  // X軸を反転（3Dマップと同じ座標系）
         y: z - rotY * Math.sin(tiltRad)
     };
 }
