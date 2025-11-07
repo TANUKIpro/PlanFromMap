@@ -115,7 +115,6 @@ import {
 
 // API通信
 import {
-    loadStats,
     loadOperations,
     executeQuery
 } from './modules/apiClient.js';
@@ -286,7 +285,6 @@ window.redo = redo;
 window.saveToHistory = saveToHistory;
 
 // API通信
-window.loadStats = loadStats;
 window.loadOperations = loadOperations;
 window.executeQuery = executeQuery;
 
@@ -400,9 +398,6 @@ function initializeApp() {
  */
 async function onPageLoad() {
     console.log('Page loaded, fetching initial data...');
-
-    // 統計情報を読み込み
-    loadStats();
 
     // 操作カタログを読み込み
     loadOperations();

@@ -338,7 +338,7 @@ export function addLayer(name) {
 | viewportControl.js | ズーム/パン | `zoomIn`, `zoomOut`, `resetView` | mapState, layerManager |
 | historyManager.js | アンドゥ/リドゥ | `undo`, `redo`, `saveToHistory` | mapState |
 | profileManager.js | プロファイル管理 | `saveProfile`, `loadProfile`, `getLastProfile` | mapState, toast |
-| apiClient.js | API 通信 | `loadStats`, `loadOperations`, `executeQuery` | config |
+| apiClient.js | API 通信 | `loadOperations`, `executeQuery` | config |
 
 ### ユーティリティ
 

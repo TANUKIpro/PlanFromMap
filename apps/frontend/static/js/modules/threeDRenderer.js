@@ -399,8 +399,8 @@ function drawGrid(ctx, centerX, centerY) {
 }
 
 /**
- * 3D空間に原点マーカーを描画
- * 床面(z=0)に原点(0,0,0)を赤い十字と矢印で表示
+ * 3D空間に原点マーカーを床面テクスチャとして描画
+ * マップ画像と同じように床面（Z=0）に原点マーカーを貼り付けます
  *
  * @private
  */
@@ -409,94 +409,147 @@ function draw3DOrigin(ctx, centerX, centerY) {
         return;
     }
 
-    // 原点の3D座標
-    const originX = 0;
-    const originY = 0;
-    const originZ = 0;
-
-    // 原点を等角投影
-    const originIso = worldToIso(originX, originY, originZ);
-    const screenX = centerX + originIso.x * view3DState.scale;
-    const screenY = centerY - originIso.y * view3DState.scale;
-
     ctx.save();
 
-    // 赤い十字を描画
-    ctx.strokeStyle = 'rgba(231, 76, 60, 0.9)';
-    ctx.lineWidth = 3;
+    // 原点の3D座標（床面）
+    const originX = 0;
+    const originY = 0;
+    const originZ = 0; // 床面
 
-    const crossSize = 15;
-    ctx.beginPath();
-    ctx.moveTo(screenX - crossSize, screenY);
-    ctx.lineTo(screenX + crossSize, screenY);
-    ctx.moveTo(screenX, screenY - crossSize);
-    ctx.lineTo(screenX, screenY + crossSize);
-    ctx.stroke();
+    // 十字のサイズ（メートル単位）
+    const crossSizeMeters = 0.15; // 15cm
+    const lineWidthMeters = 0.02; // 2cm
 
-    // 方向矢印を描画（theta方向）
+    // 赤い十字を床面に描画（4本の細い四角形）
+    const crossColor = 'rgba(231, 76, 60, 0.9)';
+
+    // 水平線（左）
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX - crossSizeMeters, originY - lineWidthMeters / 2, originZ,
+        originX, originY + lineWidthMeters / 2, originZ,
+        crossColor);
+
+    // 水平線（右）
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX, originY - lineWidthMeters / 2, originZ,
+        originX + crossSizeMeters, originY + lineWidthMeters / 2, originZ,
+        crossColor);
+
+    // 垂直線（上）
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX - lineWidthMeters / 2, originY, originZ,
+        originX + lineWidthMeters / 2, originY + crossSizeMeters, originZ,
+        crossColor);
+
+    // 垂直線（下）
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX - lineWidthMeters / 2, originY - crossSizeMeters, originZ,
+        originX + lineWidthMeters / 2, originY, originZ,
+        crossColor);
+
+    // 方向矢印を床面に描画（theta方向）
     const theta = Array.isArray(mapState.metadata.origin) && mapState.metadata.origin.length >= 3
         ? mapState.metadata.origin[2]
         : 0;
 
     // 矢印の長さ（3D空間での実寸）
     const arrowLengthMeters = 0.5; // 50cm
+    const arrowWidthMeters = 0.015; // 1.5cm
 
     // 矢印の終点（3D座標）
     const arrowEndX = originX + Math.cos(theta) * arrowLengthMeters;
     const arrowEndY = originY + Math.sin(theta) * arrowLengthMeters;
     const arrowEndZ = originZ;
 
-    // 等角投影
-    const arrowEndIso = worldToIso(arrowEndX, arrowEndY, arrowEndZ);
-    const arrowEndScreenX = centerX + arrowEndIso.x * view3DState.scale;
-    const arrowEndScreenY = centerY - arrowEndIso.y * view3DState.scale;
+    // 矢印の軸（細い四角形）
+    const perpX = -Math.sin(theta) * arrowWidthMeters / 2;
+    const perpY = Math.cos(theta) * arrowWidthMeters / 2;
 
-    // 矢印の線
-    ctx.lineWidth = 2;
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX + perpX, originY + perpY, originZ,
+        arrowEndX + perpX, arrowEndY + perpY, originZ,
+        crossColor);
+    drawFloorRectangle(ctx, centerX, centerY,
+        arrowEndX + perpX, arrowEndY + perpY, originZ,
+        arrowEndX - perpX, arrowEndY - perpY, originZ,
+        crossColor);
+    drawFloorRectangle(ctx, centerX, centerY,
+        arrowEndX - perpX, arrowEndY - perpY, originZ,
+        originX - perpX, originY - perpY, originZ,
+        crossColor);
+    drawFloorRectangle(ctx, centerX, centerY,
+        originX - perpX, originY - perpY, originZ,
+        originX + perpX, originY + perpY, originZ,
+        crossColor);
+
+    // 矢印の先端（三角形）
+    const headLengthMeters = 0.1; // 10cm
+    const headWidthMeters = 0.08; // 8cm
+
+    // 矢印の先端の3点
+    const tipX = arrowEndX + Math.cos(theta) * headLengthMeters;
+    const tipY = arrowEndY + Math.sin(theta) * headLengthMeters;
+
+    const leftX = arrowEndX + Math.cos(theta + Math.PI * 2/3) * headWidthMeters;
+    const leftY = arrowEndY + Math.sin(theta + Math.PI * 2/3) * headWidthMeters;
+
+    const rightX = arrowEndX + Math.cos(theta - Math.PI * 2/3) * headWidthMeters;
+    const rightY = arrowEndY + Math.sin(theta - Math.PI * 2/3) * headWidthMeters;
+
+    // 三角形を床面に描画
+    const tip = worldToIso(tipX, tipY, originZ);
+    const left = worldToIso(leftX, leftY, originZ);
+    const right = worldToIso(rightX, rightY, originZ);
+
+    ctx.fillStyle = crossColor;
     ctx.beginPath();
-    ctx.moveTo(screenX, screenY);
-    ctx.lineTo(arrowEndScreenX, arrowEndScreenY);
-    ctx.stroke();
-
-    // 矢印の先端
-    const dx = arrowEndScreenX - screenX;
-    const dy = arrowEndScreenY - screenY;
-    const angle = Math.atan2(dy, dx);
-
-    const headLength = 10;
-    ctx.beginPath();
-    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
-    ctx.lineTo(
-        arrowEndScreenX - headLength * Math.cos(angle - Math.PI / 6),
-        arrowEndScreenY - headLength * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.moveTo(arrowEndScreenX, arrowEndScreenY);
-    ctx.lineTo(
-        arrowEndScreenX - headLength * Math.cos(angle + Math.PI / 6),
-        arrowEndScreenY - headLength * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.stroke();
-
-    // ラベルを描画
-    const label = '原点 (0,0)';
-    ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif';
-    const labelPadding = 4;
-    const textWidth = ctx.measureText(label).width;
-    const labelX = screenX + 18;
-    const labelY = screenY + 18;
-
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.9)';
-    ctx.fillRect(
-        labelX - labelPadding,
-        labelY - labelPadding - 12,
-        textWidth + labelPadding * 2,
-        18
-    );
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, labelX, labelY);
+    ctx.moveTo(centerX + tip.x * view3DState.scale, centerY - tip.y * view3DState.scale);
+    ctx.lineTo(centerX + left.x * view3DState.scale, centerY - left.y * view3DState.scale);
+    ctx.lineTo(centerX + right.x * view3DState.scale, centerY - right.y * view3DState.scale);
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
+}
+
+/**
+ * 床面に四角形を描画するヘルパー関数
+ *
+ * @private
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {number} centerX - 画面中心X
+ * @param {number} centerY - 画面中心Y
+ * @param {number} x1 - 開始X座標（メートル）
+ * @param {number} y1 - 開始Y座標（メートル）
+ * @param {number} z1 - 開始Z座標（メートル）
+ * @param {number} x2 - 終了X座標（メートル）
+ * @param {number} y2 - 終了Y座標（メートル）
+ * @param {number} z2 - 終了Z座標（メートル）
+ * @param {string} color - 塗りつぶし色
+ */
+function drawFloorRectangle(ctx, centerX, centerY, x1, y1, z1, x2, y2, z2, color) {
+    // 四角形の4つの角を計算
+    const corners = [
+        worldToIso(x1, y1, z1),
+        worldToIso(x2, y1, z1),
+        worldToIso(x2, y2, z2),
+        worldToIso(x1, y2, z2)
+    ];
+
+    const screenCorners = corners.map(v => ({
+        x: centerX + v.x * view3DState.scale,
+        y: centerY - v.y * view3DState.scale
+    }));
+
+    // 四角形を描画
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
+    ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
+    ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
+    ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+    ctx.closePath();
+    ctx.fill();
 }
 
 /**

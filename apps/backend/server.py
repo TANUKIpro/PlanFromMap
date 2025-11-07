@@ -204,23 +204,6 @@ def mapql_query():
 
 
 # ============================================
-# 統計情報API
-# ============================================
-@app.route('/api/stats', methods=['GET'])
-def get_stats():
-    """統計情報を取得"""
-    return jsonify({
-        "operations_count": len(SAMPLE_OPERATIONS),
-        "maps_count": len(SAMPLE_MAPS),
-        "operation_types": {
-            "door": len([op for op in SAMPLE_OPERATIONS if op['type'] == 'door']),
-            "drawer": len([op for op in SAMPLE_OPERATIONS if op['type'] == 'drawer']),
-            "appliance": len([op for op in SAMPLE_OPERATIONS if op['type'] == 'appliance'])
-        }
-    })
-
-
-# ============================================
 # 画像最適化API
 # ============================================
 @app.route('/api/optimize-image', methods=['POST'])
@@ -304,7 +287,6 @@ if __name__ == '__main__':
     print("  - GET  /api/maps")
     print("  - GET  /api/maps/<id>")
     print("  - POST /api/mapql/query")
-    print("  - GET  /api/stats")
     print("  - POST /api/optimize-image")
     print()
     print("=" * 60)
