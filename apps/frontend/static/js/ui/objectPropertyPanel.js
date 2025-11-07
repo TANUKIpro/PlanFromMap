@@ -95,24 +95,10 @@ function initializeResizer() {
 
     if (!resizer || !panel) return;
 
-    let isResizing = false;
     let startX = 0;
     let startWidth = 0;
 
-    const handleMouseDown = (e) => {
-        isResizing = true;
-        startX = e.clientX;
-        startWidth = panel.offsetWidth;
-        resizer.classList.add('resizing');
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
     const handleMouseMove = (e) => {
-        if (!isResizing) return;
-
         const deltaX = startX - e.clientX;
         const newWidth = Math.max(250, Math.min(600, startWidth + deltaX));
 
@@ -123,18 +109,32 @@ function initializeResizer() {
     };
 
     const handleMouseUp = (e) => {
-        if (isResizing) {
-            isResizing = false;
-            resizer.classList.remove('resizing');
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            e.preventDefault();
-        }
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        // イベントリスナーを削除
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        e.preventDefault();
+    };
+
+    const handleMouseDown = (e) => {
+        startX = e.clientX;
+        startWidth = panel.offsetWidth;
+        resizer.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        // イベントリスナーを動的に追加
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        e.preventDefault();
+        e.stopPropagation();
     };
 
     resizer.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
 }
 
 /**

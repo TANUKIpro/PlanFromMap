@@ -8,7 +8,7 @@
    ======================================== */
 .layers-panel {
     position: fixed;
-    bottom: 20px;
+    bottom: 44px; /* ステータスバー(24px) + マージン(20px) */
     right: var(--property-panel-width, 320px);
     width: 280px;
     max-height: 400px;
@@ -31,7 +31,7 @@
 .layers-panel-toggle {
     position: fixed;
     right: calc(var(--property-panel-width, 320px) - 4px);
-    bottom: 220px;
+    bottom: 244px; /* ステータスバー(24px) + マージン(20px) + レイヤーパネル中央(200px) */
     background: rgba(255, 255, 255, 0.95);
     border: none;
     border-radius: 8px 0 0 8px;
@@ -54,12 +54,6 @@
     width: 20px;
     height: 20px;
     display: block;
-    transition: transform 0.3s ease;
-}
-
-/* レイヤーパネルが表示されている時、アイコンを左向きに */
-.layers-panel:not(.hidden) ~ .layers-panel-toggle .toggle-arrow-icon {
-    transform: rotate(180deg);
 }
 
 /* 折りたたみ状態（廃止） */

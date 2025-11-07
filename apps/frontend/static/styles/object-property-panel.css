@@ -15,7 +15,7 @@
     position: fixed;
     top: 60px;
     right: 0;
-    bottom: 0;
+    bottom: 24px; /* ステータスバーの高さ分空ける */
     width: 320px;
     min-width: 250px;
     max-width: 600px;
