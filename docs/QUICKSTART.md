@@ -1,19 +1,68 @@
 # クイックスタートガイド
 
-Pythonコマンドでローカル環境にてサーバを起動する手順です。
+ローカル環境にてサーバを起動する手順です。
 
 ## 前提条件
 
 - Python 3.8以上
-- pip (Pythonパッケージマネージャー)
+- uv (推奨) または pip (Pythonパッケージマネージャー)
 
-## セットアップ手順
+## 方法1: uvを使用（推奨・最新）
+
+uvは高速なPythonパッケージマネージャーで、依存関係の管理が簡単です。
 
 ### 1. リポジトリのクローン
 
 ```bash
-git clone <repository-url>
-cd semantic-map-platform
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
+```
+
+### 2. uvのインストール
+
+```bash
+# Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### 3. 依存関係のインストール
+
+```bash
+uv sync
+```
+
+このコマンドで`pyproject.toml`と`uv.lock`に基づいて依存関係がインストールされます。
+
+### 4. サーバーの起動
+
+```bash
+uv run python server.py
+```
+
+このコマンドで以下が起動します:
+- バックエンドAPI: http://localhost:3000
+- フロントエンドUI: http://localhost:5173
+
+### 5. ブラウザでアクセス
+
+ブラウザで以下のURLにアクセスしてください:
+
+```
+http://localhost:5173
+```
+
+## 方法2: pipを使用（従来の方法）
+
+uvを使用しない場合は、従来のpipでも起動できます。
+
+### 1. リポジトリのクローン
+
+```bash
+git clone https://github.com/TANUKIpro/PlanFromMap.git
+cd PlanFromMap
 ```
 
 ### 2. Python依存関係のインストール
