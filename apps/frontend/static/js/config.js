@@ -101,6 +101,15 @@ export const RECTANGLE_DEFAULTS = {
     /** ハンドルのサイズ（ピクセル） */
     HANDLE_SIZE: 10,
 
+    /** 回転ハンドルのオフセット（ピクセル） */
+    ROTATE_HANDLE_OFFSET: 30,
+
+    /** ドラッグ判定の閾値（ピクセル） */
+    DRAG_THRESHOLD: 3,
+
+    /** UI要素のY方向オフセット（ピクセル） */
+    UI_OFFSET_Y: 30,
+
     /** 四角形の線の太さ */
     STROKE_WIDTH: 2,
 

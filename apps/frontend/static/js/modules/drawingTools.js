@@ -17,6 +17,11 @@
  */
 
 import { mapState } from '../state/mapState.js';
+import {
+    canvasToImagePixel as canvasToImagePixelUtil,
+    imagePixelToCanvas as imagePixelToCanvasUtil
+} from '../utils/coordinates.js';
+import { isUIElement } from '../utils/dom.js';
 
 /**
  * キャンバス座標をマップ画像ピクセル座標に変換
@@ -26,22 +31,8 @@ import { mapState } from '../state/mapState.js';
  * @returns {{x: number, y: number}} 画像ピクセル座標
  */
 export function canvasToImagePixel(canvasX, canvasY) {
-    if (!mapState.image) return {x: canvasX, y: canvasY};
-
     const container = document.getElementById('mapContainer');
-    const scaledWidth = mapState.image.width * mapState.scale;
-    const scaledHeight = mapState.image.height * mapState.scale;
-
-    const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
-    const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
-
-    const drawX = baseX + mapState.offsetX;
-    const drawY = baseY + mapState.offsetY;
-
-    const imagePixelX = (canvasX - drawX) / mapState.scale;
-    const imagePixelY = (canvasY - drawY) / mapState.scale;
-
-    return {x: imagePixelX, y: imagePixelY};
+    return canvasToImagePixelUtil(canvasX, canvasY, container);
 }
 
 /**
@@ -52,22 +43,8 @@ export function canvasToImagePixel(canvasX, canvasY) {
  * @returns {{x: number, y: number}} キャンバス座標
  */
 export function imagePixelToCanvas(imagePixelX, imagePixelY) {
-    if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
-
     const container = document.getElementById('mapContainer');
-    const scaledWidth = mapState.image.width * mapState.scale;
-    const scaledHeight = mapState.image.height * mapState.scale;
-
-    const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
-    const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
-
-    const drawX = baseX + mapState.offsetX;
-    const drawY = baseY + mapState.offsetY;
-
-    const canvasX = imagePixelX * mapState.scale + drawX;
-    const canvasY = imagePixelY * mapState.scale + drawY;
-
-    return {x: canvasX, y: canvasY};
+    return imagePixelToCanvasUtil(imagePixelX, imagePixelY, container);
 }
 
 /**
@@ -361,45 +338,8 @@ export function selectPaletteColor(color) {
     }
 }
 
-/**
- * UIコントロール要素かどうかをチェック
- * @export
- * @param {HTMLElement} element - チェックする要素
- * @returns {boolean} UIコントロール要素の場合true
- */
-export function isUIElement(element) {
-    if (!element) return false;
-
-    // ボタン、入力、スライダーなどのUI要素
-    if (element.tagName === 'BUTTON' ||
-        element.tagName === 'INPUT' ||
-        element.tagName === 'SELECT' ||
-        element.tagName === 'TEXTAREA' ||
-        element.tagName === 'A') {
-        return true;
-    }
-
-    // パネルやツールバーなどのクラスをチェック
-    if (element.classList) {
-        if (element.classList.contains('panel') ||
-            element.classList.contains('tool-button') ||
-            element.classList.contains('drawing-tools-palette') ||
-            element.classList.contains('drawing-options') ||
-            element.classList.contains('layer-item') ||
-            element.classList.contains('layer-controls') ||
-            element.id === 'layersPanel' ||
-            element.id === 'drawingToolsPalette') {
-            return true;
-        }
-    }
-
-    // 親要素をチェック
-    if (element.parentElement && element.parentElement !== document.body) {
-        return isUIElement(element.parentElement);
-    }
-
-    return false;
-}
+// isUIElement は utils/dom.js から再エクスポート（後方互換性のため）
+export { isUIElement };
 
 /**
  * アクティブな描画レイヤーを取得（なければ作成）

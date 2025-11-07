@@ -16,19 +16,13 @@
 import { mapState } from '../state/mapState.js';
 
 /**
- * 表示をリセットする
- * スケールを1.0、オフセットを0にリセットします
+ * ビューポートを再描画する
+ * レイヤーシステムまたは旧システムに応じて適切な再描画関数を呼び出します
  *
+ * @private
  * @returns {void}
- *
- * @example
- * resetView();
  */
-export function resetView() {
-    mapState.scale = 1.0;
-    mapState.offsetX = 0;
-    mapState.offsetY = 0;
-
+function redrawViewport() {
     // レイヤーシステムが有効な場合
     if (mapState.layerStack.length > 0) {
         // redrawAllLayersは外部関数（layerManager.js等）を期待
@@ -44,6 +38,23 @@ export function resetView() {
 }
 
 /**
+ * 表示をリセットする
+ * スケールを1.0、オフセットを0にリセットします
+ *
+ * @returns {void}
+ *
+ * @example
+ * resetView();
+ */
+export function resetView() {
+    mapState.scale = 1.0;
+    mapState.offsetX = 0;
+    mapState.offsetY = 0;
+
+    redrawViewport();
+}
+
+/**
  * ズームインする
  * スケールを1.2倍にします（最大スケール制限あり）
  *
@@ -55,19 +66,7 @@ export function resetView() {
 export function zoomIn() {
     if (mapState.scale < mapState.maxScale) {
         mapState.scale *= 1.2;
-
-        // レイヤーシステムが有効な場合
-        if (mapState.layerStack.length > 0) {
-            // redrawAllLayersは外部関数（layerManager.js等）を期待
-            if (typeof window.redrawAllLayers === 'function') {
-                window.redrawAllLayers();
-            }
-        } else {
-            // 旧システムの場合はdrawMapを呼び出す
-            if (typeof window.drawMap === 'function') {
-                window.drawMap();
-            }
-        }
+        redrawViewport();
     }
 }
 
@@ -83,19 +82,7 @@ export function zoomIn() {
 export function zoomOut() {
     if (mapState.scale > mapState.minScale) {
         mapState.scale /= 1.2;
-
-        // レイヤーシステムが有効な場合
-        if (mapState.layerStack.length > 0) {
-            // redrawAllLayersは外部関数（layerManager.js等）を期待
-            if (typeof window.redrawAllLayers === 'function') {
-                window.redrawAllLayers();
-            }
-        } else {
-            // 旧システムの場合はdrawMapを呼び出す
-            if (typeof window.drawMap === 'function') {
-                window.drawMap();
-            }
-        }
+        redrawViewport();
     }
 }
 

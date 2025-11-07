@@ -27,6 +27,10 @@ import {
     deleteRectangle,
     getRectangleLayer
 } from './rectangleManager.js';
+import {
+    canvasToImagePixel as canvasToImagePixelUtil,
+    imagePixelToCanvas as imagePixelToCanvasUtil
+} from '../utils/coordinates.js';
 
 /**
  * キャンバス座標を画像ピクセル座標に変換
@@ -36,22 +40,8 @@ import {
  * @returns {{x: number, y: number}} 画像ピクセル座標
  */
 export function canvasToImagePixel(canvasX, canvasY) {
-    if (!mapState.image) return {x: canvasX, y: canvasY};
-
     const container = document.getElementById('mapContainer');
-    const scaledWidth = mapState.image.width * mapState.scale;
-    const scaledHeight = mapState.image.height * mapState.scale;
-
-    const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
-    const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
-
-    const drawX = baseX + mapState.offsetX;
-    const drawY = baseY + mapState.offsetY;
-
-    const imagePixelX = (canvasX - drawX) / mapState.scale;
-    const imagePixelY = (canvasY - drawY) / mapState.scale;
-
-    return {x: imagePixelX, y: imagePixelY};
+    return canvasToImagePixelUtil(canvasX, canvasY, container);
 }
 
 /**
@@ -131,7 +121,7 @@ export function hitTestHandle(canvasX, canvasY, rectangle) {
     const sin = Math.sin(rad);
 
     // 回転ハンドルのテスト（四角形の上）
-    const rotateHandleOffset = 30 / mapState.scale; // ピクセル → 画像ピクセル
+    const rotateHandleOffset = RECTANGLE_DEFAULTS.ROTATE_HANDLE_OFFSET / mapState.scale; // ピクセル → 画像ピクセル
     const rotateHandleX = rectangle.x + 0 * cos - (-rectangle.height / 2 - rotateHandleOffset) * sin;
     const rotateHandleY = rectangle.y + 0 * sin + (-rectangle.height / 2 - rotateHandleOffset) * cos;
     const rotateHandleSize = (RECTANGLE_DEFAULTS.HANDLE_SIZE * 1.5) / mapState.scale;
@@ -373,8 +363,8 @@ export function handleRectangleMouseMove(canvasX, canvasY) {
         const dy = currentPos.y - mapState.rectangleToolState.mouseDownPos.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // 3ピクセル以上移動したらドラッグモードに入る
-        const dragThreshold = 3 / mapState.scale; // 画像ピクセル単位
+        // ドラッグ閾値以上移動したらドラッグモードに入る
+        const dragThreshold = RECTANGLE_DEFAULTS.DRAG_THRESHOLD / mapState.scale; // 画像ピクセル単位
 
         if (distance > dragThreshold) {
             // ドラッグ開始：移動モードに入る
@@ -765,22 +755,8 @@ export function snapRotationAngle(angle) {
  * @returns {{x: number, y: number}} キャンバス座標
  */
 function imagePixelToCanvas(imagePixelX, imagePixelY) {
-    if (!mapState.image) return {x: imagePixelX, y: imagePixelY};
-
     const container = document.getElementById('mapContainer');
-    const scaledWidth = mapState.image.width * mapState.scale;
-    const scaledHeight = mapState.image.height * mapState.scale;
-
-    const baseX = (container.getBoundingClientRect().width - scaledWidth) / 2;
-    const baseY = (container.getBoundingClientRect().height - scaledHeight) / 2;
-
-    const drawX = baseX + mapState.offsetX;
-    const drawY = baseY + mapState.offsetY;
-
-    const canvasX = imagePixelX * mapState.scale + drawX;
-    const canvasY = imagePixelY * mapState.scale + drawY;
-
-    return {x: canvasX, y: canvasY};
+    return imagePixelToCanvasUtil(imagePixelX, imagePixelY, container);
 }
 
 /**
@@ -909,7 +885,7 @@ function showEdgeLengthInputUI(x, y, currentValue, callback) {
 
     // UIの位置を設定（辺の中心より少し下にオフセット）
     ui.style.left = `${x}px`;
-    ui.style.top = `${y + 30}px`;
+    ui.style.top = `${y + RECTANGLE_DEFAULTS.UI_OFFSET_Y}px`;
     ui.style.display = 'block';
 
     // 入力フィールドに現在の値を設定
