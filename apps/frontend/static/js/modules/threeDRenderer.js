@@ -1168,7 +1168,7 @@ function worldToIso(x, y, z) {
     const rotY = offsetX * Math.sin(rad) + offsetY * Math.cos(rad);
 
     return {
-        x: rotX,
+        x: -rotX,  // X軸を反転（2Dマップとの整合性のため）
         y: z - rotY * Math.sin(tiltRad)
     };
 }
@@ -2159,7 +2159,7 @@ export function worldToPreviewIso(x, y, z) {
     const rotY = x * Math.sin(rad) + y * Math.cos(rad);
 
     return {
-        x: rotX,
+        x: -rotX,  // X軸を反転（2Dマップとの整合性のため）
         y: z - rotY * Math.sin(tiltRad)
     };
 }
