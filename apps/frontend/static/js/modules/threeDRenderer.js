@@ -1543,7 +1543,7 @@ export function renderPropertyPreview(rectangleId) {
         width: coords3D.width,
         depth: coords3D.depth,
         height: coords3D.height,
-        rotation: 0,  // プレビューでは回転なし
+        rotation: coords3D.rotation || 0,  // オブジェクトの回転を反映
         frontDirection: rectangle.frontDirection || 'top'
     };
 
@@ -1605,19 +1605,24 @@ function drawPreviewGrid(ctx, centerX, centerY) {
  * @private
  */
 function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
-    const { x, y, z, width, depth, height } = coords3D;
+    const { x, y, z, width, depth, height, rotation } = coords3D;
 
-    // 8つの頂点を計算
-    const vertices = [
-        worldToPreviewIso(x - width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z + height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z + height/2),
+    // 8つの頂点を計算（回転を考慮）
+    const localVertices = [
+        { lx: -width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: +depth/2, lz: +height/2 },
+        { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
+
+    const vertices = localVertices.map(v => {
+        const rotated = applyRotation(v.lx, v.ly, rotation);
+        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+    });
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -1704,20 +1709,25 @@ export function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectT
  * @private
  */
 function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
-    const { x, y, z, width, depth, height } = coords3D;
+    const { x, y, z, width, depth, height, rotation } = coords3D;
     const thickness = 0.05; // 壁の厚さ
 
-    // 8つの頂点を計算
-    const vertices = [
-        worldToPreviewIso(x - width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z + height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z + height/2),
+    // 8つの頂点を計算（回転を考慮）
+    const localVertices = [
+        { lx: -width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: +depth/2, lz: +height/2 },
+        { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
+
+    const vertices = localVertices.map(v => {
+        const rotated = applyRotation(v.lx, v.ly, rotation);
+        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+    });
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -1858,19 +1868,24 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
  * @private
  */
 function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
-    const { x, y, z, width, depth, height } = coords3D;
+    const { x, y, z, width, depth, height, rotation } = coords3D;
 
-    // 8つの頂点を計算
-    const vertices = [
-        worldToPreviewIso(x - width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y - depth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y + depth/2, z + height/2),
-        worldToPreviewIso(x - width/2, y + depth/2, z + height/2),
+    // 8つの頂点を計算（回転を考慮）
+    const localVertices = [
+        { lx: -width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: -depth/2, lz: -height/2 },
+        { lx: +width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: +depth/2, lz: -height/2 },
+        { lx: -width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: -depth/2, lz: +height/2 },
+        { lx: +width/2, ly: +depth/2, lz: +height/2 },
+        { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
+
+    const vertices = localVertices.map(v => {
+        const rotated = applyRotation(v.lx, v.ly, rotation);
+        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+    });
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -2138,30 +2153,39 @@ function drawPreviewWall(ctx, coords3D, color, centerX, centerY) {
  * @param {number} centerY - 中心Y座標
  */
 export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX, centerY) {
-    const { x, y, z, width, depth } = coords3D;
+    const { x, y, z, width, depth, rotation } = coords3D;
 
-    let arrowStart, arrowEnd;
+    let localStart, localEnd;
 
+    // ローカル座標で矢印の開始・終了位置を定義
     switch (frontDirection) {
         case 'top':
-            arrowStart = worldToPreviewIso(x, y - depth/2, z);
-            arrowEnd = worldToPreviewIso(x, y - depth/2 - 0.3, z);
+            localStart = { lx: 0, ly: -depth/2 };
+            localEnd = { lx: 0, ly: -depth/2 - 0.3 };
             break;
         case 'right':
-            arrowStart = worldToPreviewIso(x + width/2, y, z);
-            arrowEnd = worldToPreviewIso(x + width/2 + 0.3, y, z);
+            localStart = { lx: width/2, ly: 0 };
+            localEnd = { lx: width/2 + 0.3, ly: 0 };
             break;
         case 'bottom':
-            arrowStart = worldToPreviewIso(x, y + depth/2, z);
-            arrowEnd = worldToPreviewIso(x, y + depth/2 + 0.3, z);
+            localStart = { lx: 0, ly: depth/2 };
+            localEnd = { lx: 0, ly: depth/2 + 0.3 };
             break;
         case 'left':
-            arrowStart = worldToPreviewIso(x - width/2, y, z);
-            arrowEnd = worldToPreviewIso(x - width/2 - 0.3, y, z);
+            localStart = { lx: -width/2, ly: 0 };
+            localEnd = { lx: -width/2 - 0.3, ly: 0 };
             break;
         default:
             return;
     }
+
+    // 回転を適用
+    const rotatedStart = applyRotation(localStart.lx, localStart.ly, rotation);
+    const rotatedEnd = applyRotation(localEnd.lx, localEnd.ly, rotation);
+
+    // ワールド座標に変換
+    const arrowStart = worldToPreviewIso(x + rotatedStart.x, y + rotatedStart.y, z);
+    const arrowEnd = worldToPreviewIso(x + rotatedEnd.x, y + rotatedEnd.y, z);
 
     const startScreen = {
         x: centerX + arrowStart.x * previewState.scale,
@@ -2198,6 +2222,28 @@ export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX
     ctx.fill();
 
     ctx.restore();
+}
+
+/**
+ * ローカル座標に回転を適用
+ * @param {number} localX - ローカルX座標
+ * @param {number} localY - ローカルY座標
+ * @param {number} rotation - 回転角度（度）
+ * @returns {Object} 回転後の座標 {x, y}
+ * @private
+ */
+function applyRotation(localX, localY, rotation) {
+    if (!rotation) return { x: localX, y: localY };
+
+    // 回転を適用（反時計回り）
+    const rad = rotation * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    return {
+        x: localX * cos + localY * sin,  // Y軸が反転しているため符号を調整
+        y: -localX * sin + localY * cos
+    };
 }
 
 /**
