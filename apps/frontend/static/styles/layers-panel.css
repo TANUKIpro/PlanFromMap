@@ -27,12 +27,11 @@
     transform: translateX(calc(100% + var(--property-panel-width, 320px)));
 }
 
-/* トグルボタン */
+/* トグルボタン（独立配置） */
 .layers-panel-toggle {
-    position: absolute;
-    left: -32px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: fixed;
+    right: calc(var(--property-panel-width, 320px) - 4px);
+    bottom: 220px;
     background: rgba(255, 255, 255, 0.95);
     border: none;
     border-radius: 8px 0 0 8px;
@@ -40,8 +39,8 @@
     cursor: pointer;
     font-size: 1.2em;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: background 0.2s ease;
-    z-index: 11;
+    transition: background 0.2s ease, right 0.3s ease;
+    z-index: 998;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,6 +54,12 @@
     width: 20px;
     height: 20px;
     display: block;
+    transition: transform 0.3s ease;
+}
+
+/* レイヤーパネルが表示されている時、アイコンを左向きに */
+.layers-panel:not(.hidden) ~ .layers-panel-toggle .toggle-arrow-icon {
+    transform: rotate(180deg);
 }
 
 /* 折りたたみ状態（廃止） */

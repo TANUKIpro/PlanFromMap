@@ -99,7 +99,7 @@ function initializeResizer() {
     let startX = 0;
     let startWidth = 0;
 
-    resizer.addEventListener('mousedown', (e) => {
+    const handleMouseDown = (e) => {
         isResizing = true;
         startX = e.clientX;
         startWidth = panel.offsetWidth;
@@ -107,9 +107,10 @@ function initializeResizer() {
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
         e.preventDefault();
-    });
+        e.stopPropagation();
+    };
 
-    document.addEventListener('mousemove', (e) => {
+    const handleMouseMove = (e) => {
         if (!isResizing) return;
 
         const deltaX = startX - e.clientX;
@@ -118,16 +119,22 @@ function initializeResizer() {
         panel.style.width = `${newWidth}px`;
         panelWidth = newWidth;
         updatePropertyPanelWidth(newWidth);
-    });
+        e.preventDefault();
+    };
 
-    document.addEventListener('mouseup', () => {
+    const handleMouseUp = (e) => {
         if (isResizing) {
             isResizing = false;
             resizer.classList.remove('resizing');
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
+            e.preventDefault();
         }
-    });
+    };
+
+    resizer.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 }
 
 /**
