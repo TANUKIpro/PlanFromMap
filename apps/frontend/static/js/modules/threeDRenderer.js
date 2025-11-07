@@ -2235,14 +2235,14 @@ export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX
 function applyRotation(localX, localY, rotation) {
     if (!rotation) return { x: localX, y: localY };
 
-    // 標準的な2D回転行列を適用（反時計回り）
+    // 2D回転行列を適用（Y軸反転を考慮）
     const rad = rotation * Math.PI / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
 
     return {
         x: localX * cos - localY * sin,
-        y: localX * sin + localY * cos
+        y: -(localX * sin + localY * cos)  // Y軸を反転（worldToPreviewIsoでのX軸反転と整合性を取る）
     };
 }
 
