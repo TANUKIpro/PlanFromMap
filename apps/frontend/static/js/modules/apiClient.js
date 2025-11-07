@@ -2,54 +2,11 @@
  * @file apiClient.js
  * @description API通信関連の機能を提供するモジュール
  * @requires ../config.js
- * @exports loadStats
  * @exports loadOperations
  * @exports executeQuery
  */
 
 import { API_BASE_URL } from '../config.js';
-
-/**
- * 統計情報を取得
- * @export
- * @returns {Promise<void>}
- */
-export async function loadStats() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/stats`);
-        const data = await response.json();
-
-        const statsHTML = `
-            <div class="stat-box">
-                <h3>${data.operations_count}</h3>
-                <p>操作カタログ</p>
-            </div>
-            <div class="stat-box">
-                <h3>${data.maps_count}</h3>
-                <p>意味地図</p>
-            </div>
-            <div class="stat-box">
-                <h3>${data.operation_types.door}</h3>
-                <p>ドア操作</p>
-            </div>
-            <div class="stat-box">
-                <h3>${data.operation_types.drawer}</h3>
-                <p>引き出し</p>
-            </div>
-        `;
-
-        const statsContent = document.getElementById('statsContent');
-        if (statsContent) {
-            statsContent.innerHTML = statsHTML;
-        }
-    } catch (error) {
-        console.error('統計情報の取得に失敗:', error);
-        const statsContent = document.getElementById('statsContent');
-        if (statsContent) {
-            statsContent.innerHTML = '<div class="error">統計情報の取得に失敗しました</div>';
-        }
-    }
-}
 
 /**
  * 操作カタログを取得

@@ -198,7 +198,6 @@ apps/frontend/static/
 **責務**: バックエンドAPIとの通信
 
 **主要関数**:
-- `loadStats()` - 統計情報取得
 - `loadOperations()` - 操作カタログ取得
 - `executeQuery()` - MapQLクエリ実行
 
