@@ -143,12 +143,6 @@
                                 <div class="menu-bar__dropdown-divider"></div>
                                 <div class="menu-bar__dropdown-submenu">
                                     <label class="menu-bar__dropdown-checkbox">
-                                        <input type="checkbox" id="objectPropertyPanelToggleMenu" checked onchange="toggleObjectPropertyPanel(this.checked)">
-                                        <span>オブジェクトプロパティ</span>
-                                    </label>
-                                </div>
-                                <div class="menu-bar__dropdown-submenu">
-                                    <label class="menu-bar__dropdown-checkbox">
                                         <input type="checkbox" id="statusBarToggleMenu" checked onchange="toggleStatusBar(this.checked)">
                                         <span>ステータスバー</span>
                                     </label>
@@ -246,6 +240,9 @@
 
                         <!-- レイヤーパネル -->
                         <div class="layers-panel hidden" id="layersPanel">
+                            <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
+                                <img src="icons/arrow-right.svg" alt="展開" class="toggle-arrow-icon">
+                            </button>
                             <div class="layers-panel-header">
                                 <span class="layers-panel-title">
                                     📚 レイヤー
@@ -266,14 +263,8 @@
                             </div>
                         </div>
 
-                        <!-- レイヤーパネルトグルボタン -->
-                        <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
-                            <img src="icons/arrow-right.svg" alt="展開" class="toggle-arrow-icon">
-                        </button>
-
                         <!-- オブジェクトプロパティパネル -->
                         <div class="object-property-panel" id="objectPropertyPanel">
-                            <div class="property-panel-resizer" id="propertyPanelResizer"></div>
                             <div class="property-panel__header">
                                 <h3 class="property-panel__title">🏠 オブジェクトプロパティ</h3>
                                 <p class="property-panel__selected-info" id="selectedObjectInfo">選択: -</p>
