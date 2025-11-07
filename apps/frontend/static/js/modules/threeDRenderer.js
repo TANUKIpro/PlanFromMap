@@ -1292,6 +1292,9 @@ function handle3DMouseMove(event) {
         // 回転
         view3DState.rotation += deltaX * 0.5;
         view3DState.tilt = Math.max(0, Math.min(90, view3DState.tilt + deltaY * 0.5));
+
+        // ViewCubeを更新
+        updateViewCube(view3DState.rotation, view3DState.tilt);
     }
 
     view3DState.lastMouseX = event.clientX;
@@ -2212,7 +2215,7 @@ export function worldToPreviewIso(x, y, z) {
     const rotY = x * Math.sin(rad) + y * Math.cos(rad);
 
     return {
-        x: -rotX,  // X軸を反転（2Dマップとの整合性のため）
+        x: rotX,  // X軸反転を削除（グリッドとオブジェクトの座標系を一致させる）
         y: z - rotY * Math.sin(tiltRad)
     };
 }
