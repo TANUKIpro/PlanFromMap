@@ -511,6 +511,15 @@
                                     ✕
                                 </button>
                             </div>
+
+                            <!-- タブナビゲーション -->
+                            <div class="catalog-detail-tabs">
+                                <button class="catalog-tab-button active" onclick="switchCatalogTab('basic')" data-tab="basic">基本情報</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('robot')" data-tab="robot">ロボット操作</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('physical')" data-tab="physical">物理的特性</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('navigation')" data-tab="navigation">ナビゲーション</button>
+                            </div>
+
                             <div class="catalog-detail-content" id="catalogDetailContent">
                                 <!-- 詳細編集フォームがここに動的生成される -->
                             </div>
