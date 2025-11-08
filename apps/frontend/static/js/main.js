@@ -17,10 +17,11 @@
 import { mapState } from './state/mapState.js';
 
 // UI
-import { switchTab, switchMapSubTab } from './ui/tabs.js';
+import { switchTab, switchMapSubTab, switchPropertyTab } from './ui/tabs.js';
 import {
     loadImageFile,
     loadYAMLFile,
+    loadMapFiles,
     clearMap,
     drawMap,
     saveAsPGM,
@@ -64,7 +65,8 @@ import {
 // ファイル読み込み
 import {
     handleImageFileSelect,
-    handleYAMLFileSelect
+    handleYAMLFileSelect,
+    handleMapFilesSelect
 } from './modules/fileLoader.js';
 
 // 描画ツール
@@ -185,7 +187,11 @@ import {
     set3DViewRotation,
     reset3DView,
     getMapBounds,
-    setMapBounds
+    setMapBounds,
+    select3DObject,
+    deselect3DObject,
+    goto2DMap,
+    gotoObjectCatalog
 } from './modules/threeDRenderer.js';
 
 // ステータスバー
@@ -207,10 +213,12 @@ import {
 // タブ切り替え
 window.switchTab = switchTab;
 window.switchMapSubTab = switchMapSubTab;
+window.switchPropertyTab = switchPropertyTab;
 
 // コントロール関数
 window.loadImageFile = loadImageFile;
 window.loadYAMLFile = loadYAMLFile;
+window.loadMapFiles = loadMapFiles;
 window.clearMap = clearMap;
 window.drawMap = drawMap;
 window.saveAsPGM = saveAsPGM;
@@ -237,6 +245,7 @@ window.toggleLayersPanelVisibility = toggleLayersPanelVisibility;
 // ファイル読み込みハンドラー
 window.handleImageFileSelect = handleImageFileSelect;
 window.handleYAMLFileSelect = handleYAMLFileSelect;
+window.handleMapFilesSelect = handleMapFilesSelect;
 
 // レイヤー管理
 window.addNewLayer = addNewLayer;
@@ -340,6 +349,10 @@ window.set3DViewRotation = set3DViewRotation;
 window.reset3DView = reset3DView;
 window.getMapBounds = getMapBounds;
 window.setMapBounds = setMapBounds;
+window.select3DObject = select3DObject;
+window.deselect3DObject = deselect3DObject;
+window.goto2DMap = goto2DMap;
+window.gotoObjectCatalog = gotoObjectCatalog;
 
 // オブジェクトカタログ
 window.initializeObjectCatalog = initializeObjectCatalog;

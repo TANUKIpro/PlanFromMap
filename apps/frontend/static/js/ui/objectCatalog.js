@@ -83,6 +83,7 @@ export function initializeObjectCatalog() {
     window.closeCatalogDetail = closeCatalogDetail;
     window.cancelCatalogEdit = cancelCatalogEdit;
     window.saveCatalogEdit = saveCatalogEdit;
+    window.switchCatalogTab = switchCatalogTab;
 
     console.log('オブジェクトカタログを初期化しました');
 }
@@ -464,6 +465,36 @@ function clearPreview() {
 
 
 /**
+ * カタログ詳細編集のタブを切り替える
+ *
+ * @param {string} tabName - タブ名（'basic', 'robot', 'physical', 'navigation'）
+ * @returns {void}
+ */
+function switchCatalogTab(tabName) {
+    // すべてのタブボタンを非アクティブに
+    document.querySelectorAll('.catalog-tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // すべてのタブコンテンツを非表示に
+    document.querySelectorAll('.catalog-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // 選択されたタブボタンをアクティブに
+    const targetButton = document.querySelector(`.catalog-tab-button[data-tab="${tabName}"]`);
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+
+    // 選択されたタブコンテンツを表示
+    const targetContent = document.getElementById(`catalogTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+}
+
+/**
  * 詳細編集パネルを表示する
  *
  * @param {string} rectangleId - 四角形のID
@@ -483,18 +514,34 @@ function showCatalogDetail(rectangleId) {
         commonProperties: JSON.parse(JSON.stringify(rectangle.commonProperties || {}))
     };
 
-    // フォームを生成
+    // フォームを生成（タブ形式）
     detailContent.innerHTML = '';
     const schema = getCommonPropertySchema();
 
+    // セクション名とタブ名のマッピング
+    const sectionToTab = {
+        '基本情報': 'basic',
+        'ロボット操作': 'robot',
+        '物理的特性': 'physical',
+        'ナビゲーション': 'navigation'
+    };
+
     schema.forEach(section => {
+        const tabName = sectionToTab[section.section];
+        const tabId = `catalogTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+
+        // タブコンテンツを作成
+        const tabContent = document.createElement('div');
+        tabContent.className = 'catalog-tab-content';
+        tabContent.id = tabId;
+
+        // 最初のタブをアクティブに
+        if (section.section === '基本情報') {
+            tabContent.classList.add('active');
+        }
+
         const sectionDiv = document.createElement('div');
         sectionDiv.className = 'catalog-form-section';
-
-        const sectionTitle = document.createElement('h4');
-        sectionTitle.className = 'catalog-form-section-title';
-        sectionTitle.textContent = section.section;
-        sectionDiv.appendChild(sectionTitle);
 
         section.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
@@ -511,7 +558,8 @@ function showCatalogDetail(rectangleId) {
             sectionDiv.appendChild(fieldDiv);
         });
 
-        detailContent.appendChild(sectionDiv);
+        tabContent.appendChild(sectionDiv);
+        detailContent.appendChild(tabContent);
     });
 
     // パネルを表示

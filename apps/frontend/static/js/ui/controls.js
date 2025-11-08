@@ -58,6 +58,16 @@ export function loadYAMLFile() {
 }
 
 /**
+ * マップファイル（PGM + YAML）を同時に読み込むダイアログを開く
+ */
+export function loadMapFiles() {
+    const mapFilesInput = document.getElementById('mapFilesInput');
+    if (mapFilesInput) {
+        mapFilesInput.click();
+    }
+}
+
+/**
  * マップをPGM形式で保存する
  */
 export function saveAsPGM() {

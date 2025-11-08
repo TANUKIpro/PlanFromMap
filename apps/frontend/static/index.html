@@ -26,6 +26,7 @@
         <!-- 隠しファイル入力 -->
         <input type="file" id="imageFileInput" accept="image/*,.pgm" style="display: none;" onchange="handleImageFileSelect(event)">
         <input type="file" id="yamlFileInput" accept=".yaml,.yml" style="display: none;" onchange="handleYAMLFileSelect(event)">
+        <input type="file" id="mapFilesInput" accept=".pgm,.yaml,.yml" multiple style="display: none;" onchange="handleMapFilesSelect(event)">
         <input type="file" id="profileFileInput" accept=".json" style="display: none;" onchange="handleProfileFileSelect(event)">
 
         <!-- タブコンテナ -->
@@ -57,6 +58,8 @@
                         <div class="menu-bar__item">
                             <button class="menu-bar__button" onclick="toggleMenu('fileMenu')">ファイル</button>
                             <div id="fileMenu" class="menu-bar__dropdown">
+                                <button class="menu-bar__dropdown-item" onclick="loadMapFiles(); closeAllMenus();">マップファイルを読み込む (PGM + YAML)...</button>
+                                <div class="menu-bar__dropdown-divider"></div>
                                 <button class="menu-bar__dropdown-item" onclick="loadImageFile(); closeAllMenus();">画像を読み込む...</button>
                                 <button class="menu-bar__dropdown-item" onclick="loadYAMLFile(); closeAllMenus();">YAMLを読み込む...</button>
                                 <div class="menu-bar__dropdown-divider"></div>
@@ -161,7 +164,7 @@
                         <canvas id="mapCanvas" style="display: none;"></canvas>
 
                         <!-- 描画ツールパレット -->
-                        <div class="drawing-tools-palette hidden" id="drawingToolsPalette">
+                        <div class="drawing-tools-palette" id="drawingToolsPalette">
                             <div class="drawing-tools-body">
                                 <!-- 左列: ツールボタン -->
                                 <div class="tools-column">
@@ -239,7 +242,7 @@
                         </div>
 
                         <!-- レイヤーパネル -->
-                        <div class="layers-panel hidden" id="layersPanel">
+                        <div class="layers-panel" id="layersPanel">
                             <button class="layers-panel-toggle" id="layersPanelToggle" onclick="toggleLayersPanelVisibility()" title="レイヤーを表示/非表示">
                                 <img src="icons/arrow-right.svg" alt="展開" class="toggle-arrow-icon">
                             </button>
@@ -269,54 +272,85 @@
                                 <h3 class="property-panel__title">🏠 オブジェクトプロパティ</h3>
                                 <p class="property-panel__selected-info" id="selectedObjectInfo">選択: -</p>
                             </div>
+
+                            <!-- プロパティパネルのタブナビゲーション -->
+                            <div class="property-panel__tabs">
+                                <button class="property-tab-button active" onclick="switchPropertyTab('basic')" data-tab="basic">基本情報</button>
+                                <button class="property-tab-button" onclick="switchPropertyTab('robot')" data-tab="robot">ロボット操作</button>
+                                <button class="property-tab-button" onclick="switchPropertyTab('physical')" data-tab="physical">物理的特性</button>
+                                <button class="property-tab-button" onclick="switchPropertyTab('navigation')" data-tab="navigation">ナビゲーション</button>
+                            </div>
+
                             <div class="property-panel__body">
-                                <!-- 3Dプレビュー -->
+                                <!-- 3Dプレビュー（全タブで共通表示） -->
                                 <div class="property-preview">
                                     <canvas id="propertyPreviewCanvas" class="property-preview__canvas"></canvas>
                                 </div>
 
-                                <!-- 基本情報セクション -->
-                                <div class="property-section">
-                                    <h4 class="property-section__title">基本情報</h4>
+                                <!-- 基本情報タブ -->
+                                <div class="property-tab-content active" id="propertyTabBasic">
+                                    <div class="property-section">
+                                        <h4 class="property-section__title">基本情報</h4>
 
-                                    <div class="property-field">
-                                        <label class="property-label" for="objectTypeSelect">カテゴリ</label>
-                                        <select class="property-select" id="objectTypeSelect">
-                                            <option value="none">なし</option>
-                                            <option value="shelf">棚</option>
-                                            <option value="box">箱</option>
-                                            <option value="table">テーブル</option>
-                                            <option value="door">扉</option>
-                                            <option value="wall">壁</option>
-                                        </select>
+                                        <div class="property-field">
+                                            <label class="property-label" for="objectTypeSelect">カテゴリ</label>
+                                            <select class="property-select" id="objectTypeSelect">
+                                                <option value="none">なし</option>
+                                                <option value="shelf">棚</option>
+                                                <option value="box">箱</option>
+                                                <option value="table">テーブル</option>
+                                                <option value="door">扉</option>
+                                                <option value="wall">壁</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="property-field">
+                                            <label class="property-label" for="heightMetersInput">高さ (m)</label>
+                                            <input type="number" class="property-input" id="heightMetersInput"
+                                                   min="0.01" max="10" step="0.01" value="0.50">
+                                        </div>
+
+                                        <div class="property-field">
+                                            <label class="property-label" for="frontDirectionSelect">前面方向</label>
+                                            <select class="property-select" id="frontDirectionSelect">
+                                                <option value="top">上</option>
+                                                <option value="right">右</option>
+                                                <option value="bottom">下</option>
+                                                <option value="left">左</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- 3D情報セクション -->
-                                <div class="property-section">
-                                    <h4 class="property-section__title">3D情報</h4>
-
-                                    <div class="property-field">
-                                        <label class="property-label" for="heightMetersInput">高さ (m)</label>
-                                        <input type="number" class="property-input" id="heightMetersInput"
-                                               min="0.01" max="10" step="0.01" value="0.50">
-                                    </div>
-
-                                    <div class="property-field">
-                                        <label class="property-label" for="frontDirectionSelect">前面方向</label>
-                                        <select class="property-select" id="frontDirectionSelect">
-                                            <option value="top">上</option>
-                                            <option value="right">右</option>
-                                            <option value="bottom">下</option>
-                                            <option value="left">左</option>
-                                        </select>
+                                <!-- ロボット操作タブ -->
+                                <div class="property-tab-content" id="propertyTabRobot">
+                                    <div class="property-section">
+                                        <h4 class="property-section__title">ロボット操作設定</h4>
+                                        <div id="objectDetailsContainer">
+                                            <!-- カテゴリに応じた詳細設定が動的に生成される -->
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- カテゴリ別詳細設定 -->
-                                <div class="property-section">
-                                    <div id="objectDetailsContainer">
-                                        <!-- カテゴリに応じた詳細設定が動的に生成される -->
+                                <!-- 物理的特性タブ -->
+                                <div class="property-tab-content" id="propertyTabPhysical">
+                                    <div class="property-section">
+                                        <h4 class="property-section__title">物理的特性</h4>
+                                        <div id="physicalPropertiesContainer">
+                                            <!-- 物理的特性の設定項目 -->
+                                            <p style="color: #999; text-align: center; padding: 20px;">物理的特性の設定（今後実装予定）</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ナビゲーションタブ -->
+                                <div class="property-tab-content" id="propertyTabNavigation">
+                                    <div class="property-section">
+                                        <h4 class="property-section__title">ナビゲーション設定</h4>
+                                        <div id="navigationPropertiesContainer">
+                                            <!-- ナビゲーション設定項目 -->
+                                            <p style="color: #999; text-align: center; padding: 20px;">ナビゲーション設定（今後実装予定）</p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -373,6 +407,36 @@
                                 <!-- ViewCube（右上） -->
                                 <div class="view-cube-container">
                                     <canvas id="viewCubeCanvas" class="view-cube-canvas"></canvas>
+                                </div>
+
+                                <!-- 選択オブジェクト情報パネル -->
+                                <div class="view-3d-selected-info" id="view3DSelectedInfo" style="display: none;">
+                                    <div class="view-3d-info-header">
+                                        <h4 class="view-3d-info-title">選択オブジェクト</h4>
+                                        <button class="view-3d-info-close" onclick="deselect3DObject()">✕</button>
+                                    </div>
+                                    <div class="view-3d-info-body">
+                                        <div class="view-3d-info-field">
+                                            <span class="view-3d-info-label">ID:</span>
+                                            <span class="view-3d-info-value" id="view3DInfoId">-</span>
+                                        </div>
+                                        <div class="view-3d-info-field">
+                                            <span class="view-3d-info-label">カテゴリ:</span>
+                                            <span class="view-3d-info-value" id="view3DInfoType">-</span>
+                                        </div>
+                                        <div class="view-3d-info-field">
+                                            <span class="view-3d-info-label">サイズ:</span>
+                                            <span class="view-3d-info-value" id="view3DInfoSize">-</span>
+                                        </div>
+                                        <div class="view-3d-info-field">
+                                            <span class="view-3d-info-label">高さ:</span>
+                                            <span class="view-3d-info-value" id="view3DInfoHeight">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="view-3d-info-actions">
+                                        <button class="view-3d-info-button" onclick="goto2DMap()">2Dマップで表示</button>
+                                        <button class="view-3d-info-button primary" onclick="gotoObjectCatalog()">カタログを開く</button>
+                                    </div>
                                 </div>
 
                                 <!-- 3Dビューコントロール -->
@@ -447,6 +511,15 @@
                                     ✕
                                 </button>
                             </div>
+
+                            <!-- タブナビゲーション -->
+                            <div class="catalog-detail-tabs">
+                                <button class="catalog-tab-button active" onclick="switchCatalogTab('basic')" data-tab="basic">基本情報</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('robot')" data-tab="robot">ロボット操作</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('physical')" data-tab="physical">物理的特性</button>
+                                <button class="catalog-tab-button" onclick="switchCatalogTab('navigation')" data-tab="navigation">ナビゲーション</button>
+                            </div>
+
                             <div class="catalog-detail-content" id="catalogDetailContent">
                                 <!-- 詳細編集フォームがここに動的生成される -->
                             </div>

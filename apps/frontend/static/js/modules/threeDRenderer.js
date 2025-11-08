@@ -49,6 +49,9 @@ const view3DState = {
     isDragging: false,
     lastMouseX: 0,
     lastMouseY: 0,
+    mouseDownX: 0,         // マウスダウン時のX座標（クリック判定用）
+    mouseDownY: 0,         // マウスダウン時のY座標（クリック判定用）
+    selectedObjectId: null, // 選択されたオブジェクトのID
     mapBounds: null        // マップの有効領域 {minX, minY, maxX, maxY, centerX, centerY}
 };
 
@@ -561,13 +564,26 @@ function draw3DObject(ctx, rectangle, centerX, centerY) {
     const coords3D = get3DCoordinates(rectangle.id);
     if (!coords3D) return;
 
+    // 選択されているかチェック
+    const isSelected = view3DState.selectedObjectId === rectangle.id;
+
     // オブジェクトタイプに応じた色
-    const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+    let color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
         ? OBJECT_TYPE_COLORS[rectangle.objectType]
         : OBJECT_TYPE_COLORS.none;
 
+    // 選択されている場合は色を明るくする
+    if (isSelected) {
+        color = lightenColor(color, 40);
+    }
+
     // オブジェクトタイプに応じた3Dモデルを描画
     draw3DModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+
+    // 選択されている場合はハイライト枠を描画
+    if (isSelected) {
+        drawSelectionHighlight(ctx, coords3D, centerX, centerY);
+    }
 
     // 前面方向を矢印で表示
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
@@ -1086,6 +1102,82 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
 }
 
 /**
+ * 選択ハイライトを描画
+ *
+ * @private
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} coords3D - 3D座標情報
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ */
+function drawSelectionHighlight(ctx, coords3D, centerX, centerY) {
+    const { x, y, z, width, depth, height } = coords3D;
+
+    // バウンディングボックスの頂点を計算
+    const vertices = [
+        worldToIso(x - width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y + depth/2, z + height/2),
+        worldToIso(x - width/2, y + depth/2, z + height/2),
+    ];
+
+    const screen = vertices.map(v => ({
+        x: centerX + v.x * view3DState.scale,
+        y: centerY - v.y * view3DState.scale
+    }));
+
+    ctx.save();
+    ctx.strokeStyle = '#667eea';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 5]);
+
+    // 下部の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[2].x, screen[2].y);
+    ctx.lineTo(screen[3].x, screen[3].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    // 上部の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[4].x, screen[4].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    // 垂直の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[4].x, screen[4].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[2].x, screen[2].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[3].x, screen[3].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
  * 前面方向を矢印で描画
  *
  * @private
@@ -1271,6 +1363,8 @@ function handle3DMouseDown(event) {
     view3DState.isDragging = true;
     view3DState.lastMouseX = event.clientX;
     view3DState.lastMouseY = event.clientY;
+    view3DState.mouseDownX = event.clientX;
+    view3DState.mouseDownY = event.clientY;
 }
 
 /**
@@ -1309,6 +1403,16 @@ function handle3DMouseMove(event) {
  * @private
  */
 function handle3DMouseUp(event) {
+    // クリック判定（マウスダウンからの移動量が小さい場合）
+    const deltaX = Math.abs(event.clientX - view3DState.mouseDownX);
+    const deltaY = Math.abs(event.clientY - view3DState.mouseDownY);
+    const isClick = deltaX < 5 && deltaY < 5;
+
+    if (isClick) {
+        // クリックされた位置から最も近いオブジェクトを選択
+        handle3DObjectClick(event);
+    }
+
     view3DState.isDragging = false;
 }
 
@@ -1325,6 +1429,186 @@ function handle3DWheel(event) {
     view3DState.scale = Math.max(5, Math.min(100, view3DState.scale));
 
     render3DScene();
+}
+
+// ================
+// オブジェクト選択
+// ================
+
+/**
+ * 3Dオブジェクトをクリックしたときの処理
+ *
+ * @private
+ * @param {MouseEvent} event - マウスイベント
+ */
+function handle3DObjectClick(event) {
+    const rect = view3DState.canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    console.log('3D Click at:', clickX, clickY);
+
+    // すべての四角形を取得
+    const rectangles = getAllRectangles();
+    if (!rectangles || rectangles.length === 0) {
+        console.log('No rectangles found');
+        deselect3DObject();
+        return;
+    }
+
+    console.log('Found rectangles:', rectangles.length);
+
+    // クリック位置に最も近いオブジェクトを探す
+    let closestObject = null;
+    let closestDistance = Infinity;
+
+    const centerX = view3DState.canvas.width / 2 + view3DState.offsetX;
+    const centerY = view3DState.canvas.height / 2 + view3DState.offsetY;
+
+    rectangles.forEach(rect => {
+        const coords = get3DCoordinates(rect.id);
+        if (!coords) return;
+
+        // オブジェクトの中心位置を3D投影
+        const objCenterX = coords.x;
+        const objCenterY = coords.y;
+        const objCenterZ = coords.z;
+
+        const isoPos = worldToIso(objCenterX, objCenterY, objCenterZ);
+        const screenX = centerX + isoPos.x * view3DState.scale;
+        const screenY = centerY - isoPos.y * view3DState.scale;
+
+        // クリック位置との距離を計算
+        const distance = Math.sqrt(
+            Math.pow(screenX - clickX, 2) +
+            Math.pow(screenY - clickY, 2)
+        );
+
+        console.log(`Object ${rect.id}: distance=${distance.toFixed(2)}, screen=(${screenX.toFixed(1)}, ${screenY.toFixed(1)})`);
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestObject = rect;
+        }
+    });
+
+    // 閾値内にあるオブジェクトのみ選択
+    const threshold = 150; // ピクセル（閾値を増やした）
+    console.log(`Closest object: ${closestObject?.id}, distance=${closestDistance.toFixed(2)}, threshold=${threshold}`);
+
+    if (closestObject && closestDistance < threshold) {
+        console.log('Selecting object:', closestObject.id);
+        select3DObject(closestObject.id);
+    } else {
+        console.log('Deselecting (no object close enough)');
+        deselect3DObject();
+    }
+}
+
+/**
+ * 3Dオブジェクトを選択
+ *
+ * @export
+ * @param {string} objectId - オブジェクトID
+ */
+export function select3DObject(objectId) {
+    view3DState.selectedObjectId = objectId;
+
+    // 選択情報を表示
+    showSelectedObjectInfo(objectId);
+
+    // 再描画（選択ハイライトを表示）
+    render3DScene();
+}
+
+/**
+ * 3Dオブジェクトの選択を解除
+ *
+ * @export
+ */
+export function deselect3DObject() {
+    view3DState.selectedObjectId = null;
+
+    // 選択情報パネルを非表示
+    const infoPanel = document.getElementById('view3DSelectedInfo');
+    if (infoPanel) {
+        infoPanel.style.display = 'none';
+    }
+
+    // 再描画（選択ハイライトを消去）
+    render3DScene();
+}
+
+/**
+ * 選択されたオブジェクトの情報を表示
+ *
+ * @private
+ * @param {string} objectId - オブジェクトID
+ */
+function showSelectedObjectInfo(objectId) {
+    const rectangle = getRectangleById(objectId);
+    if (!rectangle) return;
+
+    const infoPanel = document.getElementById('view3DSelectedInfo');
+    if (!infoPanel) return;
+
+    // オブジェクト情報を設定
+    const objectTypeLabels = {
+        'none': 'なし',
+        'shelf': '棚',
+        'box': '箱',
+        'table': 'テーブル',
+        'door': '扉',
+        'wall': '壁'
+    };
+
+    const resolution = mapState.metadata?.resolution || 0.05;
+    const widthMeters = (rectangle.width * resolution).toFixed(2);
+    const heightMeters = (rectangle.height * resolution).toFixed(2);
+
+    document.getElementById('view3DInfoId').textContent = objectId;
+    document.getElementById('view3DInfoType').textContent = objectTypeLabels[rectangle.objectType] || 'なし';
+    document.getElementById('view3DInfoSize').textContent = `${widthMeters}m × ${heightMeters}m`;
+    document.getElementById('view3DInfoHeight').textContent = `${(rectangle.heightMeters || 0.5).toFixed(2)}m`;
+
+    // パネルを表示
+    infoPanel.style.display = 'block';
+}
+
+/**
+ * 2Dマップタブに切り替えて選択オブジェクトを表示
+ *
+ * @export
+ */
+export function goto2DMap() {
+    if (!view3DState.selectedObjectId) return;
+
+    // 2Dマップタブに切り替え
+    if (window.switchMapSubTab && typeof window.switchMapSubTab === 'function') {
+        window.switchMapSubTab('map2D');
+    }
+
+    // 2Dマップでオブジェクトを選択
+    if (window.selectRectangle && typeof window.selectRectangle === 'function') {
+        window.selectRectangle(view3DState.selectedObjectId);
+    }
+}
+
+/**
+ * オブジェクトカタログタブに切り替えて選択オブジェクトを表示
+ *
+ * @export
+ */
+export function gotoObjectCatalog() {
+    if (!view3DState.selectedObjectId) return;
+
+    // オブジェクトカタログタブに切り替え
+    if (window.switchTab && typeof window.switchTab === 'function') {
+        window.switchTab('objectCatalog');
+    }
+
+    // カタログで該当オブジェクトを選択（実装されている場合）
+    // TODO: オブジェクトカタログ側で選択機能が実装されたら連携
 }
 
 // ================

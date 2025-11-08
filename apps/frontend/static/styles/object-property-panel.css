@@ -55,6 +55,49 @@
     opacity: 0.9;
 }
 
+/* プロパティパネルのタブナビゲーション */
+.property-panel__tabs {
+    display: flex;
+    background: #f5f5f5;
+    border-bottom: 1px solid #d0d0d0;
+    overflow-x: auto;
+}
+
+.property-tab-button {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.property-tab-button:hover {
+    background: #e8e8e8;
+    color: #333;
+}
+
+.property-tab-button.active {
+    background: #ffffff;
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+/* プロパティタブコンテンツ */
+.property-tab-content {
+    display: none;
+}
+
+.property-tab-content.active {
+    display: block;
+}
+
 /* パネルボディ */
 .property-panel__body {
     padding: 16px;

@@ -431,6 +431,49 @@
     color: #4a5568;
 }
 
+/* カタログ詳細編集のタブナビゲーション */
+.catalog-detail-tabs {
+    display: flex;
+    background: #f5f5f5;
+    border-bottom: 1px solid #d0d0d0;
+    overflow-x: auto;
+}
+
+.catalog-tab-button {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.catalog-tab-button:hover {
+    background: #e8e8e8;
+    color: #333;
+}
+
+.catalog-tab-button.active {
+    background: #ffffff;
+    color: #667eea;
+    border-bottom-color: #667eea;
+}
+
+/* カタログタブコンテンツ */
+.catalog-tab-content {
+    display: none;
+}
+
+.catalog-tab-content.active {
+    display: block;
+}
+
 .catalog-detail-content {
     flex: 1;
     overflow-y: auto;
