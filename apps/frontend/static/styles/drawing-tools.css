@@ -327,8 +327,8 @@
 }
 
 .brush-size-slider-vertical {
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* WebKit */
+    writing-mode: vertical-lr;
+    direction: rtl;
     width: 8px;
     height: 140px;
     padding: 0;

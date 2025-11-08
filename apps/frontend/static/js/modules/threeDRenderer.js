@@ -132,6 +132,9 @@ export function initialize3DView() {
         1000
     );
 
+    // Z軸を上方向に設定（デフォルトはY軸が上）
+    view3DState.camera.up.set(0, 0, 1);
+
     // カメラ位置を設定（等角投影のため）
     updateCameraPosition();
 
@@ -571,17 +574,7 @@ function createShelfMesh(coords3D, color, frontDirection, objectProperties) {
     // 外枠（前面を開けた箱）
     const thickness = 0.02;
 
-    // 背面
-    if (frontDirection !== 'bottom') {
-        const backGeometry = new THREE.BoxGeometry(width, thickness, height);
-        const backMesh = new THREE.Mesh(backGeometry, material);
-        backMesh.position.set(0, depth/2, 0);
-        backMesh.castShadow = true;
-        backMesh.receiveShadow = true;
-        group.add(backMesh);
-    }
-
-    // 前面
+    // 前面（Y軸負側）
     if (frontDirection !== 'top') {
         const frontGeometry = new THREE.BoxGeometry(width, thickness, height);
         const frontMesh = new THREE.Mesh(frontGeometry, material);
@@ -589,6 +582,16 @@ function createShelfMesh(coords3D, color, frontDirection, objectProperties) {
         frontMesh.castShadow = true;
         frontMesh.receiveShadow = true;
         group.add(frontMesh);
+    }
+
+    // 背面（Y軸正側）
+    if (frontDirection !== 'bottom') {
+        const backGeometry = new THREE.BoxGeometry(width, thickness, height);
+        const backMesh = new THREE.Mesh(backGeometry, material);
+        backMesh.position.set(0, depth/2, 0);
+        backMesh.castShadow = true;
+        backMesh.receiveShadow = true;
+        group.add(backMesh);
     }
 
     // 左面
