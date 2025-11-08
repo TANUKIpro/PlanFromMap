@@ -170,6 +170,9 @@ export function initialize3DView() {
     }
 
     console.log('3Dビュー（Three.js）を初期化しました');
+    console.log('Camera position:', view3DState.camera.position);
+    console.log('Camera rotation:', view3DState.rotation, 'tilt:', view3DState.tilt);
+    console.log('Camera zoom:', view3DState.camera.zoom);
 
     // 初期レンダリング
     render3DScene();
@@ -183,13 +186,19 @@ export function initialize3DView() {
 function updateCameraPosition() {
     if (!view3DState.camera) return;
 
+    // rotation: Z軸周りの回転（度）
+    // tilt: 水平面からの角度（度）
     const rad = view3DState.rotation * Math.PI / 180;
     const tiltRad = view3DState.tilt * Math.PI / 180;
 
-    // カメラを遠くに配置
+    // カメラ距離
     const distance = view3DState.distance;
+
+    // 球面座標から直交座標に変換
+    // Three.jsの座標系: Y軸が上、Z軸が前方（デフォルト）
+    // しかし、camera.upを(0,0,1)に設定したので、Z軸が上になる
     const x = distance * Math.cos(rad) * Math.cos(tiltRad);
-    const y = -distance * Math.sin(rad) * Math.cos(tiltRad);
+    const y = distance * Math.sin(rad) * Math.cos(tiltRad);
     const z = distance * Math.sin(tiltRad);
 
     view3DState.camera.position.set(x, y, z);
@@ -239,12 +248,15 @@ function createGrid() {
         view3DState.scene.remove(view3DState.gridHelper);
     }
 
-    // グリッドヘルパーを作成（Z=0平面）
-    const size = 20;
-    const divisions = 40;
+    // グリッドサイズを2Dマップと同じにする
+    const gridSize = mapState.gridWidthInMeters || 1; // m単位
+    const size = 20; // グリッド全体のサイズ（m）
+    const divisions = Math.floor(size / gridSize);
+
     view3DState.gridHelper = new THREE.GridHelper(size, divisions, 0xcccccc, 0xe0e0e0);
 
-    // GridHelperはデフォルトでY=0に作成されるため、Z=0に回転
+    // GridHelperはデフォルトでXZ平面（Y=0）に作成される
+    // XY平面（Z=0）に配置するため、X軸周りに90度回転
     view3DState.gridHelper.rotation.x = Math.PI / 2;
 
     view3DState.scene.add(view3DState.gridHelper);
@@ -262,34 +274,46 @@ function createOriginMarker() {
 
     view3DState.originMarker = new THREE.Group();
 
-    // 十字マーカー（赤）
+    // 十字マーカー（赤）- XY平面（Z=0）に配置
     const crossSize = 0.15;
     const lineWidth = 0.02;
     const crossMaterial = new THREE.MeshBasicMaterial({ color: 0xe74c3c });
 
-    // 4本の棒で十字を作成
-    const createBar = (width, height, x, y) => {
+    // 4本の棒で十字を作成（XY平面上）
+    const createBar = (width, height, offsetX, offsetY) => {
         const geometry = new THREE.BoxGeometry(width, height, 0.001);
         const mesh = new THREE.Mesh(geometry, crossMaterial);
-        mesh.position.set(x, y, 0.001);
-        mesh.rotation.x = Math.PI / 2;
+        mesh.position.set(offsetX, offsetY, 0.001);
         return mesh;
     };
 
+    // X軸方向の線（2本）
     view3DState.originMarker.add(createBar(crossSize, lineWidth, -crossSize/2, 0));
     view3DState.originMarker.add(createBar(crossSize, lineWidth, crossSize/2, 0));
+
+    // Y軸方向の線（2本）
     view3DState.originMarker.add(createBar(lineWidth, crossSize, 0, crossSize/2));
     view3DState.originMarker.add(createBar(lineWidth, crossSize, 0, -crossSize/2));
 
-    // 方向矢印
+    // 方向矢印（theta方向）
     if (mapState.metadata?.origin) {
         const theta = Array.isArray(mapState.metadata.origin) && mapState.metadata.origin.length >= 3
             ? mapState.metadata.origin[2]
             : 0;
 
         const arrowLength = 0.5;
+        // XY平面上の方向ベクトル
         const arrowDir = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
-        const arrowHelper = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(0, 0, 0.001), arrowLength, 0xe74c3c, 0.1, 0.08);
+        arrowDir.normalize();
+
+        const arrowHelper = new THREE.ArrowHelper(
+            arrowDir,
+            new THREE.Vector3(0, 0, 0.002),
+            arrowLength,
+            0xe74c3c,
+            0.1,
+            0.08
+        );
         view3DState.originMarker.add(arrowHelper);
     }
 
@@ -308,9 +332,40 @@ function createFloor() {
 
     // マップ画像がある場合はテクスチャとして適用
     if (mapState.image) {
+        // マップ境界を解析（初回のみ）
+        if (!view3DState.mapBounds) {
+            view3DState.mapBounds = analyzeMapBounds(mapState.image);
+        }
+
+        if (!view3DState.mapBounds) return;
+
+        const bounds = view3DState.mapBounds;
+        const resolution = mapState.metadata?.resolution || 0.05;
+        const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+        const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
+        const imageHeight = mapState.image.height;
+
+        // 有効領域の実世界座標を計算
+        const boundsMinX = originX + bounds.minX * resolution;
+        const boundsMinY = originY + (imageHeight - bounds.maxY) * resolution;
+        const boundsMaxX = originX + bounds.maxX * resolution;
+        const boundsMaxY = originY + (imageHeight - bounds.minY) * resolution;
+
+        const width = boundsMaxX - boundsMinX;
+        const height = boundsMaxY - boundsMinY;
+        const centerX = (boundsMinX + boundsMaxX) / 2;
+        const centerY = (boundsMinY + boundsMaxY) / 2;
+
+        // テクスチャを作成
         const texture = new THREE.CanvasTexture(mapState.image);
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
+
+        // Y軸を反転（画像座標とThree.js座標の違いを吸収）
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.y = -1;
+        texture.offset.y = 1;
 
         const material = new THREE.MeshStandardMaterial({
             map: texture,
@@ -319,25 +374,12 @@ function createFloor() {
             side: THREE.DoubleSide
         });
 
-        // マップのサイズを計算
-        const resolution = mapState.metadata?.resolution || 0.05;
-        const width = mapState.image.width * resolution;
-        const height = mapState.image.height * resolution;
-
         const geometry = new THREE.PlaneGeometry(width, height);
         view3DState.floorPlane = new THREE.Mesh(geometry, material);
-        view3DState.floorPlane.rotation.x = Math.PI / 2;
+
+        // 床面はXY平面（Z=0）に配置
+        view3DState.floorPlane.position.set(centerX, centerY, 0);
         view3DState.floorPlane.receiveShadow = true;
-
-        // 原点位置を考慮
-        const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
-        const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
-
-        view3DState.floorPlane.position.set(
-            originX + width / 2,
-            originY + height / 2,
-            0
-        );
 
         view3DState.scene.add(view3DState.floorPlane);
     }
@@ -390,6 +432,7 @@ function setupEventListeners() {
  */
 export function render3DScene() {
     if (!view3DState.renderer || !view3DState.scene || !view3DState.camera) {
+        console.warn('render3DScene: レンダラー、シーン、カメラのいずれかが初期化されていません');
         return;
     }
 
@@ -403,6 +446,17 @@ export function render3DScene() {
 
     // すべての四角形を3Dで描画
     updateAllObjects();
+
+    // デバッグ情報（初回のみ）
+    if (view3DState.needsRender && !view3DState._debugLogged) {
+        console.log('=== 3D Scene Debug Info ===');
+        console.log('Scene children count:', view3DState.scene.children.length);
+        console.log('Grid visible:', view3DState.gridHelper?.visible);
+        console.log('Origin visible:', view3DState.originMarker?.visible);
+        console.log('Floor plane:', view3DState.floorPlane ? 'exists' : 'not created');
+        console.log('Object meshes count:', view3DState.objectMeshes.size);
+        view3DState._debugLogged = true;
+    }
 
     // レンダリング
     view3DState.renderer.render(view3DState.scene, view3DState.camera);
