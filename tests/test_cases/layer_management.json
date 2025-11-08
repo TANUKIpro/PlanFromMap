@@ -1,0 +1,37 @@
+[
+  {
+    "name": "レイヤー作成",
+    "type": "basic",
+    "input": {
+      "id": "test-1",
+      "name": "Test Layer",
+      "type": "drawing"
+    },
+    "expected": {
+      "success": true,
+      "layer_count": 1
+    }
+  },
+  {
+    "name": "レイヤー削除",
+    "type": "basic",
+    "input": {
+      "id": "test-1"
+    },
+    "expected": {
+      "success": true,
+      "layer_count": 0
+    }
+  },
+  {
+    "name": "恒久レイヤー削除失敗",
+    "type": "error",
+    "input": {
+      "id": "permanent-layer"
+    },
+    "expected": {
+      "success": false,
+      "error": "Cannot delete permanent layer"
+    }
+  }
+]

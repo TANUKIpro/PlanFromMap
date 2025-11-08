@@ -1,0 +1,158 @@
+# Claude自律テストシステム設定
+# このファイルはClaude Codeが参照する設定です
+
+project:
+  name: PlanFromMap
+  type: web_application
+  languages:
+    - python
+    - javascript
+  framework:
+    backend: flask
+    frontend: vanilla_js
+
+test_execution:
+  # 新機能追加時の動作
+  on_feature_add:
+    - create_test_file: true      # テストファイルを自動作成
+    - run_tests: true              # テストを実行
+    - min_coverage: 80             # 最小カバレッジ要求 (%)
+    - require_doc_string: true     # docstringを要求
+    
+  # 既存コード修正時の動作  
+  on_code_modify:
+    - run_affected_tests: true    # 影響を受けるテストを実行
+    - update_existing_tests: true  # 既存テストを更新
+    - regression_check: true       # 回帰テストを実行
+    - check_edge_cases: true       # エッジケースを確認
+    
+  # PR作成前の動作
+  before_pr:
+    - full_test_suite: true        # 全テストスイートを実行
+    - integration_tests: true      # 統合テストを実行
+    - lint_check: true             # リントチェック
+    - coverage_report: true        # カバレッジレポート生成
+    
+  # バグ修正時の動作
+  on_bug_fix:
+    - create_failing_test_first: true  # まず失敗するテストを作成
+    - fix_code: true                    # コードを修正
+    - verify_test_passes: true         # テストが通ることを確認
+    - check_related_tests: true        # 関連テストを確認
+
+test_patterns:
+  python:
+    - "test_*.py"
+    - "*_test.py"
+    - "*_tests.py"
+  javascript:
+    - "*.test.js"
+    - "*.spec.js"
+    - "test_*.js"
+
+test_structure:
+  # テストファイルの配置
+  python_tests: "tests/modules/"
+  js_tests: "tests/javascript/"
+  integration_tests: "tests/integration/"
+  fixtures: "tests/fixtures/"
+  
+  # テストデータ
+  test_data_dir: "tests/fixtures/data/"
+  mock_data_dir: "tests/fixtures/mocks/"
+
+coverage:
+  # カバレッジ設定
+  minimum_overall: 80          # 全体の最小カバレッジ (%)
+  minimum_per_file: 70          # ファイルごとの最小カバレッジ (%)
+  exclude_patterns:
+    - "*/tests/*"
+    - "*/__pycache__/*"
+    - "*/node_modules/*"
+    - "*/venv/*"
+    
+quality_checks:
+  # コード品質チェック
+  max_complexity: 10            # 最大複雑度
+  max_line_length: 100          # 最大行長
+  max_function_length: 50       # 最大関数長（行）
+  
+test_categories:
+  # テストカテゴリと必須度
+  unit_tests:
+    required: true
+    priority: 1
+    
+  integration_tests:
+    required: true
+    priority: 2
+    
+  edge_case_tests:
+    required: true
+    priority: 3
+    
+  performance_tests:
+    required: false
+    priority: 4
+    
+  security_tests:
+    required: false
+    priority: 5
+
+automation:
+  # 自動化設定
+  auto_generate_tests: true     # テストの自動生成
+  auto_update_tests: true        # テストの自動更新
+  auto_run_on_save: false        # 保存時に自動実行
+  watch_mode_available: true     # ファイル監視モード
+  
+  # テスト生成時の設定
+  test_generation:
+    include_basic: true          # 基本テストを含める
+    include_edge_cases: true     # エッジケースを含める
+    include_error_handling: true # エラーハンドリングを含める
+    include_mocks: true          # モックを使用
+    include_performance: false   # パフォーマンステスト（オプション）
+    
+reporting:
+  # レポート設定
+  format: 
+    - console                    # コンソール出力
+    - json                       # JSON形式
+    - html                       # HTMLレポート（オプション）
+  
+  include_in_report:
+    - test_results               # テスト結果
+    - coverage                   # カバレッジ
+    - duration                   # 実行時間
+    - failures                   # 失敗詳細
+    - warnings                   # 警告
+    
+  save_reports: true            # レポートを保存
+  report_dir: "tests/reports/"  # レポート保存先
+
+# Claude向けの特別な指示
+claude_instructions:
+  # 常に従うべきルール
+  always:
+    - "テストを書く前に、まず失敗するテストを作成する"
+    - "各関数に最低3つのテストケースを作成する"
+    - "エッジケースとエラーハンドリングを必ずテストする"
+    - "モックは適切に使用し、実際のAPIやDBには接続しない"
+    - "テストは独立して実行できるようにする"
+    
+  # 推奨事項
+  recommendations:
+    - "AAA (Arrange-Act-Assert) パターンを使用"
+    - "テストメソッド名は test_<機能>_<条件>_<期待結果> の形式"
+    - "1つのテストで1つのことだけをテスト"
+    - "テストデータは fixtures に配置"
+    - "共通のセットアップは setUp() メソッドで"
+    
+  # 禁止事項
+  avoid:
+    - "print文をテストコードに残さない"
+    - "time.sleep() を使用しない（必要なら mock）"
+    - "ハードコードされた絶対パスを使用しない"
+    - "外部サービスに依存するテストを作らない"
+    - "テスト間で状態を共有しない"

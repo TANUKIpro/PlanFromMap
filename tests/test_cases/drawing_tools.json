@@ -1,0 +1,26 @@
+[
+  {
+    "name": "ツール選択",
+    "type": "basic",
+    "input": {
+      "tool": "rectangle"
+    },
+    "expected": {
+      "selected_tool": "rectangle"
+    }
+  },
+  {
+    "name": "描画実行",
+    "type": "basic",
+    "input": {
+      "tool": "circle",
+      "x": 100,
+      "y": 200,
+      "radius": 50
+    },
+    "expected": {
+      "success": true,
+      "shape_count": 1
+    }
+  }
+]
