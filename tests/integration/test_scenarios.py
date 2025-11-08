@@ -4,10 +4,17 @@
 実際のユーザー操作フローをシミュレート
 """
 
+import sys
 import time
+from pathlib import Path
 from typing import Dict, List, Tuple, Any
 from dataclasses import dataclass
-from pathlib import Path
+
+# プロジェクトルートをパスに追加
+current_file = Path(__file__).resolve()
+tests_dir = current_file.parent.parent
+project_root = tests_dir.parent
+sys.path.insert(0, str(project_root))
 
 
 @dataclass
@@ -337,8 +344,6 @@ def run_specific_scenario(scenario_name: str) -> bool:
 
 
 if __name__ == "__main__":
-    import sys
-    
     if len(sys.argv) > 1:
         # 特定のシナリオを実行
         scenario_name = ' '.join(sys.argv[1:])

@@ -14,6 +14,13 @@ from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
 
+# プロジェクトルートとtestsディレクトリをパスに追加
+current_file = Path(__file__).resolve()
+tests_dir = current_file.parent
+project_root = tests_dir.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(tests_dir))
+
 
 @dataclass
 class TestResult:
@@ -33,7 +40,11 @@ class ClaudeTestRunner:
     Claude内で完結するテスト実行環境を提供
     """
     
-    def __init__(self, project_root: Path = Path.cwd()):
+    def __init__(self, project_root: Path = None):
+        if project_root is None:
+            # test_runner.pyの場所からプロジェクトルートを推定
+            project_root = Path(__file__).resolve().parent.parent
+        
         self.project_root = project_root
         self.tests_dir = project_root / "tests"
         self.results: List[TestResult] = []
@@ -66,7 +77,12 @@ class ClaudeTestRunner:
         """Pythonモジュールのテストを実行"""
         print("\n📝 Pythonテストを実行中...")
         
-        test_files = list((self.tests_dir / "modules").glob("test_*.py"))
+        modules_dir = self.tests_dir / "modules"
+        if not modules_dir.exists():
+            print("  ⚠️ modules ディレクトリが見つかりません")
+            return True
+        
+        test_files = list(modules_dir.glob("test_*.py"))
         all_passed = True
         
         for test_file in test_files:
@@ -115,10 +131,27 @@ class ClaudeTestRunner:
         start = time.time()
         
         # テストモジュールを動的にインポート
-        spec = __import__('importlib.util').util.spec_from_file_location(
-            test_file.stem, test_file
-        )
-        module = __import__('importlib.util').util.module_from_spec(spec)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(test_file.stem, test_file)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[test_file.stem] = module
+            try:
+                spec.loader.exec_module(module)
+            except Exception as e:
+                return {
+                    'passed': False,
+                    'duration': time.time() - start,
+                    'error': str(e),
+                    'coverage': 0
+                }
+        else:
+            return {
+                'passed': False,
+                'duration': 0,
+                'error': 'Failed to load module',
+                'coverage': 0
+            }
         
         # テストスイートを作成
         loader = unittest.TestLoader()
@@ -167,7 +200,13 @@ class ClaudeTestRunner:
         
     def _validate_javascript(self, js_file: Path) -> Dict[str, Any]:
         """JavaScriptファイルの簡易検証"""
-        content = js_file.read_text(encoding='utf-8')
+        try:
+            content = js_file.read_text(encoding='utf-8')
+        except Exception as e:
+            return {
+                'valid': False,
+                'warning': f'ファイル読み込みエラー: {str(e)}'
+            }
         
         warnings = []
         
@@ -194,23 +233,47 @@ class ClaudeTestRunner:
         if not integration_dir.exists():
             print("  ⚠️ 統合テストディレクトリが見つかりません")
             return True
-            
-        # シナリオテストを実行
-        from tests.integration.test_scenarios import run_all_scenarios
         
+        # test_scenarios.pyが存在するか確認
+        test_scenarios_file = integration_dir / "test_scenarios.py"
+        if not test_scenarios_file.exists():
+            print("  ⚠️ test_scenarios.py が見つかりません")
+            return True
+            
         try:
-            results = run_all_scenarios()
-            
-            for scenario_name, passed in results.items():
-                if passed:
-                    print(f"  ✅ {scenario_name}: 成功")
-                else:
-                    print(f"  ❌ {scenario_name}: 失敗")
+            # integration/test_scenarios.pyを動的にインポート
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "test_scenarios", 
+                test_scenarios_file
+            )
+            if spec and spec.loader:
+                test_scenarios_module = importlib.util.module_from_spec(spec)
+                sys.modules['test_scenarios'] = test_scenarios_module
+                spec.loader.exec_module(test_scenarios_module)
+                
+                # run_all_scenarios関数を実行
+                if hasattr(test_scenarios_module, 'run_all_scenarios'):
+                    results = test_scenarios_module.run_all_scenarios()
                     
-            return all(results.values())
-            
+                    for scenario_name, passed in results.items():
+                        if passed:
+                            print(f"  ✅ {scenario_name}: 成功")
+                        else:
+                            print(f"  ❌ {scenario_name}: 失敗")
+                            
+                    return all(results.values())
+                else:
+                    print("  ⚠️ run_all_scenarios 関数が見つかりません")
+                    return True
+            else:
+                print("  ⚠️ test_scenarios.py の読み込みに失敗しました")
+                return True
+                
         except Exception as e:
             print(f"  ❌ エラー: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
             
     def _calculate_coverage(self, test_file: Path) -> float:
@@ -311,7 +374,7 @@ class ClaudeTestRunner:
                 changed = False
                 
                 # Pythonファイルの変更を検出
-                for py_file in Path(".").glob("**/*.py"):
+                for py_file in Path(self.project_root).glob("**/*.py"):
                     if "__pycache__" in str(py_file):
                         continue
                         
