@@ -115,3 +115,14 @@ debug/
 *.pem
 *.cert
 *.crt
+
+# Test related
+tests/reports/
+tests/__pycache__/
+tests/**/__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+htmlcov/
