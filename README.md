@@ -58,9 +58,6 @@ cd PlanFromMap
 ```bash
 # Linux/macOS
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ##### 3. 依存関係のインストール
@@ -271,9 +268,6 @@ cd PlanFromMap
 ```bash
 # Linux/macOS
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ##### 3. Install dependencies

@@ -23,9 +23,6 @@ cd PlanFromMap
 ```bash
 # Linux/macOS
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ### 3. 依存関係のインストール
@@ -79,9 +76,6 @@ python -m venv venv
 
 # 仮想環境の有効化 (Linux/Mac)
 source venv/bin/activate
-
-# 仮想環境の有効化 (Windows)
-venv\Scripts\activate
 
 # 依存関係のインストール
 pip install -r requirements.txt
