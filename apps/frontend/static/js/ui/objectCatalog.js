@@ -16,7 +16,7 @@ import { OBJECT_TYPES, OBJECT_TYPE_LABELS, OBJECT_TYPE_COLORS, getCommonProperty
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { mapState } from '../state/mapState.js';
 import { initializeViewCube } from '../ui/viewCube.js';
-import { getPreviewState, drawPreviewModel, drawPreviewFrontDirection } from '../modules/threeDRenderer.js';
+import { getPreviewState, drawPreviewModel, drawPreviewFrontDirection } from '../modules/threeDRendererThree.js';
 
 // カタログの状態
 const catalogState = {

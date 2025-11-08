@@ -37,7 +37,7 @@ import {
     getPropertySchema
 } from '../models/objectTypes.js';
 import { showSuccess, showError, showWarning } from './toast.js';
-import { initializePropertyPreview, renderPropertyPreview } from '../modules/threeDRenderer.js';
+import { initializePropertyPreview, renderPropertyPreview } from '../modules/threeDRendererThree.js';
 
 // ================
 // 初期化

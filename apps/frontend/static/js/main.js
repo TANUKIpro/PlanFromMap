@@ -178,7 +178,7 @@ import {
     updateObjectCatalog
 } from './ui/objectCatalog.js';
 
-// 3D描画
+// 3D描画 (Three.js版)
 import {
     initialize3DView,
     render3DScene,
@@ -192,7 +192,7 @@ import {
     deselect3DObject,
     goto2DMap,
     gotoObjectCatalog
-} from './modules/threeDRenderer.js';
+} from './modules/threeDRendererThree.js';
 
 // ステータスバー
 import {
