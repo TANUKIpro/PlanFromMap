@@ -32,6 +32,7 @@ import { get3DCoordinates } from '../modules/objectPropertyManager.js';
 import { OBJECT_TYPES, OBJECT_TYPE_COLORS } from '../models/objectTypes.js';
 import { initializeViewCube, updateViewCube } from '../ui/viewCube.js';
 import { analyzeMapBounds } from '../utils/imageProcessing.js';
+import { createDefaultLighting } from '../utils/lightingSystem.js';
 
 // ================
 // 3Dビュー状態
@@ -54,6 +55,13 @@ const view3DState = {
     selectedObjectId: null, // 選択されたオブジェクトのID
     mapBounds: null        // マップの有効領域 {minX, minY, maxX, maxY, centerX, centerY}
 };
+
+// ================
+// 光源システム
+// ================
+
+// グローバル光源システムインスタンス
+let globalLighting = createDefaultLighting();
 
 // ================
 // 初期化
@@ -663,8 +671,8 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
             drawFront = false;
     }
 
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
+    // 上面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -672,12 +680,12 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
     ctx.lineTo(screen[7].x, screen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
+    // 底面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -685,11 +693,12 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
     ctx.lineTo(screen[3].x, screen[3].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
     ctx.stroke();
 
-    // 左面
+    // 左面（光源システムを使用）
     if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
         ctx.lineTo(screen[3].x, screen[3].y);
@@ -697,12 +706,13 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.lineTo(screen[4].x, screen[4].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
         ctx.stroke();
     }
 
-    // 右面
+    // 右面（光源システムを使用）
     if (drawRight) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(screen[1].x, screen[1].y);
         ctx.lineTo(screen[5].x, screen[5].y);
@@ -710,12 +720,13 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.lineTo(screen[2].x, screen[2].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
         ctx.stroke();
     }
 
-    // 前面
+    // 前面（光源システムを使用）
     if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
         ctx.lineTo(screen[1].x, screen[1].y);
@@ -723,12 +734,13 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.lineTo(screen[4].x, screen[4].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
         ctx.stroke();
     }
 
-    // 背面
+    // 背面（光源システムを使用）
     if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
         ctx.beginPath();
         ctx.moveTo(screen[2].x, screen[2].y);
         ctx.lineTo(screen[3].x, screen[3].y);
@@ -736,13 +748,15 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.lineTo(screen[6].x, screen[6].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'back');
         ctx.stroke();
     }
 
     // 棚板を描画
     if (objectProperties && objectProperties.shelfLevels) {
         const levels = objectProperties.shelfLevels;
-        ctx.strokeStyle = darkenColor(color, 30);
+        // 棚板はエッジとして扱い、より暗く描画
+        ctx.strokeStyle = globalLighting.getFaceColor(color, 'top', { isEdge: true });
         ctx.lineWidth = 2;
 
         for (let i = 1; i < levels; i++) {
@@ -795,8 +809,8 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
 
     ctx.save();
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
+    // 底面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -804,12 +818,12 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.lineTo(screen[3].x, screen[3].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
+    // 左面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -817,10 +831,11 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.lineTo(screen[4].x, screen[4].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
     ctx.stroke();
 
-    // 右面
-    ctx.fillStyle = color;
+    // 右面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -828,10 +843,11 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.lineTo(screen[2].x, screen[2].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
     ctx.stroke();
 
-    // 前面
-    ctx.fillStyle = darkenColor(color, 5);
+    // 前面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -839,10 +855,11 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.lineTo(screen[4].x, screen[4].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
     ctx.stroke();
 
-    // 背面
-    ctx.fillStyle = darkenColor(color, 15);
+    // 背面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
     ctx.beginPath();
     ctx.moveTo(screen[2].x, screen[2].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -850,6 +867,7 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.lineTo(screen[6].x, screen[6].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'back');
     ctx.stroke();
 
     ctx.restore();
@@ -884,7 +902,8 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
         y: centerY - v.y * view3DState.scale
     }));
 
-    ctx.fillStyle = lightenColor(color, 20);
+    // 天板上面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(topScreen[4].x, topScreen[4].y);
     ctx.lineTo(topScreen[5].x, topScreen[5].y);
@@ -892,11 +911,12 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(topScreen[7].x, topScreen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.fillStyle = color;
+    // 天板右面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(topScreen[1].x, topScreen[1].y);
     ctx.lineTo(topScreen[5].x, topScreen[5].y);
@@ -904,9 +924,11 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(topScreen[2].x, topScreen[2].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
     ctx.stroke();
 
-    ctx.fillStyle = darkenColor(color, 10);
+    // 天板左面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(topScreen[0].x, topScreen[0].y);
     ctx.lineTo(topScreen[3].x, topScreen[3].y);
@@ -914,6 +936,7 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(topScreen[4].x, topScreen[4].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
     ctx.stroke();
 
     // 4本の脚を描画
@@ -941,7 +964,8 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
             y: centerY - v.y * view3DState.scale
         }));
 
-        ctx.fillStyle = darkenColor(color, 15);
+        // 脚右面（光源システムを使用）
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(legScreen[1].x, legScreen[1].y);
         ctx.lineTo(legScreen[5].x, legScreen[5].y);
@@ -949,9 +973,11 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
         ctx.lineTo(legScreen[2].x, legScreen[2].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
         ctx.stroke();
 
-        ctx.fillStyle = darkenColor(color, 20);
+        // 脚左面（光源システムを使用）
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(legScreen[0].x, legScreen[0].y);
         ctx.lineTo(legScreen[3].x, legScreen[3].y);
@@ -959,6 +985,7 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
         ctx.lineTo(legScreen[4].x, legScreen[4].y);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
         ctx.stroke();
     });
 
@@ -991,7 +1018,8 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
 
     ctx.save();
 
-    ctx.fillStyle = lightenColor(color, 10);
+    // 扉前面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -999,11 +1027,12 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[4].x, screen[4].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.fillStyle = color;
+    // 扉右面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -1011,9 +1040,11 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[2].x, screen[2].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
     ctx.stroke();
 
-    ctx.fillStyle = lightenColor(color, 20);
+    // 扉上面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -1021,6 +1052,7 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[7].x, screen[7].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.stroke();
 
     ctx.restore();
@@ -1063,8 +1095,8 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 面を描画（背面から前面へ）
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
+    // 上面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -1072,12 +1104,12 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[7].x, screen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
+    // 左面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -1085,10 +1117,11 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[4].x, screen[4].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
     ctx.stroke();
 
-    // 右面
-    ctx.fillStyle = color;
+    // 右面（光源システムを使用）
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -1096,6 +1129,7 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[2].x, screen[2].y);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
     ctx.stroke();
 
     ctx.restore();
@@ -1333,20 +1367,6 @@ function lightenColor(color, percent) {
     const R = Math.min(255, (num >> 16) + amt);
     const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
     const B = Math.min(255, (num & 0x0000FF) + amt);
-    return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
-}
-
-/**
- * 色を暗くする
- *
- * @private
- */
-function darkenColor(color, percent) {
-    const num = parseInt(color.replace("#",""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.max(0, (num >> 16) - amt);
-    const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
-    const B = Math.max(0, (num & 0x0000FF) - amt);
     return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
@@ -1689,6 +1709,39 @@ export function setMapBounds(bounds) {
     view3DState.mapBounds = bounds;
 }
 
+/**
+ * 光源設定を更新する
+ *
+ * @param {Object} updates - 更新する光源設定
+ * @param {Object} [updates.lightDirection] - 光源方向 {x, y, z}
+ * @param {number} [updates.ambient] - 環境光の強度 (0.0-1.0)
+ * @param {number} [updates.diffuse] - 拡散光の強度 (0.0-1.0)
+ * @param {number} [updates.edgeDarkening] - エッジの暗さ (0.0-0.5)
+ * @returns {void}
+ *
+ * @example
+ * updateLightingConfig({ ambient: 0.4, diffuse: 0.6 });
+ */
+export function updateLightingConfig(updates) {
+    globalLighting.updateConfig(updates);
+    render3DScene();
+
+    // プレビューも更新（選択中のオブジェクトがある場合）
+    const selectedRect = getAllRectangles().find(r => r.selected);
+    if (selectedRect) {
+        renderPropertyPreview(selectedRect.id);
+    }
+}
+
+/**
+ * 現在の光源設定を取得する
+ *
+ * @returns {Object} 光源設定
+ */
+export function getLightingConfig() {
+    return globalLighting.getConfig();
+}
+
 // ================
 // プロパティプレビュー
 // ================
@@ -1916,7 +1969,7 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -1924,12 +1977,12 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[7].x, screen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -1940,7 +1993,7 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
     ctx.stroke();
 
     // 右面
-    ctx.fillStyle = color;
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -2041,7 +2094,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     }
 
     // 上面（天板）
-    ctx.fillStyle = lightenColor(color, 20);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -2049,12 +2102,12 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     ctx.lineTo(screen[7].x, screen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -2066,7 +2119,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
 
     // 左面
     if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
         ctx.lineTo(screen[3].x, screen[3].y);
@@ -2079,7 +2132,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
 
     // 右面
     if (drawRight) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(screen[1].x, screen[1].y);
         ctx.lineTo(screen[5].x, screen[5].y);
@@ -2092,7 +2145,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
 
     // 前面（y-）
     if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
         ctx.lineTo(screen[1].x, screen[1].y);
@@ -2105,7 +2158,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
 
     // 背面（y+）
     if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
         ctx.beginPath();
         ctx.moveTo(screen[2].x, screen[2].y);
         ctx.lineTo(screen[3].x, screen[3].y);
@@ -2119,7 +2172,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     // 棚板を描画（オプション）
     if (objectProperties && objectProperties.shelfLevels) {
         const levels = objectProperties.shelfLevels;
-        ctx.strokeStyle = darkenColor(color, 30);
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
         ctx.lineWidth = 1.5;
 
         for (let i = 1; i < levels; i++) {
@@ -2181,7 +2234,7 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     // 上部は開いているので描画しない
 
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -2189,12 +2242,12 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     ctx.lineTo(screen[3].x, screen[3].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -2205,7 +2258,7 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     ctx.stroke();
 
     // 右面
-    ctx.fillStyle = color;
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -2216,7 +2269,7 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     ctx.stroke();
 
     // 前面
-    ctx.fillStyle = darkenColor(color, 5);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -2227,7 +2280,7 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     ctx.stroke();
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
     ctx.beginPath();
     ctx.moveTo(screen[2].x, screen[2].y);
     ctx.lineTo(screen[3].x, screen[3].y);
@@ -2271,7 +2324,7 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     }));
 
     // 天板上面
-    ctx.fillStyle = lightenColor(color, 20);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(topScreen[4].x, topScreen[4].y);
     ctx.lineTo(topScreen[5].x, topScreen[5].y);
@@ -2279,12 +2332,12 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(topScreen[7].x, topScreen[7].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // 天板側面
-    ctx.fillStyle = color;
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(topScreen[1].x, topScreen[1].y);
     ctx.lineTo(topScreen[5].x, topScreen[5].y);
@@ -2294,7 +2347,7 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = darkenColor(color, 10);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
     ctx.beginPath();
     ctx.moveTo(topScreen[0].x, topScreen[0].y);
     ctx.lineTo(topScreen[3].x, topScreen[3].y);
@@ -2329,8 +2382,8 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
             y: centerY - v.y * previewState.scale
         }));
 
-        // 脚の側面
-        ctx.fillStyle = darkenColor(color, 15);
+        // 脚の側面（右面）
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(legScreen[1].x, legScreen[1].y);
         ctx.lineTo(legScreen[5].x, legScreen[5].y);
@@ -2340,7 +2393,8 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = darkenColor(color, 20);
+        // 脚の側面（左面）
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(legScreen[0].x, legScreen[0].y);
         ctx.lineTo(legScreen[3].x, legScreen[3].y);
@@ -2382,7 +2436,7 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 前面（大きい面）
-    ctx.fillStyle = lightenColor(color, 10);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
     ctx.beginPath();
     ctx.moveTo(screen[0].x, screen[0].y);
     ctx.lineTo(screen[1].x, screen[1].y);
@@ -2390,12 +2444,12 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.lineTo(screen[4].x, screen[4].y);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
+    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
     ctx.lineWidth = 1;
     ctx.stroke();
 
     // 右面（薄い面）
-    ctx.fillStyle = color;
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
     ctx.beginPath();
     ctx.moveTo(screen[1].x, screen[1].y);
     ctx.lineTo(screen[5].x, screen[5].y);
@@ -2406,7 +2460,7 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.stroke();
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
+    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
     ctx.beginPath();
     ctx.moveTo(screen[4].x, screen[4].y);
     ctx.lineTo(screen[5].x, screen[5].y);

@@ -191,7 +191,9 @@ import {
     select3DObject,
     deselect3DObject,
     goto2DMap,
-    gotoObjectCatalog
+    gotoObjectCatalog,
+    updateLightingConfig,
+    getLightingConfig
 } from './modules/threeDRenderer.js';
 
 // ステータスバー
@@ -351,6 +353,8 @@ window.getMapBounds = getMapBounds;
 window.setMapBounds = setMapBounds;
 window.select3DObject = select3DObject;
 window.deselect3DObject = deselect3DObject;
+window.updateLightingConfig = updateLightingConfig;
+window.getLightingConfig = getLightingConfig;
 window.goto2DMap = goto2DMap;
 window.gotoObjectCatalog = gotoObjectCatalog;
 
