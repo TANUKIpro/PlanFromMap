@@ -564,13 +564,26 @@ function draw3DObject(ctx, rectangle, centerX, centerY) {
     const coords3D = get3DCoordinates(rectangle.id);
     if (!coords3D) return;
 
+    // 選択されているかチェック
+    const isSelected = view3DState.selectedObjectId === rectangle.id;
+
     // オブジェクトタイプに応じた色
-    const color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
+    let color = rectangle.objectType && rectangle.objectType !== OBJECT_TYPES.NONE
         ? OBJECT_TYPE_COLORS[rectangle.objectType]
         : OBJECT_TYPE_COLORS.none;
 
+    // 選択されている場合は色を明るくする
+    if (isSelected) {
+        color = lightenColor(color, 40);
+    }
+
     // オブジェクトタイプに応じた3Dモデルを描画
     draw3DModel(ctx, coords3D, color, centerX, centerY, rectangle.objectType, rectangle.frontDirection, rectangle.objectProperties);
+
+    // 選択されている場合はハイライト枠を描画
+    if (isSelected) {
+        drawSelectionHighlight(ctx, coords3D, centerX, centerY);
+    }
 
     // 前面方向を矢印で表示
     if (rectangle.objectType !== OBJECT_TYPES.NONE) {
@@ -1089,6 +1102,82 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
 }
 
 /**
+ * 選択ハイライトを描画
+ *
+ * @private
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Object} coords3D - 3D座標情報
+ * @param {number} centerX - 中心X座標
+ * @param {number} centerY - 中心Y座標
+ */
+function drawSelectionHighlight(ctx, coords3D, centerX, centerY) {
+    const { x, y, z, width, depth, height } = coords3D;
+
+    // バウンディングボックスの頂点を計算
+    const vertices = [
+        worldToIso(x - width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y + depth/2, z + height/2),
+        worldToIso(x - width/2, y + depth/2, z + height/2),
+    ];
+
+    const screen = vertices.map(v => ({
+        x: centerX + v.x * view3DState.scale,
+        y: centerY - v.y * view3DState.scale
+    }));
+
+    ctx.save();
+    ctx.strokeStyle = '#667eea';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 5]);
+
+    // 下部の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[2].x, screen[2].y);
+    ctx.lineTo(screen[3].x, screen[3].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    // 上部の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[4].x, screen[4].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    // 垂直の辺
+    ctx.beginPath();
+    ctx.moveTo(screen[0].x, screen[0].y);
+    ctx.lineTo(screen[4].x, screen[4].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[1].x, screen[1].y);
+    ctx.lineTo(screen[5].x, screen[5].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[2].x, screen[2].y);
+    ctx.lineTo(screen[6].x, screen[6].y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(screen[3].x, screen[3].y);
+    ctx.lineTo(screen[7].x, screen[7].y);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+/**
  * 前面方向を矢印で描画
  *
  * @private
@@ -1357,12 +1446,17 @@ function handle3DObjectClick(event) {
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
 
+    console.log('3D Click at:', clickX, clickY);
+
     // すべての四角形を取得
     const rectangles = getAllRectangles();
     if (!rectangles || rectangles.length === 0) {
+        console.log('No rectangles found');
         deselect3DObject();
         return;
     }
+
+    console.log('Found rectangles:', rectangles.length);
 
     // クリック位置に最も近いオブジェクトを探す
     let closestObject = null;
@@ -1376,9 +1470,9 @@ function handle3DObjectClick(event) {
         if (!coords) return;
 
         // オブジェクトの中心位置を3D投影
-        const objCenterX = (coords.xMin + coords.xMax) / 2;
-        const objCenterY = (coords.yMin + coords.yMax) / 2;
-        const objCenterZ = coords.zMax / 2;
+        const objCenterX = coords.x;
+        const objCenterY = coords.y;
+        const objCenterZ = coords.z;
 
         const isoPos = worldToIso(objCenterX, objCenterY, objCenterZ);
         const screenX = centerX + isoPos.x * view3DState.scale;
@@ -1390,6 +1484,8 @@ function handle3DObjectClick(event) {
             Math.pow(screenY - clickY, 2)
         );
 
+        console.log(`Object ${rect.id}: distance=${distance.toFixed(2)}, screen=(${screenX.toFixed(1)}, ${screenY.toFixed(1)})`);
+
         if (distance < closestDistance) {
             closestDistance = distance;
             closestObject = rect;
@@ -1397,10 +1493,14 @@ function handle3DObjectClick(event) {
     });
 
     // 閾値内にあるオブジェクトのみ選択
-    const threshold = 100; // ピクセル
+    const threshold = 150; // ピクセル（閾値を増やした）
+    console.log(`Closest object: ${closestObject?.id}, distance=${closestDistance.toFixed(2)}, threshold=${threshold}`);
+
     if (closestObject && closestDistance < threshold) {
+        console.log('Selecting object:', closestObject.id);
         select3DObject(closestObject.id);
     } else {
+        console.log('Deselecting (no object close enough)');
         deselect3DObject();
     }
 }
