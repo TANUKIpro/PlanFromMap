@@ -83,14 +83,23 @@ const previewState = {
 // ================
 
 /**
- * 座標系の設定
+ * 座標系の設定と変換
  *
- * 既存の座標系を維持：
+ * 【アプリケーションの座標系】(元の実装)
  * - X軸: 右方向が正
- * - Y軸: 奥方向が正
+ * - Y軸: 奥方向が正（画面の下方向）
  * - Z軸: 上方向が正
  *
- * Three.jsのデフォルト座標系と同じなので、変換不要
+ * 【Three.jsの座標系】(デフォルト)
+ * - X軸: 右方向が正
+ * - Y軸: 上方向が正
+ * - Z軸: 手前方向が正（カメラ向き、奥がマイナス）
+ *
+ * 【座標変換ルール】
+ * アプリ(x, y, z) → Three.js(x, z, -y)
+ * - X: そのまま
+ * - Y(奥) → -Z(Three.js)  ※奥方向がマイナスZ
+ * - Z(上) → Y(Three.js)
  */
 
 // ================
@@ -362,7 +371,7 @@ function addMapTexture() {
 
     // 実世界サイズ（メートル）
     const realWidth = imageWidth * resolution;
-    const realHeight = imageHeight * resolution;
+    const realDepth = imageHeight * resolution;
 
     // テクスチャを作成
     const texture = new THREE.Texture(mapState.image);
@@ -370,8 +379,8 @@ function addMapTexture() {
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
 
-    // 床面の平面ジオメトリ
-    const geometry = new THREE.PlaneGeometry(realWidth, realHeight);
+    // 床面の平面ジオメトリ (XZ平面)
+    const geometry = new THREE.PlaneGeometry(realWidth, realDepth);
     const material = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.DoubleSide,
@@ -381,19 +390,21 @@ function addMapTexture() {
 
     const mesh = new THREE.Mesh(geometry, material);
 
-    // 床面に配置（XZ平面）
-    mesh.rotation.x = -Math.PI / 2; // Y-upなので90度回転
+    // PlaneGeometryはデフォルトでXY平面なので、XZ平面に回転
+    mesh.rotation.x = -Math.PI / 2;
 
-    // マップの原点を考慮した位置調整
+    // ROSマップの原点を取得（マップ左下の実世界座標）
     const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
     const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
 
-    // マップの中心を原点に配置
-    mesh.position.set(
-        originX + realWidth / 2,
-        0,
-        originY + realHeight / 2
-    );
+    // マップ中心の実世界座標を計算
+    // ROSマップは左下が原点、画像は左上が原点
+    const centerWorldX = originX + realWidth / 2;
+    const centerWorldY = originY + realDepth / 2;
+
+    // 座標変換: アプリ(x, y, 0) → Three.js(x, 0, -y)
+    // 床面なのでY=0（高さ）
+    mesh.position.set(centerWorldX, 0, -centerWorldY);
 
     mesh.receiveShadow = true;
 
@@ -489,6 +500,8 @@ function create3DModelMesh(coords3D, color, objectType, frontDirection, objectPr
 function createDefaultMesh(coords3D, color) {
     const { x, y, z, width, depth, height } = coords3D;
 
+    // BoxGeometryは中心が原点
+    // coords3D.zは既に高さの中心座標（heightMeters / 2）
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshStandardMaterial({
         color: color,
@@ -497,7 +510,8 @@ function createDefaultMesh(coords3D, color) {
     });
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, z + height / 2, y); // Y座標は奥行き、Z座標は高さ
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    mesh.position.set(x, z, -y);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
@@ -519,12 +533,13 @@ function createShelfMesh(coords3D, color, frontDirection, objectProperties) {
 
     // 基本的な箱型（前面が開いている）
     const wallThickness = Math.min(width, depth) * 0.05;
-
-    // 背面
-    const backGeometry = new THREE.BoxGeometry(width, height, wallThickness);
     const material = new THREE.MeshStandardMaterial({ color: color });
+
+    // 背面（奥側）
+    const backGeometry = new THREE.BoxGeometry(width, height, wallThickness);
     const back = new THREE.Mesh(backGeometry, material);
-    back.position.set(0, height / 2, -depth / 2 + wallThickness / 2);
+    // 元の座標系(0, height/2, -depth/2) → Three.js(0, height/2, depth/2)
+    back.position.set(0, height / 2, depth / 2 - wallThickness / 2);
     back.castShadow = true;
     back.receiveShadow = true;
     group.add(back);
@@ -572,7 +587,8 @@ function createShelfMesh(coords3D, color, frontDirection, objectProperties) {
     // 前面方向に応じて回転
     applyFrontDirectionRotation(group, frontDirection);
 
-    group.position.set(x, z, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    group.position.set(x, z, -y);
 
     return group;
 }
@@ -599,17 +615,17 @@ function createBoxMesh(coords3D, color, frontDirection, objectProperties) {
     // 4つの側面
     const sideHeight = height - wallThickness;
 
-    // 前面
+    // 前面（手前側）
     const frontGeometry = new THREE.BoxGeometry(width, sideHeight, wallThickness);
     const front = new THREE.Mesh(frontGeometry, material);
-    front.position.set(0, wallThickness + sideHeight / 2, depth / 2 - wallThickness / 2);
+    front.position.set(0, wallThickness + sideHeight / 2, -depth / 2 + wallThickness / 2);
     front.castShadow = true;
     front.receiveShadow = true;
     group.add(front);
 
-    // 背面
+    // 背面（奥側）
     const back = new THREE.Mesh(frontGeometry, material);
-    back.position.set(0, wallThickness + sideHeight / 2, -depth / 2 + wallThickness / 2);
+    back.position.set(0, wallThickness + sideHeight / 2, depth / 2 - wallThickness / 2);
     back.castShadow = true;
     back.receiveShadow = true;
     group.add(back);
@@ -629,7 +645,8 @@ function createBoxMesh(coords3D, color, frontDirection, objectProperties) {
     right.receiveShadow = true;
     group.add(right);
 
-    group.position.set(x, z, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    group.position.set(x, z, -y);
 
     return group;
 }
@@ -673,7 +690,8 @@ function createTableMesh(coords3D, color, objectProperties) {
         group.add(leg);
     });
 
-    group.position.set(x, z, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    group.position.set(x, z, -y);
 
     return group;
 }
@@ -691,7 +709,8 @@ function createDoorMesh(coords3D, color) {
     const material = new THREE.MeshStandardMaterial({ color: color });
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, z + height / 2, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    mesh.position.set(x, z, -y);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
@@ -709,7 +728,8 @@ function createWallMesh(coords3D, color) {
     const material = new THREE.MeshStandardMaterial({ color: color });
 
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, z + height / 2, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    mesh.position.set(x, z, -y);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
@@ -722,19 +742,23 @@ function createWallMesh(coords3D, color) {
  */
 function applyFrontDirectionRotation(group, frontDirection) {
     // 棚の前面方向の回転
-    // デフォルトは前面が前方（+Z方向）を向いている
+    // デフォルトで前面は-Z方向（手前）を向いている
+    // 元の座標系: top=奥, bottom=手前, left=左, right=右
     switch (frontDirection) {
         case 'top':
-            // 回転なし（デフォルト）
+            // 奥方向（+Z） = 180度回転
+            group.rotation.y = Math.PI;
             break;
         case 'bottom':
-            group.rotation.y = Math.PI; // 180度回転
+            // 手前方向（-Z） = 回転なし
             break;
         case 'left':
-            group.rotation.y = Math.PI / 2; // 90度左回転
+            // 左方向（-X） = 90度右回転（-Y軸周り）
+            group.rotation.y = -Math.PI / 2;
             break;
         case 'right':
-            group.rotation.y = -Math.PI / 2; // 90度右回転
+            // 右方向（+X） = 90度左回転（+Y軸周り）
+            group.rotation.y = Math.PI / 2;
             break;
     }
 }
@@ -748,26 +772,35 @@ function createFrontDirectionArrow(coords3D, frontDirection, color) {
 
     const { x, y, z, width, depth, height } = coords3D;
 
-    // 矢印の向き
-    let dir = new THREE.Vector3(0, 0, 1); // デフォルトは前方
-    let origin = new THREE.Vector3(x, z + height, y + depth / 2);
+    // 矢印の向きと原点（Three.js座標系で）
+    let dir = new THREE.Vector3();
+    let origin = new THREE.Vector3();
+
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    const threeX = x;
+    const threeY = z + height; // オブジェクトの上端
+    const threeZ = -y;
 
     switch (frontDirection) {
         case 'top':
+            // 元の座標系で「奥」方向 → Three.jsで+Z方向
             dir.set(0, 0, 1);
-            origin.set(x, z + height, y + depth / 2);
+            origin.set(threeX, threeY, threeZ + depth / 2);
             break;
         case 'bottom':
+            // 元の座標系で「手前」方向 → Three.jsで-Z方向
             dir.set(0, 0, -1);
-            origin.set(x, z + height, y - depth / 2);
+            origin.set(threeX, threeY, threeZ - depth / 2);
             break;
         case 'left':
+            // 左方向（X軸負方向）
             dir.set(-1, 0, 0);
-            origin.set(x - width / 2, z + height, y);
+            origin.set(threeX - width / 2, threeY, threeZ);
             break;
         case 'right':
+            // 右方向（X軸正方向）
             dir.set(1, 0, 0);
-            origin.set(x + width / 2, z + height, y);
+            origin.set(threeX + width / 2, threeY, threeZ);
             break;
     }
 
@@ -791,7 +824,8 @@ function createSelectionHighlight(coords3D) {
     const material = new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: 2 });
     const lineSegments = new THREE.LineSegments(edges, material);
 
-    lineSegments.position.set(x, z + height / 2, y);
+    // 座標変換: アプリ(x, y, z) → Three.js(x, z, -y)
+    lineSegments.position.set(x, z, -y);
 
     return lineSegments;
 }
@@ -1016,11 +1050,12 @@ export function renderPropertyPreview(rectangleId) {
     const coords3D = get3DCoordinates(rectangleId);
     if (!coords3D) return;
 
-    // プレビュー用に座標を正規化（原点中心）
+    // プレビュー用に座標を正規化（原点中心、床面に配置）
+    // Three.js座標系では、底面をy=0に配置するため、zをheight/2に設定
     const previewCoords = {
         x: 0,
         y: 0,
-        z: 0,
+        z: coords3D.height / 2,  // 底面がy=0になるように
         width: coords3D.width,
         depth: coords3D.depth,
         height: coords3D.height,
