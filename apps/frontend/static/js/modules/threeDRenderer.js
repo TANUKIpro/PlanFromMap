@@ -637,10 +637,7 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         worldToIso(x - width/2, y + depth/2, z + height/2),
     ];
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * view3DState.scale,
-        y: centerY - v.y * view3DState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, view3DState.scale);
 
     ctx.save();
 
@@ -663,84 +660,19 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
             drawFront = false;
     }
 
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 30), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        drawLeft ? { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) } : null,
+        drawRight ? { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) } : null,
+        drawFront ? { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) } : null,
+        drawBack ? { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) } : null,
+    ].filter(Boolean);
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
-    // 左面
-    if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 右面
-    if (drawRight) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.lineTo(screen[2].x, screen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 前面
-    if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 背面
-    if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(screen[2].x, screen[2].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 棚板を描画
-    if (objectProperties && objectProperties.shelfLevels) {
+    // 棚板を描画（前面が開いている場合のみ）
+    if (!drawFront && objectProperties && objectProperties.shelfLevels) {
         const levels = objectProperties.shelfLevels;
         ctx.strokeStyle = darkenColor(color, 30);
         ctx.lineWidth = 2;
@@ -788,69 +720,19 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
         worldToIso(x - width/2, y + depth/2, z + height/2),
     ];
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * view3DState.scale,
-        y: centerY - v.y * view3DState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, view3DState.scale);
 
     ctx.save();
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 30), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -879,42 +761,18 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
         worldToIso(x - width/2, y + depth/2, topZ + topThickness/2),
     ];
 
-    const topScreen = topVertices.map(v => ({
-        x: centerX + v.x * view3DState.scale,
-        y: centerY - v.y * view3DState.scale
-    }));
+    const topProjected = projectVerticesToScreen(topVertices, centerX, centerY, view3DState.scale);
 
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const topFaces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, topProjected, topFaces);
 
     // 4本の脚を描画
     const legPositions = [
@@ -936,30 +794,18 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
             worldToIso(pos.x - legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
         ];
 
-        const legScreen = legVertices.map(v => ({
-            x: centerX + v.x * view3DState.scale,
-            y: centerY - v.y * view3DState.scale
-        }));
+        const legProjected = projectVerticesToScreen(legVertices, centerX, centerY, view3DState.scale);
 
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const legFaces = [
+            { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+            { indices: [4, 5, 6, 7], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+            { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 20), strokeStyle: darkenColor(color, 30) },
+            { indices: [1, 2, 6, 5], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+            { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+            { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 30) },
+        ];
 
-        ctx.fillStyle = darkenColor(color, 20);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        drawSortedFaces(ctx, legProjected, legFaces);
     });
 
     ctx.restore();
@@ -984,44 +830,20 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
         worldToIso(x - width/2, y + doorDepth/2, z + height/2),
     ];
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * view3DState.scale,
-        y: centerY - v.y * view3DState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, view3DState.scale);
 
     ctx.save();
 
-    ctx.fillStyle = lightenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: lightenColor(color, 10), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 20), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -1042,61 +864,31 @@ function draw3DWall(ctx, coords3D, color, centerX, centerY) {
 function drawBox(ctx, coords3D, color, centerX, centerY) {
     const { x, y, z, width, depth, height } = coords3D;
 
-    // 8つの頂点を計算
     const vertices = [
-        worldToIso(x - width/2, y - depth/2, z - height/2),  // 0: 左下前
-        worldToIso(x + width/2, y - depth/2, z - height/2),  // 1: 右下前
-        worldToIso(x + width/2, y + depth/2, z - height/2),  // 2: 右下後
-        worldToIso(x - width/2, y + depth/2, z - height/2),  // 3: 左下後
-        worldToIso(x - width/2, y - depth/2, z + height/2),  // 4: 左上前
-        worldToIso(x + width/2, y - depth/2, z + height/2),  // 5: 右上前
-        worldToIso(x + width/2, y + depth/2, z + height/2),  // 6: 右上後
-        worldToIso(x - width/2, y + depth/2, z + height/2),  // 7: 左上後
+        worldToIso(x - width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y - depth/2, z - height/2),
+        worldToIso(x + width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y + depth/2, z - height/2),
+        worldToIso(x - width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y - depth/2, z + height/2),
+        worldToIso(x + width/2, y + depth/2, z + height/2),
+        worldToIso(x - width/2, y + depth/2, z + height/2),
     ];
 
-    // スクリーン座標に変換
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * view3DState.scale,
-        y: centerY - v.y * view3DState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, view3DState.scale);
 
     ctx.save();
 
-    // 面を描画（背面から前面へ）
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 35), strokeStyle: darkenColor(color, 20) }, // 底面
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) }, // 上面
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) }, // 左面
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },                  // 右面
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },  // 前面
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 30) }, // 背面
+    ];
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -1314,13 +1106,72 @@ function worldToIso(x, y, z) {
 
     return {
         x: -rotX,  // X軸を反転（2Dマップとの整合性のため）
-        y: z - rotY * Math.sin(tiltRad)
+        y: z - rotY * Math.sin(tiltRad),
+        depth: rotY * Math.cos(tiltRad) + z * Math.sin(tiltRad)
     };
 }
 
 // ================
 // ユーティリティ
 // ================
+
+/**
+ * 3D頂点をキャンバス座標へ変換する
+ *
+ * @param {Array<Object>} vertices - 等角投影後の頂点配列
+ * @param {number} centerX - キャンバス中心X座標
+ * @param {number} centerY - キャンバス中心Y座標
+ * @param {number} scale - 拡大率
+ * @returns {Array<Object>} 画面座標と深度を含む頂点配列
+ */
+function projectVerticesToScreen(vertices, centerX, centerY, scale) {
+    return vertices.map(v => ({
+        x: centerX + v.x * scale,
+        y: centerY - v.y * scale,
+        depth: v.depth
+    }));
+}
+
+/**
+ * 面を奥から手前へ並べ替えて描画する
+ *
+ * @param {CanvasRenderingContext2D} ctx - 描画コンテキスト
+ * @param {Array<Object>} projectedVertices - 画面座標の頂点配列
+ * @param {Array<Object>} faces - 面情報 { indices, fillStyle, strokeStyle, lineWidth, visible }
+ */
+function drawSortedFaces(ctx, projectedVertices, faces) {
+    const visibleFaces = faces.filter(face => face && face.visible !== false);
+
+    const sortedFaces = visibleFaces
+        .map(face => ({
+            ...face,
+            depth: face.indices.reduce((sum, idx) => sum + (projectedVertices[idx]?.depth || 0), 0) / face.indices.length
+        }))
+        .sort((a, b) => b.depth - a.depth);
+
+    sortedFaces.forEach(face => {
+        if (!face.indices.length) return;
+        ctx.beginPath();
+        const firstVertex = projectedVertices[face.indices[0]];
+        ctx.moveTo(firstVertex.x, firstVertex.y);
+        for (let i = 1; i < face.indices.length; i++) {
+            const vertex = projectedVertices[face.indices[i]];
+            ctx.lineTo(vertex.x, vertex.y);
+        }
+        ctx.closePath();
+
+        if (face.fillStyle) {
+            ctx.fillStyle = face.fillStyle;
+            ctx.fill();
+        }
+
+        if (face.strokeStyle) {
+            ctx.strokeStyle = face.strokeStyle;
+            ctx.lineWidth = face.lineWidth || 1;
+            ctx.stroke();
+        }
+    });
+}
 
 /**
  * 色を明るくする
@@ -1891,7 +1742,6 @@ function drawPreviewGrid(ctx, centerX, centerY) {
 function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
     const { x, y, z, width, depth, height, rotation } = coords3D;
 
-    // 8つの頂点を計算（回転を考慮）
     const localVertices = [
         { lx: -width/2, ly: -depth/2, lz: -height/2 },
         { lx: +width/2, ly: -depth/2, lz: -height/2 },
@@ -1908,47 +1758,20 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
         return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
     });
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * previewState.scale,
-        y: centerY - v.y * previewState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, previewState.scale);
 
     ctx.save();
 
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 35), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 30) },
+    ];
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -1994,9 +1817,6 @@ export function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectT
  */
 function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
     const { x, y, z, width, depth, height, rotation } = coords3D;
-    const thickness = 0.05; // 壁の厚さ
-
-    // 8つの頂点を計算（回転を考慮）
     const localVertices = [
         { lx: -width/2, ly: -depth/2, lz: -height/2 },
         { lx: +width/2, ly: -depth/2, lz: -height/2 },
@@ -2013,10 +1833,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
         return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
     });
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * previewState.scale,
-        y: centerY - v.y * previewState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, previewState.scale);
 
     ctx.save();
 
@@ -2040,84 +1857,19 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
             drawFront = false; // デフォルトは前面が開く
     }
 
-    // 上面（天板）
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 30), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        drawLeft ? { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) } : null,
+        drawRight ? { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) } : null,
+        drawFront ? { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) } : null,
+        drawBack ? { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) } : null,
+    ].filter(Boolean);
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 左面
-    if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 右面
-    if (drawRight) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.lineTo(screen[2].x, screen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 前面（y-）
-    if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    // 背面（y+）
-    if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(screen[2].x, screen[2].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
+    drawSortedFaces(ctx, projected, faces);
 
     // 棚板を描画（オプション）
-    if (objectProperties && objectProperties.shelfLevels) {
+    if (!drawFront && objectProperties && objectProperties.shelfLevels) {
         const levels = objectProperties.shelfLevels;
         ctx.strokeStyle = darkenColor(color, 30);
         ctx.lineWidth = 1.5;
@@ -2171,71 +1923,21 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
         return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
     });
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * previewState.scale,
-        y: centerY - v.y * previewState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, previewState.scale);
 
     ctx.save();
 
     // 上部は開いているので描画しない
 
-    // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 30), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -2248,7 +1950,6 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     const { x, y, z, width, depth, height } = coords3D;
     const topThickness = height * 0.1; // 天板の厚さ
     const legWidth = Math.min(width, depth) * 0.1; // 脚の太さ
-    const legHeight = height - topThickness;
 
     ctx.save();
 
@@ -2265,44 +1966,18 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
         worldToPreviewIso(x - width/2, y + depth/2, topZ + topThickness/2),
     ];
 
-    const topScreen = topVertices.map(v => ({
-        x: centerX + v.x * previewState.scale,
-        y: centerY - v.y * previewState.scale
-    }));
+    const topProjected = projectVerticesToScreen(topVertices, centerX, centerY, previewState.scale);
 
-    // 天板上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const topFaces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    // 天板側面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, topProjected, topFaces);
 
     // 4本の脚を描画
     const legPositions = [
@@ -2324,31 +1999,18 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
             worldToPreviewIso(pos.x - legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
         ];
 
-        const legScreen = legVertices.map(v => ({
-            x: centerX + v.x * previewState.scale,
-            y: centerY - v.y * previewState.scale
-        }));
+        const legProjected = projectVerticesToScreen(legVertices, centerX, centerY, previewState.scale);
 
-        // 脚の側面
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const legFaces = [
+            { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+            { indices: [4, 5, 6, 7], fillStyle: darkenColor(color, 5), strokeStyle: darkenColor(color, 20) },
+            { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 20), strokeStyle: darkenColor(color, 30) },
+            { indices: [1, 2, 6, 5], fillStyle: darkenColor(color, 10), strokeStyle: darkenColor(color, 25) },
+            { indices: [0, 1, 5, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+            { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 30) },
+        ];
 
-        ctx.fillStyle = darkenColor(color, 20);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        drawSortedFaces(ctx, legProjected, legFaces);
     });
 
     ctx.restore();
@@ -2374,47 +2036,20 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
         worldToPreviewIso(x - width/2, y + doorDepth/2, z + height/2),
     ];
 
-    const screen = vertices.map(v => ({
-        x: centerX + v.x * previewState.scale,
-        y: centerY - v.y * previewState.scale
-    }));
+    const projected = projectVerticesToScreen(vertices, centerX, centerY, previewState.scale);
 
     ctx.save();
 
-    // 前面（大きい面）
-    ctx.fillStyle = lightenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const faces = [
+        { indices: [0, 1, 2, 3], fillStyle: darkenColor(color, 25), strokeStyle: darkenColor(color, 20) },
+        { indices: [4, 5, 6, 7], fillStyle: lightenColor(color, 20), strokeStyle: darkenColor(color, 20) },
+        { indices: [0, 3, 7, 4], fillStyle: darkenColor(color, 15), strokeStyle: darkenColor(color, 25) },
+        { indices: [1, 2, 6, 5], fillStyle: color, strokeStyle: darkenColor(color, 15) },
+        { indices: [0, 1, 5, 4], fillStyle: lightenColor(color, 10), strokeStyle: darkenColor(color, 20) },
+        { indices: [2, 3, 7, 6], fillStyle: darkenColor(color, 20), strokeStyle: darkenColor(color, 25) },
+    ];
 
-    // 右面（薄い面）
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawSortedFaces(ctx, projected, faces);
 
     ctx.restore();
 }
@@ -2546,6 +2181,7 @@ export function worldToPreviewIso(x, y, z) {
 
     return {
         x: -rotX,  // X軸を反転（3Dマップと同じ座標系）
-        y: z - rotY * Math.sin(tiltRad)
+        y: z - rotY * Math.sin(tiltRad),
+        depth: rotY * Math.cos(tiltRad) + z * Math.sin(tiltRad)
     };
 }
