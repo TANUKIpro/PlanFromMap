@@ -299,7 +299,7 @@ function handlePreviewMouseMove(e) {
 
     // 回転を更新（マウスの動きに合わせて回転方向を調整）
     catalogState.rotation -= deltaX * 0.5;
-    catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt - deltaY * 0.5));
+    catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt + deltaY * 0.5));
 
     catalogState.lastMouseX = e.clientX;
     catalogState.lastMouseY = e.clientY;
