@@ -1856,7 +1856,7 @@ function handle3DMouseMove(event) {
         view3DState.offsetY += deltaY;
     } else {
         // 回転
-        view3DState.rotation += deltaX * 0.5;
+        view3DState.rotation -= deltaX * 0.5;  // マウスドラッグ方向に3Dモデルが追従するよう反転
         view3DState.tilt = Math.max(0, Math.min(90, view3DState.tilt + deltaY * 0.5));
 
         // ViewCubeを更新
