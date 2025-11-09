@@ -298,7 +298,8 @@ function handlePreviewMouseMove(e) {
     const deltaY = e.clientY - catalogState.lastMouseY;
 
     // 回転を更新（マウスの動きに合わせて回転方向を調整）
-    catalogState.rotation -= deltaX * 0.5;
+    // X軸反転に伴い、マウス操作の方向も反転して直感的な操作を維持
+    catalogState.rotation += deltaX * 0.5;
     catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt + deltaY * 0.5));
 
     catalogState.lastMouseX = e.clientX;
