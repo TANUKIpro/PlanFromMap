@@ -1855,7 +1855,7 @@ function handle3DMouseMove(event) {
         view3DState.offsetX += deltaX;
         view3DState.offsetY += deltaY;
     } else {
-        // 回転
+        // 回転（座標系統一により方向を調整）
         view3DState.rotation -= deltaX * 0.5;
         view3DState.tilt = Math.max(0, Math.min(90, view3DState.tilt + deltaY * 0.5));
 
@@ -3400,14 +3400,14 @@ export function drawPreviewFrontDirection(ctx, coords3D, frontDirection, centerX
 function applyRotation(localX, localY, rotation) {
     if (!rotation) return { x: localX, y: localY };
 
-    // 2D回転行列を適用（Y軸反転を考慮）
+    // 2D回転行列を適用
     const rad = rotation * Math.PI / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
 
     return {
         x: localX * cos - localY * sin,
-        y: -(localX * sin + localY * cos)  // Y軸を反転（worldToPreviewIsoでのX軸反転と整合性を取る）
+        y: localX * sin + localY * cos  // Y軸反転を削除して座標系を統一
     };
 }
 
