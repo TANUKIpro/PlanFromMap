@@ -246,10 +246,43 @@ function updateBasicInfo(rectangle) {
         heightInput.value = (rectangle.heightMeters || 0.5).toFixed(2);
     }
 
-    // 前面方向
+    // 前面方向（カテゴリに応じて選択肢を更新）
+    updateFrontDirectionOptions(rectangle);
+}
+
+/**
+ * 前面方向の選択肢をカテゴリに応じて更新
+ *
+ * @private
+ * @param {Object} rectangle - 四角形オブジェクト
+ */
+function updateFrontDirectionOptions(rectangle) {
     const frontDirectionSelect = document.getElementById('frontDirectionSelect');
-    if (frontDirectionSelect) {
-        frontDirectionSelect.value = rectangle.frontDirection || 'top';
+    if (!frontDirectionSelect) return;
+
+    const objectType = rectangle.objectType || OBJECT_TYPES.NONE;
+    const options = getFrontDirectionOptions(objectType);
+
+    // 選択肢をクリア
+    frontDirectionSelect.innerHTML = '';
+
+    // 新しい選択肢を追加
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.label;
+        frontDirectionSelect.appendChild(optionElement);
+    });
+
+    // 現在の値を設定（なければデフォルト値）
+    const currentDirection = rectangle.frontDirection || 'none';
+    if (options.some(opt => opt.value === currentDirection)) {
+        frontDirectionSelect.value = currentDirection;
+    } else {
+        // 現在の値が選択肢にない場合は、最初の選択肢を選択
+        frontDirectionSelect.value = options[0].value;
+        // rectangleの値も更新
+        setFrontDirection(rectangle.id, options[0].value);
     }
 }
 
@@ -541,11 +574,20 @@ function handleCategoryChange(event) {
     // オブジェクトタイプを変更
     setObjectType(selectedRect.id, newType);
 
+    // 前面方向の選択肢を更新（カテゴリに応じて変わるため）
+    updateFrontDirectionOptions(selectedRect);
+
     // パネルを再描画（詳細設定が変わるため）
     updatePropertyPanel(selectedRect.id);
 
     // プレビューを更新
     renderPropertyPreview(selectedRect.id);
+
+    // 四角形レイヤーを再描画（色がカテゴリに基づいて変わるため）
+    if (window.redrawRectangleLayer) {
+        const rectangleLayer = mapState.layerStack.find(l => l.type === 'rectangle');
+        if (rectangleLayer) window.redrawRectangleLayer(rectangleLayer);
+    }
 
     showSuccess(`カテゴリを「${OBJECT_TYPE_LABELS[newType]}」に変更しました`);
 }

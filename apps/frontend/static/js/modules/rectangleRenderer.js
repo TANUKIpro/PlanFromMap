@@ -141,8 +141,9 @@ export function drawRectangle(ctx, rectangle) {
         }
     }
 
-    // 前方向情報がある場合は矢印を表示
-    if (rectangle.frontDirection && rectangle.objectType && rectangle.objectType !== 'none') {
+    // 前方向情報がある場合は矢印を表示（ただし、前面方向が 'none' の場合は表示しない）
+    if (rectangle.frontDirection && rectangle.frontDirection !== 'none' &&
+        rectangle.objectType && rectangle.objectType !== 'none') {
         drawFrontDirectionArrow(ctx, rectangle, scaledWidth, scaledHeight, centerPos);
     }
 

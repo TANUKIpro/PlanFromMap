@@ -100,7 +100,7 @@ export const DEFAULT_PROPERTIES = {
  */
 export const DEFAULT_3D_PROPERTIES = {
     heightMeters: 0.5,               // 高さ（メートル）
-    frontDirection: 'top'            // 前面方向 'top' | 'right' | 'bottom' | 'left'
+    frontDirection: 'none'           // 前面方向 'none' | 'top' | 'right' | 'bottom' | 'left'
 };
 
 /**
@@ -152,13 +152,6 @@ export const COMMON_PROPERTY_SCHEMA = [
                 placeholder: 'オブジェクトの詳細説明やメモを入力',
                 rows: 3,
                 maxLength: 500
-            },
-            {
-                key: 'tags',
-                label: 'タグ',
-                type: 'tags',
-                placeholder: 'タグを入力してEnter',
-                hint: 'カンマまたはEnterで区切って複数入力可能'
             },
             {
                 key: 'customColor',
@@ -526,15 +519,31 @@ export function validate3DProperties(heightMeters, frontDirection) {
     }
 
     // 前面方向の検証
-    const validDirections = ['top', 'right', 'bottom', 'left'];
+    const validDirections = ['none', 'top', 'right', 'bottom', 'left'];
     if (!validDirections.includes(frontDirection)) {
-        errors.push('前面方向は top, right, bottom, left のいずれかである必要があります');
+        errors.push('前面方向は none, top, right, bottom, left のいずれかである必要があります');
     }
 
     return {
         valid: errors.length === 0,
         errors
     };
+}
+
+/**
+ * オブジェクトタイプの色を取得
+ *
+ * @param {string} objectType - オブジェクトタイプ
+ * @returns {string} カラーコード（HEX形式）
+ *
+ * @example
+ * const color = getObjectTypeColor('shelf');  // '#48bb78'
+ */
+export function getObjectTypeColor(objectType) {
+    if (!objectType || !OBJECT_TYPE_COLORS[objectType]) {
+        return OBJECT_TYPE_COLORS.none;  // デフォルトは「なし」の色
+    }
+    return OBJECT_TYPE_COLORS[objectType];
 }
 
 /**
@@ -552,10 +561,23 @@ export function getObjectTypeOptions() {
 /**
  * 前面方向のリストを取得（UI選択用）
  *
+ * @param {string} [objectType] - オブジェクトタイプ（指定すると、そのタイプに適した選択肢を返す）
  * @returns {Array} { value, label } の配列
  */
-export function getFrontDirectionOptions() {
+export function getFrontDirectionOptions(objectType) {
+    // 前面方向が不要なカテゴリ
+    const noDirectionTypes = [OBJECT_TYPES.NONE, OBJECT_TYPES.TABLE, OBJECT_TYPES.WALL];
+
+    // カテゴリが指定され、かつ前面方向が不要な場合
+    if (objectType && noDirectionTypes.includes(objectType)) {
+        return [
+            { value: 'none', label: 'なし' }
+        ];
+    }
+
+    // 前面方向が必要なカテゴリの場合
     return [
+        { value: 'none', label: 'なし' },
         { value: 'top', label: '上' },
         { value: 'right', label: '右' },
         { value: 'bottom', label: '下' },

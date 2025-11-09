@@ -89,7 +89,8 @@ import {
     selectPaletteColor,
     toggleColorPicker,
     closeColorPicker,
-    setupColorPickerClickHandler
+    setupColorPickerClickHandler,
+    updateColorPickerState
 } from './modules/drawingTools.js';
 
 // メタデータ表示
@@ -275,6 +276,7 @@ window.switchColorMode = switchColorMode;
 window.selectPaletteColor = selectPaletteColor;
 window.toggleColorPicker = toggleColorPicker;
 window.closeColorPicker = closeColorPicker;
+window.updateColorPickerState = updateColorPickerState;
 
 // メタデータ表示
 window.toggleLayer = toggleLayer;

@@ -25,7 +25,8 @@ import {
     OBJECT_TYPES,
     getDefaultProperties,
     validateProperties,
-    validate3DProperties
+    validate3DProperties,
+    getObjectTypeColor
 } from '../models/objectTypes.js';
 import { getRectangleById, updateRectangle } from './rectangleManager.js';
 import { showSuccess, showError, showWarning } from '../ui/toast.js';
@@ -69,6 +70,9 @@ export function setObjectType(rectangleId, objectType, preserveProperties = fals
         // デフォルトプロパティで初期化
         rectangle.objectProperties = getDefaultProperties(objectType);
     }
+
+    // 色をカテゴリに基づいて更新
+    rectangle.color = getObjectTypeColor(objectType);
 
     // 履歴に保存
     if (window.saveToHistory && typeof window.saveToHistory === 'function') {

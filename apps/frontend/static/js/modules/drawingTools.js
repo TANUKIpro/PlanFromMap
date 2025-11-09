@@ -14,6 +14,7 @@
  * @exports showMeasureDistance
  * @exports performBucketFill
  * @exports isUIElement
+ * @exports updateColorPickerState
  */
 
 import { mapState } from '../state/mapState.js';
@@ -247,6 +248,11 @@ export function changeBrushSize(size) {
  * @export
  */
 export function toggleColorPicker() {
+    // 四角形ツールが有効な場合は、カラーピッカーを開けない
+    if (mapState.rectangleToolState && mapState.rectangleToolState.enabled) {
+        return;
+    }
+
     const popup = document.getElementById('colorPickerPopup');
     if (popup) {
         popup.classList.toggle('hidden');
@@ -335,6 +341,37 @@ export function selectPaletteColor(color) {
     const colorPicker = document.getElementById('colorPicker');
     if (colorPicker) {
         colorPicker.value = color;
+    }
+}
+
+/**
+ * カラーピッカーの有効/無効状態を更新
+ * 四角形ツールが有効な場合は、カラーピッカーを無効化（グレーアウト）
+ * @export
+ */
+export function updateColorPickerState() {
+    const colorIconButton = document.getElementById('colorIconButton');
+    const isRectangleToolEnabled = mapState.rectangleToolState && mapState.rectangleToolState.enabled;
+
+    if (colorIconButton) {
+        if (isRectangleToolEnabled) {
+            // 四角形ツールが有効な場合は無効化
+            colorIconButton.classList.add('disabled');
+            colorIconButton.style.opacity = '0.5';
+            colorIconButton.style.cursor = 'not-allowed';
+            colorIconButton.title = '四角形ツール使用中は色の変更はできません（色はカテゴリに基づいて自動的に決定されます）';
+        } else {
+            // 四角形ツールが無効な場合は有効化
+            colorIconButton.classList.remove('disabled');
+            colorIconButton.style.opacity = '';
+            colorIconButton.style.cursor = '';
+            colorIconButton.title = '色を選択';
+        }
+    }
+
+    // カラーピッカーポップアップが開いている場合は閉じる
+    if (isRectangleToolEnabled) {
+        closeColorPicker();
     }
 }
 
