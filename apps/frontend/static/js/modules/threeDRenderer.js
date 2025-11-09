@@ -1731,7 +1731,7 @@ function worldToIso(x, y, z) {
     const rotY = offsetX * Math.sin(rad) + offsetY * Math.cos(rad);
 
     return {
-        x: -rotX,  // X軸を反転（2Dマップとの整合性のため）
+        x: rotX,  // X軸反転を削除して座標系を統一
         y: z - rotY * Math.sin(tiltRad)
     };
 }
@@ -1856,7 +1856,7 @@ function handle3DMouseMove(event) {
         view3DState.offsetY += deltaY;
     } else {
         // 回転
-        view3DState.rotation -= deltaX * 0.5;  // マウスドラッグ方向に3Dモデルが追従するよう反転
+        view3DState.rotation += deltaX * 0.5;
         view3DState.tilt = Math.max(0, Math.min(90, view3DState.tilt + deltaY * 0.5));
 
         // ViewCubeを更新
@@ -3426,7 +3426,7 @@ export function worldToPreviewIso(x, y, z) {
     const rotY = x * Math.sin(rad) + y * Math.cos(rad);
 
     return {
-        x: -rotX,  // X軸を反転（3Dマップと同じ座標系）
+        x: rotX,  // X軸反転を削除して座標系を統一
         y: z - rotY * Math.sin(tiltRad)
     };
 }
