@@ -20,7 +20,7 @@
 
 import { mapState } from '../state/mapState.js';
 import { RECTANGLE_DEFAULTS } from '../config.js';
-import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES, getDefaultCommonProperties } from '../models/objectTypes.js';
+import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES, getDefaultCommonProperties, getObjectTypeColor } from '../models/objectTypes.js';
 
 /**
  * 四角形ツールのオン/オフを切り替える
@@ -34,6 +34,11 @@ import { OBJECT_TYPES, DEFAULT_3D_PROPERTIES, getDefaultCommonProperties } from 
  */
 export function toggleRectangleTool(enabled) {
     mapState.rectangleToolState.enabled = enabled;
+
+    // カラーピッカーの状態を更新（四角形ツールが有効な場合は無効化）
+    if (window.updateColorPickerState && typeof window.updateColorPickerState === 'function') {
+        window.updateColorPickerState();
+    }
 
     // 四角形レイヤーの表示を管理
     const rectangleLayer = getRectangleLayer();
@@ -113,11 +118,15 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null,
     const rectangleNumber = mapState.rectangleToolState.nextRectangleId;
     mapState.rectangleToolState.nextRectangleId++;
 
-    // 色が指定されていない場合は、現在の描画色を使用
-    const rectangleColor = color || mapState.drawingState.color || RECTANGLE_DEFAULTS.STROKE_COLOR;
-
     // デフォルトの名前を生成（子レイヤー名と一致）
     const defaultName = `四角形 ${rectangleNumber}`;
+
+    // オブジェクトタイプ（デフォルトは「なし」）
+    const objectType = OBJECT_TYPES.NONE;
+
+    // 色はカテゴリに基づいて自動的に決定される
+    // colorパラメータは後方互換性のために残すが、カテゴリベースの色を優先
+    const rectangleColor = getObjectTypeColor(objectType);
 
     const rectangle = {
         // 基本プロパティ
@@ -128,11 +137,11 @@ export function createRectangle(x, y, width, height, rotation = 0, color = null,
         width: width || RECTANGLE_DEFAULTS.DEFAULT_WIDTH,
         height: height || RECTANGLE_DEFAULTS.DEFAULT_HEIGHT,
         rotation: rotation,  // 回転角度（度）
-        color: rectangleColor,  // 四角形の色
+        color: rectangleColor,  // 四角形の色（カテゴリベース）
         selected: false,
 
         // オブジェクト情報（新規追加）
-        objectType: OBJECT_TYPES.NONE,  // デフォルトは「なし」
+        objectType: objectType,  // デフォルトは「なし」
         heightMeters: DEFAULT_3D_PROPERTIES.heightMeters,  // 高さ（メートル）
         frontDirection: DEFAULT_3D_PROPERTIES.frontDirection,  // 前面方向
         objectProperties: {},  // カテゴリ別のプロパティ（空で初期化）
