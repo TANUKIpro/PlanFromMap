@@ -634,16 +634,19 @@ function draw3DModel(ctx, coords3D, color, centerX, centerY, objectType, frontDi
 function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
     const { x, y, z, width, depth, height } = coords3D;
 
-    const vertices = [
-        worldToIso(x - width/2, y - depth/2, z - height/2),
-        worldToIso(x + width/2, y - depth/2, z - height/2),
-        worldToIso(x + width/2, y + depth/2, z - height/2),
-        worldToIso(x - width/2, y + depth/2, z - height/2),
-        worldToIso(x - width/2, y - depth/2, z + height/2),
-        worldToIso(x + width/2, y - depth/2, z + height/2),
-        worldToIso(x + width/2, y + depth/2, z + height/2),
-        worldToIso(x - width/2, y + depth/2, z + height/2),
+    // ワールド座標の頂点（バックフェイスカリング用）
+    const worldVertices = [
+        { x: x - width/2, y: y - depth/2, z: z - height/2 },  // 0
+        { x: x + width/2, y: y - depth/2, z: z - height/2 },  // 1
+        { x: x + width/2, y: y + depth/2, z: z - height/2 },  // 2
+        { x: x - width/2, y: y + depth/2, z: z - height/2 },  // 3
+        { x: x - width/2, y: y - depth/2, z: z + height/2 },  // 4
+        { x: x + width/2, y: y - depth/2, z: z + height/2 },  // 5
+        { x: x + width/2, y: y + depth/2, z: z + height/2 },  // 6
+        { x: x - width/2, y: y + depth/2, z: z + height/2 },  // 7
     ];
+
+    const vertices = worldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * view3DState.scale,
@@ -671,33 +674,38 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
             drawFront = false;
     }
 
-    // 上面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // 上面（光源システムを使用 + バックフェイスカリング）
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
-    // 底面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
-    ctx.stroke();
+    // 底面（光源システムを使用 + バックフェイスカリング）
+    if (isFaceVisible(worldVertices[0], worldVertices[3], worldVertices[2], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
-    // 左面（光源システムを使用）
-    if (drawLeft) {
+    // 左面（光源システムを使用 + バックフェイスカリング）
+    if (drawLeft && isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], view3DState.rotation, view3DState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
@@ -707,11 +715,12 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
+        ctx.lineWidth = 1;
         ctx.stroke();
     }
 
-    // 右面（光源システムを使用）
-    if (drawRight) {
+    // 右面（光源システムを使用 + バックフェイスカリング）
+    if (drawRight && isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(screen[1].x, screen[1].y);
@@ -721,11 +730,12 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+        ctx.lineWidth = 1;
         ctx.stroke();
     }
 
-    // 前面（光源システムを使用）
-    if (drawFront) {
+    // 前面（光源システムを使用 + バックフェイスカリング）
+    if (drawFront && isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], view3DState.rotation, view3DState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
@@ -735,11 +745,12 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
+        ctx.lineWidth = 1;
         ctx.stroke();
     }
 
-    // 背面（光源システムを使用）
-    if (drawBack) {
+    // 背面（光源システムを使用 + バックフェイスカリング）
+    if (drawBack && isFaceVisible(worldVertices[2], worldVertices[3], worldVertices[7], view3DState.rotation, view3DState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
         ctx.beginPath();
         ctx.moveTo(screen[2].x, screen[2].y);
@@ -749,6 +760,7 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = globalLighting.getStrokeColor(color, 'back');
+        ctx.lineWidth = 1;
         ctx.stroke();
     }
 
@@ -791,16 +803,18 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
 function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
     const { x, y, z, width, depth, height } = coords3D;
 
-    const vertices = [
-        worldToIso(x - width/2, y - depth/2, z - height/2),
-        worldToIso(x + width/2, y - depth/2, z - height/2),
-        worldToIso(x + width/2, y + depth/2, z - height/2),
-        worldToIso(x - width/2, y + depth/2, z - height/2),
-        worldToIso(x - width/2, y - depth/2, z + height/2),
-        worldToIso(x + width/2, y - depth/2, z + height/2),
-        worldToIso(x + width/2, y + depth/2, z + height/2),
-        worldToIso(x - width/2, y + depth/2, z + height/2),
+    const worldVertices = [
+        { x: x - width/2, y: y - depth/2, z: z - height/2 },  // 0
+        { x: x + width/2, y: y - depth/2, z: z - height/2 },  // 1
+        { x: x + width/2, y: y + depth/2, z: z - height/2 },  // 2
+        { x: x - width/2, y: y + depth/2, z: z - height/2 },  // 3
+        { x: x - width/2, y: y - depth/2, z: z + height/2 },  // 4
+        { x: x + width/2, y: y - depth/2, z: z + height/2 },  // 5
+        { x: x + width/2, y: y + depth/2, z: z + height/2 },  // 6
+        { x: x - width/2, y: y + depth/2, z: z + height/2 },  // 7
     ];
+
+    const vertices = worldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * view3DState.scale,
@@ -810,65 +824,75 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
     ctx.save();
 
     // 底面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[3], worldVertices[2], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 左面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
+        ctx.stroke();
+    }
 
     // 右面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+        ctx.stroke();
+    }
 
     // 前面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
+        ctx.stroke();
+    }
 
     // 背面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'back');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[2], worldVertices[3], worldVertices[7], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
+        ctx.beginPath();
+        ctx.moveTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'back');
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
@@ -886,16 +910,18 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
 
     // 天板を描画
     const topZ = z + height/2 - topThickness/2;
-    const topVertices = [
-        worldToIso(x - width/2, y - depth/2, topZ - topThickness/2),
-        worldToIso(x + width/2, y - depth/2, topZ - topThickness/2),
-        worldToIso(x + width/2, y + depth/2, topZ - topThickness/2),
-        worldToIso(x - width/2, y + depth/2, topZ - topThickness/2),
-        worldToIso(x - width/2, y - depth/2, topZ + topThickness/2),
-        worldToIso(x + width/2, y - depth/2, topZ + topThickness/2),
-        worldToIso(x + width/2, y + depth/2, topZ + topThickness/2),
-        worldToIso(x - width/2, y + depth/2, topZ + topThickness/2),
+    const topWorldVertices = [
+        { x: x - width/2, y: y - depth/2, z: topZ - topThickness/2 },  // 0
+        { x: x + width/2, y: y - depth/2, z: topZ - topThickness/2 },  // 1
+        { x: x + width/2, y: y + depth/2, z: topZ - topThickness/2 },  // 2
+        { x: x - width/2, y: y + depth/2, z: topZ - topThickness/2 },  // 3
+        { x: x - width/2, y: y - depth/2, z: topZ + topThickness/2 },  // 4
+        { x: x + width/2, y: y - depth/2, z: topZ + topThickness/2 },  // 5
+        { x: x + width/2, y: y + depth/2, z: topZ + topThickness/2 },  // 6
+        { x: x - width/2, y: y + depth/2, z: topZ + topThickness/2 },  // 7
     ];
+
+    const topVertices = topWorldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
     const topScreen = topVertices.map(v => ({
         x: centerX + v.x * view3DState.scale,
@@ -903,41 +929,47 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     }));
 
     // 天板上面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[4], topWorldVertices[5], topWorldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[4].x, topScreen[4].y);
+        ctx.lineTo(topScreen[5].x, topScreen[5].y);
+        ctx.lineTo(topScreen[6].x, topScreen[6].y);
+        ctx.lineTo(topScreen[7].x, topScreen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 天板右面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[1], topWorldVertices[2], topWorldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[1].x, topScreen[1].y);
+        ctx.lineTo(topScreen[5].x, topScreen[5].y);
+        ctx.lineTo(topScreen[6].x, topScreen[6].y);
+        ctx.lineTo(topScreen[2].x, topScreen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+        ctx.stroke();
+    }
 
     // 天板左面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[0], topWorldVertices[4], topWorldVertices[7], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[0].x, topScreen[0].y);
+        ctx.lineTo(topScreen[3].x, topScreen[3].y);
+        ctx.lineTo(topScreen[7].x, topScreen[7].y);
+        ctx.lineTo(topScreen[4].x, topScreen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
+        ctx.stroke();
+    }
 
     // 4本の脚を描画
     const legPositions = [
@@ -948,16 +980,18 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     ];
 
     legPositions.forEach(pos => {
-        const legVertices = [
-            worldToIso(pos.x - legWidth/2, pos.y - legWidth/2, z - height/2),
-            worldToIso(pos.x + legWidth/2, pos.y - legWidth/2, z - height/2),
-            worldToIso(pos.x + legWidth/2, pos.y + legWidth/2, z - height/2),
-            worldToIso(pos.x - legWidth/2, pos.y + legWidth/2, z - height/2),
-            worldToIso(pos.x - legWidth/2, pos.y - legWidth/2, topZ - topThickness/2),
-            worldToIso(pos.x + legWidth/2, pos.y - legWidth/2, topZ - topThickness/2),
-            worldToIso(pos.x + legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
-            worldToIso(pos.x - legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
+        const legWorldVertices = [
+            { x: pos.x - legWidth/2, y: pos.y - legWidth/2, z: z - height/2 },  // 0
+            { x: pos.x + legWidth/2, y: pos.y - legWidth/2, z: z - height/2 },  // 1
+            { x: pos.x + legWidth/2, y: pos.y + legWidth/2, z: z - height/2 },  // 2
+            { x: pos.x - legWidth/2, y: pos.y + legWidth/2, z: z - height/2 },  // 3
+            { x: pos.x - legWidth/2, y: pos.y - legWidth/2, z: topZ - topThickness/2 },  // 4
+            { x: pos.x + legWidth/2, y: pos.y - legWidth/2, z: topZ - topThickness/2 },  // 5
+            { x: pos.x + legWidth/2, y: pos.y + legWidth/2, z: topZ - topThickness/2 },  // 6
+            { x: pos.x - legWidth/2, y: pos.y + legWidth/2, z: topZ - topThickness/2 },  // 7
         ];
+
+        const legVertices = legWorldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
         const legScreen = legVertices.map(v => ({
             x: centerX + v.x * view3DState.scale,
@@ -965,28 +999,32 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
         }));
 
         // 脚右面（光源システムを使用）
-        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
-        ctx.stroke();
+        if (isFaceVisible(legWorldVertices[1], legWorldVertices[2], legWorldVertices[6], view3DState.rotation, view3DState.tilt)) {
+            ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+            ctx.beginPath();
+            ctx.moveTo(legScreen[1].x, legScreen[1].y);
+            ctx.lineTo(legScreen[5].x, legScreen[5].y);
+            ctx.lineTo(legScreen[6].x, legScreen[6].y);
+            ctx.lineTo(legScreen[2].x, legScreen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+            ctx.stroke();
+        }
 
         // 脚左面（光源システムを使用）
-        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
-        ctx.stroke();
+        if (isFaceVisible(legWorldVertices[0], legWorldVertices[4], legWorldVertices[7], view3DState.rotation, view3DState.tilt)) {
+            ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+            ctx.beginPath();
+            ctx.moveTo(legScreen[0].x, legScreen[0].y);
+            ctx.lineTo(legScreen[3].x, legScreen[3].y);
+            ctx.lineTo(legScreen[7].x, legScreen[7].y);
+            ctx.lineTo(legScreen[4].x, legScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
+            ctx.stroke();
+        }
     });
 
     ctx.restore();
@@ -1000,16 +1038,18 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     const { x, y, z, width, depth, height } = coords3D;
     const doorDepth = Math.min(depth, 0.1);
 
-    const vertices = [
-        worldToIso(x - width/2, y - doorDepth/2, z - height/2),
-        worldToIso(x + width/2, y - doorDepth/2, z - height/2),
-        worldToIso(x + width/2, y + doorDepth/2, z - height/2),
-        worldToIso(x - width/2, y + doorDepth/2, z - height/2),
-        worldToIso(x - width/2, y - doorDepth/2, z + height/2),
-        worldToIso(x + width/2, y - doorDepth/2, z + height/2),
-        worldToIso(x + width/2, y + doorDepth/2, z + height/2),
-        worldToIso(x - width/2, y + doorDepth/2, z + height/2),
+    const worldVertices = [
+        { x: x - width/2, y: y - doorDepth/2, z: z - height/2 },  // 0
+        { x: x + width/2, y: y - doorDepth/2, z: z - height/2 },  // 1
+        { x: x + width/2, y: y + doorDepth/2, z: z - height/2 },  // 2
+        { x: x - width/2, y: y + doorDepth/2, z: z - height/2 },  // 3
+        { x: x - width/2, y: y - doorDepth/2, z: z + height/2 },  // 4
+        { x: x + width/2, y: y - doorDepth/2, z: z + height/2 },  // 5
+        { x: x + width/2, y: y + doorDepth/2, z: z + height/2 },  // 6
+        { x: x - width/2, y: y + doorDepth/2, z: z + height/2 },  // 7
     ];
+
+    const vertices = worldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * view3DState.scale,
@@ -1019,41 +1059,47 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 扉前面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 扉右面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+        ctx.stroke();
+    }
 
     // 扉上面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
@@ -1075,16 +1121,18 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     const { x, y, z, width, depth, height } = coords3D;
 
     // 8つの頂点を計算
-    const vertices = [
-        worldToIso(x - width/2, y - depth/2, z - height/2),  // 0: 左下前
-        worldToIso(x + width/2, y - depth/2, z - height/2),  // 1: 右下前
-        worldToIso(x + width/2, y + depth/2, z - height/2),  // 2: 右下後
-        worldToIso(x - width/2, y + depth/2, z - height/2),  // 3: 左下後
-        worldToIso(x - width/2, y - depth/2, z + height/2),  // 4: 左上前
-        worldToIso(x + width/2, y - depth/2, z + height/2),  // 5: 右上前
-        worldToIso(x + width/2, y + depth/2, z + height/2),  // 6: 右上後
-        worldToIso(x - width/2, y + depth/2, z + height/2),  // 7: 左上後
+    const worldVertices = [
+        { x: x - width/2, y: y - depth/2, z: z - height/2 },  // 0: 左下前
+        { x: x + width/2, y: y - depth/2, z: z - height/2 },  // 1: 右下前
+        { x: x + width/2, y: y + depth/2, z: z - height/2 },  // 2: 右下後
+        { x: x - width/2, y: y + depth/2, z: z - height/2 },  // 3: 左下後
+        { x: x - width/2, y: y - depth/2, z: z + height/2 },  // 4: 左上前
+        { x: x + width/2, y: y - depth/2, z: z + height/2 },  // 5: 右上前
+        { x: x + width/2, y: y + depth/2, z: z + height/2 },  // 6: 右上後
+        { x: x - width/2, y: y + depth/2, z: z + height/2 },  // 7: 左上後
     ];
+
+    const vertices = worldVertices.map(v => worldToIso(v.x, v.y, v.z));
 
     // スクリーン座標に変換
     const screen = vertices.map(v => ({
@@ -1096,41 +1144,47 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
 
     // 面を描画（背面から前面へ）
     // 上面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 左面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'left');
+        ctx.stroke();
+    }
 
     // 右面（光源システムを使用）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], view3DState.rotation, view3DState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'right');
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
@@ -1368,6 +1422,94 @@ function lightenColor(color, percent) {
     const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
     const B = Math.min(255, (num & 0x0000FF) + amt);
     return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+}
+
+/**
+ * 3つの頂点から面の法線ベクトルを計算（外積）
+ *
+ * @private
+ * @param {Object} v0 - 頂点0 {x, y, z}
+ * @param {Object} v1 - 頂点1 {x, y, z}
+ * @param {Object} v2 - 頂点2 {x, y, z}
+ * @returns {Object} 法線ベクトル {x, y, z}
+ */
+function calculateFaceNormal(v0, v1, v2) {
+    // v0からv1へのベクトル
+    const edge1 = {
+        x: v1.x - v0.x,
+        y: v1.y - v0.y,
+        z: v1.z - v0.z
+    };
+
+    // v0からv2へのベクトル
+    const edge2 = {
+        x: v2.x - v0.x,
+        y: v2.y - v0.y,
+        z: v2.z - v0.z
+    };
+
+    // 外積を計算（右手系）
+    const normal = {
+        x: edge1.y * edge2.z - edge1.z * edge2.y,
+        y: edge1.z * edge2.x - edge1.x * edge2.z,
+        z: edge1.x * edge2.y - edge1.y * edge2.x
+    };
+
+    return normal;
+}
+
+/**
+ * カメラの視線方向ベクトルを計算（等角投影）
+ *
+ * @private
+ * @param {number} rotation - 回転角度（度）
+ * @param {number} tilt - 傾き角度（度）
+ * @returns {Object} 視線方向ベクトル {x, y, z}（正規化済み）
+ */
+function getCameraDirection(rotation, tilt) {
+    const rotRad = rotation * Math.PI / 180;
+    const tiltRad = tilt * Math.PI / 180;
+
+    // カメラはオブジェクトを見下ろす位置にある
+    // 等角投影では、視線方向は回転とtiltから計算
+    const dir = {
+        x: Math.sin(rotRad) * Math.cos(tiltRad),
+        y: -Math.cos(rotRad) * Math.cos(tiltRad),
+        z: -Math.sin(tiltRad)
+    };
+
+    // 正規化
+    const length = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+    return {
+        x: dir.x / length,
+        y: dir.y / length,
+        z: dir.z / length
+    };
+}
+
+/**
+ * 面がカメラから見えるかを判定（バックフェイスカリング）
+ *
+ * @private
+ * @param {Object} v0 - 頂点0（ワールド座標） {x, y, z}
+ * @param {Object} v1 - 頂点1（ワールド座標） {x, y, z}
+ * @param {Object} v2 - 頂点2（ワールド座標） {x, y, z}
+ * @param {number} rotation - カメラの回転角度（度）
+ * @param {number} tilt - カメラの傾き角度（度）
+ * @returns {boolean} true: 面が見える, false: 面が見えない
+ */
+function isFaceVisible(v0, v1, v2, rotation, tilt) {
+    // 面の法線ベクトルを計算
+    const normal = calculateFaceNormal(v0, v1, v2);
+
+    // カメラの視線方向を計算
+    const cameraDir = getCameraDirection(rotation, tilt);
+
+    // 法線と視線の内積を計算
+    const dot = normal.x * cameraDir.x + normal.y * cameraDir.y + normal.z * cameraDir.z;
+
+    // 内積が正なら面はカメラの方を向いている（見える）
+    return dot > 0;
 }
 
 // ================
@@ -1956,10 +2098,12 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
         { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
 
-    const vertices = localVertices.map(v => {
+    const worldVertices = localVertices.map(v => {
         const rotated = applyRotation(v.lx, v.ly, rotation);
-        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+        return { x: x + rotated.x, y: y + rotated.y, z: z + v.lz };
     });
+
+    const vertices = worldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -1969,39 +2113,45 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 上面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 左面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 右面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
@@ -2061,10 +2211,12 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
         { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
 
-    const vertices = localVertices.map(v => {
+    const worldVertices = localVertices.map(v => {
         const rotated = applyRotation(v.lx, v.ly, rotation);
-        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+        return { x: x + rotated.x, y: y + rotated.y, z: z + v.lz };
     });
+
+    const vertices = worldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -2094,31 +2246,35 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     }
 
     // 上面（天板）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 底面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[3], worldVertices[2], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 左面
-    if (drawLeft) {
+    if (drawLeft && isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], previewState.rotation, previewState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
@@ -2131,7 +2287,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     }
 
     // 右面
-    if (drawRight) {
+    if (drawRight && isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], previewState.rotation, previewState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
         ctx.beginPath();
         ctx.moveTo(screen[1].x, screen[1].y);
@@ -2144,7 +2300,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     }
 
     // 前面（y-）
-    if (drawFront) {
+    if (drawFront && isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], previewState.rotation, previewState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
         ctx.beginPath();
         ctx.moveTo(screen[0].x, screen[0].y);
@@ -2157,7 +2313,7 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
     }
 
     // 背面（y+）
-    if (drawBack) {
+    if (drawBack && isFaceVisible(worldVertices[2], worldVertices[3], worldVertices[7], previewState.rotation, previewState.tilt)) {
         ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
         ctx.beginPath();
         ctx.moveTo(screen[2].x, screen[2].y);
@@ -2219,10 +2375,12 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
         { lx: -width/2, ly: +depth/2, lz: +height/2 },
     ];
 
-    const vertices = localVertices.map(v => {
+    const worldVertices = localVertices.map(v => {
         const rotated = applyRotation(v.lx, v.ly, rotation);
-        return worldToPreviewIso(x + rotated.x, y + rotated.y, z + v.lz);
+        return { x: x + rotated.x, y: y + rotated.y, z: z + v.lz };
     });
+
+    const vertices = worldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -2234,61 +2392,71 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
     // 上部は開いているので描画しない
 
     // 底面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[3], worldVertices[2], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'bottom');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'bottom');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 左面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[4], worldVertices[7], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 右面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 前面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 背面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[2], worldVertices[3], worldVertices[7], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'back');
+        ctx.beginPath();
+        ctx.moveTo(screen[2].x, screen[2].y);
+        ctx.lineTo(screen[3].x, screen[3].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
@@ -2307,16 +2475,18 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
 
     // 天板を描画
     const topZ = z + height/2 - topThickness/2;
-    const topVertices = [
-        worldToPreviewIso(x - width/2, y - depth/2, topZ - topThickness/2),
-        worldToPreviewIso(x + width/2, y - depth/2, topZ - topThickness/2),
-        worldToPreviewIso(x + width/2, y + depth/2, topZ - topThickness/2),
-        worldToPreviewIso(x - width/2, y + depth/2, topZ - topThickness/2),
-        worldToPreviewIso(x - width/2, y - depth/2, topZ + topThickness/2),
-        worldToPreviewIso(x + width/2, y - depth/2, topZ + topThickness/2),
-        worldToPreviewIso(x + width/2, y + depth/2, topZ + topThickness/2),
-        worldToPreviewIso(x - width/2, y + depth/2, topZ + topThickness/2),
+    const topWorldVertices = [
+        { x: x - width/2, y: y - depth/2, z: topZ - topThickness/2 },  // 0
+        { x: x + width/2, y: y - depth/2, z: topZ - topThickness/2 },  // 1
+        { x: x + width/2, y: y + depth/2, z: topZ - topThickness/2 },  // 2
+        { x: x - width/2, y: y + depth/2, z: topZ - topThickness/2 },  // 3
+        { x: x - width/2, y: y - depth/2, z: topZ + topThickness/2 },  // 4
+        { x: x + width/2, y: y - depth/2, z: topZ + topThickness/2 },  // 5
+        { x: x + width/2, y: y + depth/2, z: topZ + topThickness/2 },  // 6
+        { x: x - width/2, y: y + depth/2, z: topZ + topThickness/2 },  // 7
     ];
+
+    const topVertices = topWorldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
     const topScreen = topVertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -2324,38 +2494,44 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     }));
 
     // 天板上面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[4], topWorldVertices[5], topWorldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[4].x, topScreen[4].y);
+        ctx.lineTo(topScreen[5].x, topScreen[5].y);
+        ctx.lineTo(topScreen[6].x, topScreen[6].y);
+        ctx.lineTo(topScreen[7].x, topScreen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'top');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 天板側面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[1], topWorldVertices[2], topWorldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[1].x, topScreen[1].y);
+        ctx.lineTo(topScreen[5].x, topScreen[5].y);
+        ctx.lineTo(topScreen[6].x, topScreen[6].y);
+        ctx.lineTo(topScreen[2].x, topScreen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(topWorldVertices[0], topWorldVertices[4], topWorldVertices[7], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+        ctx.beginPath();
+        ctx.moveTo(topScreen[0].x, topScreen[0].y);
+        ctx.lineTo(topScreen[3].x, topScreen[3].y);
+        ctx.lineTo(topScreen[7].x, topScreen[7].y);
+        ctx.lineTo(topScreen[4].x, topScreen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 4本の脚を描画
     const legPositions = [
@@ -2366,16 +2542,18 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     ];
 
     legPositions.forEach(pos => {
-        const legVertices = [
-            worldToPreviewIso(pos.x - legWidth/2, pos.y - legWidth/2, z - height/2),
-            worldToPreviewIso(pos.x + legWidth/2, pos.y - legWidth/2, z - height/2),
-            worldToPreviewIso(pos.x + legWidth/2, pos.y + legWidth/2, z - height/2),
-            worldToPreviewIso(pos.x - legWidth/2, pos.y + legWidth/2, z - height/2),
-            worldToPreviewIso(pos.x - legWidth/2, pos.y - legWidth/2, topZ - topThickness/2),
-            worldToPreviewIso(pos.x + legWidth/2, pos.y - legWidth/2, topZ - topThickness/2),
-            worldToPreviewIso(pos.x + legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
-            worldToPreviewIso(pos.x - legWidth/2, pos.y + legWidth/2, topZ - topThickness/2),
+        const legWorldVertices = [
+            { x: pos.x - legWidth/2, y: pos.y - legWidth/2, z: z - height/2 },  // 0
+            { x: pos.x + legWidth/2, y: pos.y - legWidth/2, z: z - height/2 },  // 1
+            { x: pos.x + legWidth/2, y: pos.y + legWidth/2, z: z - height/2 },  // 2
+            { x: pos.x - legWidth/2, y: pos.y + legWidth/2, z: z - height/2 },  // 3
+            { x: pos.x - legWidth/2, y: pos.y - legWidth/2, z: topZ - topThickness/2 },  // 4
+            { x: pos.x + legWidth/2, y: pos.y - legWidth/2, z: topZ - topThickness/2 },  // 5
+            { x: pos.x + legWidth/2, y: pos.y + legWidth/2, z: topZ - topThickness/2 },  // 6
+            { x: pos.x - legWidth/2, y: pos.y + legWidth/2, z: topZ - topThickness/2 },  // 7
         ];
+
+        const legVertices = legWorldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
         const legScreen = legVertices.map(v => ({
             x: centerX + v.x * previewState.scale,
@@ -2383,26 +2561,30 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
         }));
 
         // 脚の側面（右面）
-        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        if (isFaceVisible(legWorldVertices[1], legWorldVertices[2], legWorldVertices[6], previewState.rotation, previewState.tilt)) {
+            ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+            ctx.beginPath();
+            ctx.moveTo(legScreen[1].x, legScreen[1].y);
+            ctx.lineTo(legScreen[5].x, legScreen[5].y);
+            ctx.lineTo(legScreen[6].x, legScreen[6].y);
+            ctx.lineTo(legScreen[2].x, legScreen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
 
         // 脚の側面（左面）
-        ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        if (isFaceVisible(legWorldVertices[0], legWorldVertices[4], legWorldVertices[7], previewState.rotation, previewState.tilt)) {
+            ctx.fillStyle = globalLighting.getFaceColor(color, 'left');
+            ctx.beginPath();
+            ctx.moveTo(legScreen[0].x, legScreen[0].y);
+            ctx.lineTo(legScreen[3].x, legScreen[3].y);
+            ctx.lineTo(legScreen[7].x, legScreen[7].y);
+            ctx.lineTo(legScreen[4].x, legScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
     });
 
     ctx.restore();
@@ -2417,16 +2599,18 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
     // 扉は薄いので、depthを小さくする
     const doorDepth = Math.min(depth, 0.1);
 
-    const vertices = [
-        worldToPreviewIso(x - width/2, y - doorDepth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y - doorDepth/2, z - height/2),
-        worldToPreviewIso(x + width/2, y + doorDepth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y + doorDepth/2, z - height/2),
-        worldToPreviewIso(x - width/2, y - doorDepth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y - doorDepth/2, z + height/2),
-        worldToPreviewIso(x + width/2, y + doorDepth/2, z + height/2),
-        worldToPreviewIso(x - width/2, y + doorDepth/2, z + height/2),
+    const worldVertices = [
+        { x: x - width/2, y: y - doorDepth/2, z: z - height/2 },  // 0
+        { x: x + width/2, y: y - doorDepth/2, z: z - height/2 },  // 1
+        { x: x + width/2, y: y + doorDepth/2, z: z - height/2 },  // 2
+        { x: x - width/2, y: y + doorDepth/2, z: z - height/2 },  // 3
+        { x: x - width/2, y: y - doorDepth/2, z: z + height/2 },  // 4
+        { x: x + width/2, y: y - doorDepth/2, z: z + height/2 },  // 5
+        { x: x + width/2, y: y + doorDepth/2, z: z + height/2 },  // 6
+        { x: x - width/2, y: y + doorDepth/2, z: z + height/2 },  // 7
     ];
+
+    const vertices = worldVertices.map(v => worldToPreviewIso(v.x, v.y, v.z));
 
     const screen = vertices.map(v => ({
         x: centerX + v.x * previewState.scale,
@@ -2436,39 +2620,45 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
     ctx.save();
 
     // 前面（大きい面）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[0], worldVertices[1], worldVertices[5], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'front');
+        ctx.beginPath();
+        ctx.moveTo(screen[0].x, screen[0].y);
+        ctx.lineTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[4].x, screen[4].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = globalLighting.getStrokeColor(color, 'front');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
 
     // 右面（薄い面）
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[1], worldVertices[2], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'right');
+        ctx.beginPath();
+        ctx.moveTo(screen[1].x, screen[1].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[2].x, screen[2].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     // 上面
-    ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    if (isFaceVisible(worldVertices[4], worldVertices[5], worldVertices[6], previewState.rotation, previewState.tilt)) {
+        ctx.fillStyle = globalLighting.getFaceColor(color, 'top');
+        ctx.beginPath();
+        ctx.moveTo(screen[4].x, screen[4].y);
+        ctx.lineTo(screen[5].x, screen[5].y);
+        ctx.lineTo(screen[6].x, screen[6].y);
+        ctx.lineTo(screen[7].x, screen[7].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
 
     ctx.restore();
 }

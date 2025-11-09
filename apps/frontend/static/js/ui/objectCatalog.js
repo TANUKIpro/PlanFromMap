@@ -297,8 +297,8 @@ function handlePreviewMouseMove(e) {
     const deltaX = e.clientX - catalogState.lastMouseX;
     const deltaY = e.clientY - catalogState.lastMouseY;
 
-    // 回転を更新
-    catalogState.rotation += deltaX * 0.5;
+    // 回転を更新（左右反転を修正：deltaXの符号を反転）
+    catalogState.rotation -= deltaX * 0.5;
     catalogState.tilt = Math.max(-90, Math.min(90, catalogState.tilt - deltaY * 0.5));
 
     catalogState.lastMouseX = e.clientX;
