@@ -3408,7 +3408,7 @@ function applyRotation(localX, localY, rotation) {
 
     return {
         x: localX * cos - localY * sin,
-        y: -(localX * sin + localY * cos)  // Y軸を反転（worldToPreviewIsoでのX軸反転と整合性を取る）
+        y: -(localX * sin + localY * cos)  // Y軸を反転（等角投影の座標系に合わせる）
     };
 }
 
