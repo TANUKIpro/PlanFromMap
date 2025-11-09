@@ -990,38 +990,26 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
     }));
 
     ctx.save();
-
-    ctx.fillStyle = lightenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
     ctx.strokeStyle = darkenColor(color, 20);
     ctx.lineWidth = 1;
-    ctx.stroke();
 
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 前面
+    drawFilledFace(ctx, screen, [0, 1, 5, 4], lightenColor(color, 10));
 
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 右側面
+    drawFilledFace(ctx, screen, [1, 2, 6, 5], color);
+
+    // 左側面
+    drawFilledFace(ctx, screen, [0, 4, 7, 3], darkenColor(color, 15));
+
+    // 背面
+    drawFilledFace(ctx, screen, [3, 2, 6, 7], darkenColor(color, 25));
+
+    // 上面
+    drawFilledFace(ctx, screen, [4, 5, 6, 7], lightenColor(color, 20));
+
+    // 底面
+    drawFilledFace(ctx, screen, [0, 1, 2, 3], darkenColor(color, 30));
 
     ctx.restore();
 }
@@ -1061,44 +1049,42 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
     }));
 
     ctx.save();
-
-    // 面を描画（背面から前面へ）
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
     ctx.strokeStyle = darkenColor(color, 20);
     ctx.lineWidth = 1;
-    ctx.stroke();
 
-    // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 背面と底面を先に描画して前面が上に重なるようにする
+    drawFilledFace(ctx, screen, [3, 2, 6, 7], darkenColor(color, 20));
+    drawFilledFace(ctx, screen, [0, 1, 2, 3], darkenColor(color, 35));
 
-    // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 上面
+    drawFilledFace(ctx, screen, [4, 5, 6, 7], lightenColor(color, 20));
+
+    // 左右の側面
+    drawFilledFace(ctx, screen, [0, 3, 7, 4], darkenColor(color, 10));
+    drawFilledFace(ctx, screen, [1, 2, 6, 5], color);
+
+    // 前面
+    drawFilledFace(ctx, screen, [0, 1, 5, 4], darkenColor(color, 5));
 
     ctx.restore();
+}
+
+/**
+ * 直方体の面を描画する共通処理
+ *
+ * @private
+ */
+function drawFilledFace(ctx, screenPoints, indices, fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    ctx.moveTo(screenPoints[indices[0]].x, screenPoints[indices[0]].y);
+    for (let i = 1; i < indices.length; i++) {
+        const point = screenPoints[indices[i]];
+        ctx.lineTo(point.x, point.y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 }
 
 /**
