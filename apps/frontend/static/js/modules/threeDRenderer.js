@@ -621,6 +621,7 @@ function draw3DModel(ctx, coords3D, color, centerX, centerY, objectType, frontDi
 
 /**
  * 棚の3Dモデルを描画（前面が開いている）
+ * Painter's Algorithmを使用して、視点からの距離に基づいて面を描画
  * @private
  */
 function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
@@ -663,83 +664,132 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
             drawFront = false;
     }
 
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
+    // 上面（天板）
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
     if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x - width/2, cy: y, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 10);
+                ctx.beginPath();
+                ctx.moveTo(screen[0].x, screen[0].y);
+                ctx.lineTo(screen[3].x, screen[3].y);
+                ctx.lineTo(screen[7].x, screen[7].y);
+                ctx.lineTo(screen[4].x, screen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 右面
     if (drawRight) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.lineTo(screen[2].x, screen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x + width/2, cy: y, cz: z,
+            draw: () => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(screen[1].x, screen[1].y);
+                ctx.lineTo(screen[5].x, screen[5].y);
+                ctx.lineTo(screen[6].x, screen[6].y);
+                ctx.lineTo(screen[2].x, screen[2].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 前面
     if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x, cy: y - depth/2, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 5);
+                ctx.beginPath();
+                ctx.moveTo(screen[0].x, screen[0].y);
+                ctx.lineTo(screen[1].x, screen[1].y);
+                ctx.lineTo(screen[5].x, screen[5].y);
+                ctx.lineTo(screen[4].x, screen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 背面
     if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(screen[2].x, screen[2].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x, cy: y + depth/2, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 15);
+                ctx.beginPath();
+                ctx.moveTo(screen[2].x, screen[2].y);
+                ctx.lineTo(screen[3].x, screen[3].y);
+                ctx.lineTo(screen[7].x, screen[7].y);
+                ctx.lineTo(screen[6].x, screen[6].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
-    // 棚板を描画
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, view3DState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
+
+    // 棚板を描画（常に最後に描画）
     if (objectProperties && objectProperties.shelfLevels) {
         const levels = objectProperties.shelfLevels;
         ctx.strokeStyle = darkenColor(color, 30);
@@ -772,6 +822,7 @@ function draw3DShelf(ctx, coords3D, color, centerX, centerY, frontDirection, obj
 
 /**
  * 箱の3Dモデルを描画（上部が開いている）
+ * Painter's Algorithmを使用して、視点からの距離に基づいて面を描画
  * @private
  */
 function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties) {
@@ -795,68 +846,111 @@ function draw3DBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDirecti
 
     ctx.save();
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, view3DState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
 
 /**
  * テーブルの3Dモデルを描画
+ * Painter's Algorithmを使用して、視点からの距離に基づいて面を描画
  * @private
  */
 function draw3DTable(ctx, coords3D, color, centerX, centerY) {
@@ -865,6 +959,9 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     const legWidth = Math.min(width, depth) * 0.1;
 
     ctx.save();
+
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
 
     // 天板を描画
     const topZ = z + height/2 - topThickness/2;
@@ -885,72 +982,112 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
     }));
 
     // 天板の底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: topZ - topThickness/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[2].x, topScreen[2].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板の上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: topZ + topThickness/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[4].x, topScreen[4].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板の左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.lineTo(topScreen[4].x, topScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板の右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.lineTo(topScreen[2].x, topScreen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板の前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[4].x, topScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板の背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[2].x, topScreen[2].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[2].x, topScreen[2].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 4本の脚を描画
     const legPositions = [
@@ -977,67 +1114,111 @@ function draw3DTable(ctx, coords3D, color, centerX, centerY) {
             y: centerY - v.y * view3DState.scale
         }));
 
+        const legCenterZ = (z - height/2 + topZ - topThickness/2) / 2;
+
         // 脚の底面
-        ctx.fillStyle = darkenColor(color, 30);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y, cz: z - height/2,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 30);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[2].x, legScreen[2].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の左面
-        ctx.fillStyle = darkenColor(color, 20);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x - legWidth/2, cy: pos.y, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 20);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.lineTo(legScreen[7].x, legScreen[7].y);
+                ctx.lineTo(legScreen[4].x, legScreen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の右面
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x + legWidth/2, cy: pos.y, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 15);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[5].x, legScreen[5].y);
+                ctx.lineTo(legScreen[6].x, legScreen[6].y);
+                ctx.lineTo(legScreen[2].x, legScreen[2].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の前面
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y - legWidth/2, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 10);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[5].x, legScreen[5].y);
+                ctx.lineTo(legScreen[4].x, legScreen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の背面
-        ctx.fillStyle = darkenColor(color, 25);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[2].x, legScreen[2].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y + legWidth/2, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 25);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[2].x, legScreen[2].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.lineTo(legScreen[7].x, legScreen[7].y);
+                ctx.lineTo(legScreen[6].x, legScreen[6].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, view3DState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
 
 /**
  * 扉の3Dモデルを描画
+ * Painter's Algorithmを使用して、視点からの距離に基づいて面を描画
  * @private
  */
 function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
@@ -1062,73 +1243,122 @@ function draw3DDoor(ctx, coords3D, color, centerX, centerY) {
 
     ctx.save();
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面
-    ctx.fillStyle = lightenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - doorDepth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + doorDepth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, view3DState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
@@ -1143,7 +1373,7 @@ function draw3DWall(ctx, coords3D, color, centerX, centerY) {
 
 /**
  * 直方体（ボックス）を描画
- *
+ * Painter's Algorithmを使用して、視点からの距離に基づいて面を描画
  * @private
  */
 function drawBox(ctx, coords3D, color, centerX, centerY) {
@@ -1169,74 +1399,122 @@ function drawBox(ctx, coords3D, color, centerX, centerY) {
 
     ctx.save();
 
-    // 面を描画（すべての6つの面を描画）
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, view3DState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
@@ -1488,6 +1766,60 @@ function darkenColor(color, percent) {
     const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
     const B = Math.max(0, (num & 0x0000FF) - amt);
     return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+}
+
+/**
+ * 面の中心点の視点からの深度を計算（Painter's Algorithm用）
+ *
+ * 視点の位置は回転角度（rotation）と傾き角度（tilt）から決定されます。
+ * 深度が大きいほど視点から遠い位置にあります。
+ *
+ * @param {number} cx - 面の中心X座標（ワールド座標）
+ * @param {number} cy - 面の中心Y座標（ワールド座標）
+ * @param {number} cz - 面の中心Z座標（ワールド座標）
+ * @param {Object} state - 3Dビュー状態（rotation, tiltを含む）またはプレビュー状態
+ * @returns {number} 視点からの深度
+ *
+ * @private
+ */
+function calculateFaceDepth(cx, cy, cz, state) {
+    // 回転角度とチルト角度をラジアンに変換
+    const rotRad = state.rotation * Math.PI / 180;
+    const tiltRad = state.tilt * Math.PI / 180;
+
+    // 視点の位置を計算（球面座標系）
+    // 距離は十分大きな値（100メートル）とする
+    const viewDistance = 100;
+    const viewX = viewDistance * Math.cos(tiltRad) * Math.sin(rotRad);
+    const viewY = viewDistance * Math.cos(tiltRad) * Math.cos(rotRad);
+    const viewZ = viewDistance * Math.sin(tiltRad);
+
+    // 視点から面の中心までの距離を計算
+    const dx = cx - viewX;
+    const dy = cy - viewY;
+    const dz = cz - viewZ;
+
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/**
+ * 面の配列を深度順にソート（遠い面から近い面へ）
+ *
+ * Painter's Algorithmを実装するために、視点から遠い面を先に描画します。
+ *
+ * @param {Array<Object>} faces - 面の配列。各要素は {cx, cy, cz, draw: function} の形式
+ * @param {Object} state - 3Dビュー状態（rotation, tiltを含む）またはプレビュー状態
+ * @returns {Array<Object>} ソート済みの面の配列
+ *
+ * @private
+ */
+function sortFacesByDepth(faces, state) {
+    return faces.sort((a, b) => {
+        const depthA = calculateFaceDepth(a.cx, a.cy, a.cz, state);
+        const depthB = calculateFaceDepth(b.cx, b.cy, b.cz, state);
+        // 深度が大きい（遠い）方を先に描画
+        return depthB - depthA;
+    });
 }
 
 // ================
@@ -2055,73 +2387,122 @@ function drawPreviewBox(ctx, coords3D, color, centerX, centerY) {
 
     ctx.save();
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, previewState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
@@ -2213,81 +2594,130 @@ function drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection
             drawFront = false; // デフォルトは前面が開く
     }
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 上面（天板）
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
     if (drawLeft) {
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x - width/2, cy: y, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 10);
+                ctx.beginPath();
+                ctx.moveTo(screen[0].x, screen[0].y);
+                ctx.lineTo(screen[3].x, screen[3].y);
+                ctx.lineTo(screen[7].x, screen[7].y);
+                ctx.lineTo(screen[4].x, screen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 右面
     if (drawRight) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.lineTo(screen[2].x, screen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x + width/2, cy: y, cz: z,
+            draw: () => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(screen[1].x, screen[1].y);
+                ctx.lineTo(screen[5].x, screen[5].y);
+                ctx.lineTo(screen[6].x, screen[6].y);
+                ctx.lineTo(screen[2].x, screen[2].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 前面（y-）
     if (drawFront) {
-        ctx.fillStyle = darkenColor(color, 5);
-        ctx.beginPath();
-        ctx.moveTo(screen[0].x, screen[0].y);
-        ctx.lineTo(screen[1].x, screen[1].y);
-        ctx.lineTo(screen[5].x, screen[5].y);
-        ctx.lineTo(screen[4].x, screen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x, cy: y - depth/2, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 5);
+                ctx.beginPath();
+                ctx.moveTo(screen[0].x, screen[0].y);
+                ctx.lineTo(screen[1].x, screen[1].y);
+                ctx.lineTo(screen[5].x, screen[5].y);
+                ctx.lineTo(screen[4].x, screen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
 
     // 背面（y+）
     if (drawBack) {
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(screen[2].x, screen[2].y);
-        ctx.lineTo(screen[3].x, screen[3].y);
-        ctx.lineTo(screen[7].x, screen[7].y);
-        ctx.lineTo(screen[6].x, screen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: x, cy: y + depth/2, cz: z,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 15);
+                ctx.beginPath();
+                ctx.moveTo(screen[2].x, screen[2].y);
+                ctx.lineTo(screen[3].x, screen[3].y);
+                ctx.lineTo(screen[7].x, screen[7].y);
+                ctx.lineTo(screen[6].x, screen[6].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     }
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, previewState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     // 棚板を描画（オプション）
     if (objectProperties && objectProperties.shelfLevels) {
@@ -2353,62 +2783,104 @@ function drawPreviewBox_Hollowed(ctx, coords3D, color, centerX, centerY, frontDi
 
     // 上部は開いているので描画しない
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, previewState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
@@ -2424,6 +2896,9 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     const legHeight = height - topThickness;
 
     ctx.save();
+
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
 
     // 天板を描画
     const topZ = z + height/2 - topThickness/2;
@@ -2444,72 +2919,112 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
     }));
 
     // 天板底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: topZ - topThickness/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[2].x, topScreen[2].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[4].x, topScreen[4].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: topZ + topThickness/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[4].x, topScreen[4].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.lineTo(topScreen[4].x, topScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板右面
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.lineTo(topScreen[2].x, topScreen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.lineTo(topScreen[2].x, topScreen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板前面
-    ctx.fillStyle = darkenColor(color, 5);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[0].x, topScreen[0].y);
-    ctx.lineTo(topScreen[1].x, topScreen[1].y);
-    ctx.lineTo(topScreen[5].x, topScreen[5].y);
-    ctx.lineTo(topScreen[4].x, topScreen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - depth/2, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 5);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[0].x, topScreen[0].y);
+            ctx.lineTo(topScreen[1].x, topScreen[1].y);
+            ctx.lineTo(topScreen[5].x, topScreen[5].y);
+            ctx.lineTo(topScreen[4].x, topScreen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 天板背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(topScreen[2].x, topScreen[2].y);
-    ctx.lineTo(topScreen[3].x, topScreen[3].y);
-    ctx.lineTo(topScreen[7].x, topScreen[7].y);
-    ctx.lineTo(topScreen[6].x, topScreen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + depth/2, cz: topZ,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(topScreen[2].x, topScreen[2].y);
+            ctx.lineTo(topScreen[3].x, topScreen[3].y);
+            ctx.lineTo(topScreen[7].x, topScreen[7].y);
+            ctx.lineTo(topScreen[6].x, topScreen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 4本の脚を描画
     const legPositions = [
@@ -2536,61 +3051,104 @@ function drawPreviewTable(ctx, coords3D, color, centerX, centerY) {
             y: centerY - v.y * previewState.scale
         }));
 
+        const legCenterZ = (z - height/2 + topZ - topThickness/2) / 2;
+
         // 脚の底面
-        ctx.fillStyle = darkenColor(color, 30);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y, cz: z - height/2,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 30);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[2].x, legScreen[2].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の左面
-        ctx.fillStyle = darkenColor(color, 20);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x - legWidth/2, cy: pos.y, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 20);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.lineTo(legScreen[7].x, legScreen[7].y);
+                ctx.lineTo(legScreen[4].x, legScreen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の右面
-        ctx.fillStyle = darkenColor(color, 15);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.lineTo(legScreen[2].x, legScreen[2].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x + legWidth/2, cy: pos.y, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 15);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[5].x, legScreen[5].y);
+                ctx.lineTo(legScreen[6].x, legScreen[6].y);
+                ctx.lineTo(legScreen[2].x, legScreen[2].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の前面
-        ctx.fillStyle = darkenColor(color, 10);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[0].x, legScreen[0].y);
-        ctx.lineTo(legScreen[1].x, legScreen[1].y);
-        ctx.lineTo(legScreen[5].x, legScreen[5].y);
-        ctx.lineTo(legScreen[4].x, legScreen[4].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y - legWidth/2, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 10);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[0].x, legScreen[0].y);
+                ctx.lineTo(legScreen[1].x, legScreen[1].y);
+                ctx.lineTo(legScreen[5].x, legScreen[5].y);
+                ctx.lineTo(legScreen[4].x, legScreen[4].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
 
         // 脚の背面
-        ctx.fillStyle = darkenColor(color, 25);
-        ctx.beginPath();
-        ctx.moveTo(legScreen[2].x, legScreen[2].y);
-        ctx.lineTo(legScreen[3].x, legScreen[3].y);
-        ctx.lineTo(legScreen[7].x, legScreen[7].y);
-        ctx.lineTo(legScreen[6].x, legScreen[6].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        faces.push({
+            cx: pos.x, cy: pos.y + legWidth/2, cz: legCenterZ,
+            draw: () => {
+                ctx.fillStyle = darkenColor(color, 25);
+                ctx.beginPath();
+                ctx.moveTo(legScreen[2].x, legScreen[2].y);
+                ctx.lineTo(legScreen[3].x, legScreen[3].y);
+                ctx.lineTo(legScreen[7].x, legScreen[7].y);
+                ctx.lineTo(legScreen[6].x, legScreen[6].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = darkenColor(color, 20);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
     });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, previewState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
@@ -2622,73 +3180,122 @@ function drawPreviewDoor(ctx, coords3D, color, centerX, centerY) {
 
     ctx.save();
 
+    // すべての面を配列として定義（中心座標と描画関数を含む）
+    const faces = [];
+
     // 底面
-    ctx.fillStyle = darkenColor(color, 30);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = darkenColor(color, 20);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z - height/2,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 30);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y, cz: z + height/2,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 20);
+            ctx.beginPath();
+            ctx.moveTo(screen[4].x, screen[4].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 左面
-    ctx.fillStyle = darkenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x - width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 右面（薄い面）
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x + width/2, cy: y, cz: z,
+        draw: () => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.lineTo(screen[2].x, screen[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 前面（大きい面）
-    ctx.fillStyle = lightenColor(color, 10);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y - doorDepth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = lightenColor(color, 10);
+            ctx.beginPath();
+            ctx.moveTo(screen[0].x, screen[0].y);
+            ctx.lineTo(screen[1].x, screen[1].y);
+            ctx.lineTo(screen[5].x, screen[5].y);
+            ctx.lineTo(screen[4].x, screen[4].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
 
     // 背面
-    ctx.fillStyle = darkenColor(color, 15);
-    ctx.beginPath();
-    ctx.moveTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    faces.push({
+        cx: x, cy: y + doorDepth/2, cz: z,
+        draw: () => {
+            ctx.fillStyle = darkenColor(color, 15);
+            ctx.beginPath();
+            ctx.moveTo(screen[2].x, screen[2].y);
+            ctx.lineTo(screen[3].x, screen[3].y);
+            ctx.lineTo(screen[7].x, screen[7].y);
+            ctx.lineTo(screen[6].x, screen[6].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = darkenColor(color, 20);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+    });
+
+    // Z深度でソート（遠い面から近い面へ）
+    const sortedFaces = sortFacesByDepth(faces, previewState);
+
+    // ソートされた順序で面を描画
+    sortedFaces.forEach(face => face.draw());
 
     ctx.restore();
 }
