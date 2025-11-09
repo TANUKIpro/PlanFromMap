@@ -1077,38 +1077,14 @@ function drawCatalogPreviewStandardBox(ctx, coords3D, color, centerX, centerY) {
     ctx.strokeStyle = '#2d3748';
     ctx.lineWidth = 1;
 
-    // 上面
-    ctx.fillStyle = lightenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // 遠い面から順に塗りつぶす
+    drawCatalogFace(ctx, screen, [3, 2, 6, 7], darkenColor(color, 35));
+    drawCatalogFace(ctx, screen, [0, 1, 2, 3], darkenColor(color, 45));
 
-    // 右側面
-    ctx.fillStyle = darkenColor(color, 20);
-    ctx.beginPath();
-    ctx.moveTo(screen[1].x, screen[1].y);
-    ctx.lineTo(screen[2].x, screen[2].y);
-    ctx.lineTo(screen[6].x, screen[6].y);
-    ctx.lineTo(screen[5].x, screen[5].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 左側面
-    ctx.fillStyle = darkenColor(color, 40);
-    ctx.beginPath();
-    ctx.moveTo(screen[0].x, screen[0].y);
-    ctx.lineTo(screen[4].x, screen[4].y);
-    ctx.lineTo(screen[7].x, screen[7].y);
-    ctx.lineTo(screen[3].x, screen[3].y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawCatalogFace(ctx, screen, [4, 5, 6, 7], lightenColor(color, 20));
+    drawCatalogFace(ctx, screen, [0, 3, 7, 4], darkenColor(color, 40));
+    drawCatalogFace(ctx, screen, [1, 2, 6, 5], darkenColor(color, 20));
+    drawCatalogFace(ctx, screen, [0, 1, 5, 4], darkenColor(color, 15));
 
     ctx.restore();
 }
@@ -1224,6 +1200,19 @@ function drawCatalogPreviewFrontDirection(ctx, coords3D, frontDirection, centerX
     ctx.fill();
 
     ctx.restore();
+}
+
+function drawCatalogFace(ctx, screenPoints, indices, fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    ctx.moveTo(screenPoints[indices[0]].x, screenPoints[indices[0]].y);
+    for (let i = 1; i < indices.length; i++) {
+        const point = screenPoints[indices[i]];
+        ctx.lineTo(point.x, point.y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 }
 
 /**
