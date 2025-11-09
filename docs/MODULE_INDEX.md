@@ -6,7 +6,7 @@
 apps/frontend/static/
 ├── index.html                      # メインHTML (184行)
 ├── index.html.backup               # 元のバックアップ (3,238行)
-├── styles/                         # CSSモジュール (8ファイル)
+├── styles/                         # CSSモジュール (10ファイル)
 │   ├── base.css                   # 23行 - リセット、基本スタイル
 │   ├── layout.css                 # 40行 - レイアウト
 │   ├── components.css             # 123行 - 共通コンポーネント
@@ -17,14 +17,14 @@ apps/frontend/static/
 │   ├── tabs.css                   # 128行 - タブUI
 │   ├── object-property-panel.css  # 300行 - オブジェクトプロパティパネル
 │   └── view-3d.css                # 80行 - 3Dビュー
-├── js/                            # JavaScriptモジュール (17ファイル)
+├── js/                            # JavaScriptモジュール (31ファイル)
 │   ├── main.js                    # 98行 - エントリーポイント
 │   ├── config.js                  # 150行 - 設定・定数
 │   ├── state/
 │   │   └── mapState.js            # 250行 - 状態管理
 │   ├── models/                    # データモデル (1ファイル)
 │   │   └── objectTypes.js         # 500行 - オブジェクトタイプ定義
-│   ├── modules/                   # コア機能 (14ファイル)
+│   ├── modules/                   # コア機能 (19ファイル)
 │   │   ├── layerManager.js        # 488行 - レイヤー管理
 │   │   ├── historyManager.js      # 175行 - アンドゥ/リドゥ
 │   │   ├── viewportControl.js     # 117行 - ズーム/パン
@@ -36,19 +36,31 @@ apps/frontend/static/
 │   │   ├── profileManager.js      # 400行 - プロファイル管理
 │   │   ├── rectangleManager.js    # 350行 - 四角形管理
 │   │   ├── rectangleRenderer.js   # 520行 - 四角形2D描画
+│   │   ├── rectangleEditCore.js   # 783行 - 四角形編集ロジック（当たり判定、マウスイベント）
+│   │   ├── rectangleMeasure.js    # 238行 - 測量モード専用UI・ロジック
+│   │   ├── rectangleInteraction.js # 44行 - 四角形インタラクション（再エクスポート）
 │   │   ├── objectPropertyManager.js # 350行 - オブジェクトプロパティ管理
-│   │   └── threeDRenderer.js      # 1250行 - 3D描画（等角投影、カテゴリ別モデル）
-│   ├── utils/                     # ユーティリティ (4ファイル)
+│   │   ├── threeDModels.js        # 1944行 - 3Dモデル描画ロジック
+│   │   ├── threeDPreview.js       # 428行 - プロパティパネル用3Dプレビュー
+│   │   ├── threeDViewCore.js      # 1177行 - メインビュー管理、イベント処理
+│   │   └── threeDRenderer.js      # 66行 - 3D描画（再エクスポート）
+│   ├── utils/                     # ユーティリティ (5ファイル)
 │   │   ├── coordinates.js         # 133行 - 座標変換
 │   │   ├── formatting.js          # 94行 - フォーマット
 │   │   ├── canvas.js              # 54行 - Canvas操作
-│   │   └── imageProcessing.js     # 190行 - 画像処理
-│   └── ui/                        # UI制御 (5ファイル)
+│   │   ├── imageProcessing.js     # 190行 - 画像処理
+│   │   └── threeDUtils.js         # 188行 - 3D描画用ユーティリティ
+│   └── ui/                        # UI制御 (9ファイル)
 │       ├── tabs.js                # 48行 - タブ切り替え
 │       ├── objectPropertyPanel.js # 600行 - オブジェクトプロパティパネル
 │       ├── controls.js            # 163行 - UIコントロール
 │       ├── toast.js               # 143行 - トーストメッセージ
-│       └── events.js              # 404行 - イベント管理
+│       ├── events.js              # 404行 - イベント管理
+│       ├── viewCube.js            # 336行 - ビューキューブ（3D回転UI）
+│       ├── objectCatalogList.js   # 225行 - カタログリスト表示・フィルタ
+│       ├── objectCatalogEditor.js # 365行 - カタログ詳細編集パネル
+│       ├── objectCatalogPreview.js # 600行 - カタログ3Dプレビュー
+│       └── objectCatalog.js       # 65行 - オブジェクトカタログ（再エクスポート）
 └── assets/
     └── icons/                     # アイコン
 ```
@@ -270,38 +282,127 @@ apps/frontend/static/
 
 **依存**: rectangleManager.js, objectTypes.js, historyManager.js
 
-### modules/threeDRenderer.js (1250行)
-**責務**: 3D描画エンジン（等角投影、カテゴリ別モデル）
+### modules/rectangleEditCore.js (783行)
+**責務**: 四角形の当たり判定、マウスイベント、編集操作
+
+**主要関数**:
+- `hitTestRectangle(x, y, rectangle)` - 四角形の当たり判定
+- `handleRectangleMouseDown(e)` - マウス押下時の処理
+- `handleRectangleMouseMove(e)` - マウス移動時の処理
+- `handleRectangleMouseUp(e)` - マウスリリース時の処理
+- `handleResize(dx, dy, handle)` - リサイズ操作
+- `handleMove(dx, dy)` - 移動操作
+- `handleRotate(dx, dy)` - 回転操作
+
+**編集モード**:
+- 移動: 四角形本体をドラッグ
+- リサイズ: 8方向のハンドルをドラッグ
+- 回転: 回転ハンドルをドラッグ
+
+**依存**: rectangleManager.js, mapState.js, coordinates.js
+
+### modules/rectangleMeasure.js (238行)
+**責務**: 測量モード専用のUI・ロジック
+
+**主要関数**:
+- `promptEdgeLength(rectangleId, edge)` - エッジ長の入力を促す
+- `showEdgeLengthInputUI(rectangleId, edge, canvasX, canvasY)` - 長さ入力UIの表示
+- `getEdgeMidpoint(rectangle, edge)` - エッジの中点を取得
+
+**測量機能**:
+- エッジクリックで長さ入力UIを表示
+- 入力値に基づいて四角形のサイズを自動調整
+- スケール計算による実世界サイズの設定
+
+**依存**: rectangleManager.js, config.js, coordinates.js
+
+### modules/rectangleInteraction.js (44行)
+**責務**: 後方互換性のための再エクスポート
+
+**再エクスポート**:
+- rectangleEditCore.js からすべての編集関数
+- rectangleMeasure.js からすべての測量関数
+
+**依存**: rectangleEditCore.js, rectangleMeasure.js
+
+### modules/threeDModels.js (1944行)
+**責務**: 3Dモデル描画ロジック（メインとプレビュー両方）
+
+**カテゴリ別3Dモデル描画（メインビュー）**:
+- `draw3DShelf(ctx, obj, isoFunc, rotation, zoom)` - 棚（前面開口、棚板表示）
+- `draw3DBox(ctx, obj, isoFunc, rotation, zoom)` - 箱（上部開放）
+- `draw3DTable(ctx, obj, isoFunc, rotation, zoom)` - テーブル（天板+脚）
+- `draw3DDoor(ctx, obj, isoFunc, rotation, zoom)` - 扉（薄型）
+- `draw3DWall(ctx, obj, isoFunc, rotation, zoom)` - 壁（標準）
+- `drawBox(ctx, x, y, z, w, d, h, color, isoFunc, rotation, zoom)` - 汎用ボックス
+
+**プレビュー用3Dモデル描画**:
+- `drawPreviewShelf()`, `drawPreviewBox()`, `drawPreviewTable()`, `drawPreviewDoor()`, `drawPreviewWall()`
+- 各カテゴリのプレビュー版関数
+
+**特徴**:
+- パラメータ駆動型のモデル生成（段数、仕切り数、脚の数など）
+- 奥行きソートによる正しい描画順序
+- 色の明暗処理による立体感の表現
+
+**依存**: threeDUtils.js
+
+### modules/threeDPreview.js (428行)
+**責務**: プロパティパネル用3Dプレビュー管理
+
+**主要関数**:
+- `initializePropertyPreview()` - プロパティパネル内プレビュー初期化
+- `renderPropertyPreview(rectangleId)` - プレビュー描画
+- `getPreviewState()` - プレビュー状態の取得
+- `drawPreviewGrid(ctx, gridSize)` - グリッド描画
+- `drawPreviewFrontDirection(ctx, rectangle)` - 前面方向インジケーター描画
+
+**インタラクション**:
+- ホイールでズーム（回転固定）
+- リアルタイムプロパティ反映
+
+**依存**: threeDModels.js, threeDUtils.js, mapState.js
+
+### modules/threeDViewCore.js (1177行)
+**責務**: メインビューの管理、イベント処理、床面描画
 
 **主要関数**:
 - `initialize3DView()` - 3Dビューの初期化
-- `toggle3DView(visible)` - 3Dビュー表示切替
 - `render3DScene()` - 3Dシーン全体の描画
-- `initializePropertyPreview()` - プロパティパネル内プレビュー初期化
-- `renderPropertyPreview(rectangleId)` - プレビュー描画
-
-**カテゴリ別3Dモデル描画**:
-- `draw3DShelf()` / `drawPreviewShelf()` - 棚（前面開口、棚板表示）
-- `draw3DBox_Hollowed()` / `drawPreviewBox_Hollowed()` - 箱（上部開放）
-- `draw3DTable()` / `drawPreviewTable()` - テーブル（天板+脚）
-- `draw3DDoor()` / `drawPreviewDoor()` - 扉（薄型）
-- `draw3DWall()` / `drawPreviewWall()` - 壁（標準）
-
-**等角投影**:
-- `worldToIso(x, y, z)` - 3D座標→2D画面座標変換（X軸反転により2Dマップと整合）
-- `worldToPreviewIso(x, y, z)` - プレビュー用投影変換（同様の座標系）
+- `update3DObject(rectangleId)` - 特定オブジェクトの更新
+- `resize3DView()` - ビューのリサイズ
+- `set3DViewRotation(angle)` - 回転角度の設定
+- `reset3DView()` - ビューのリセット
+- `select3DObject(rectangleId)` - オブジェクトの選択
+- `deselect3DObject()` - 選択解除
+- `goto2DMap()` - 2Dマップへ遷移
+- `gotoObjectCatalog()` - オブジェクトカタログへ遷移
 
 **インタラクション**:
-- メインビュー: マウスドラッグで回転、ホイールでズーム
-- カタログプレビュー: マウスドラッグで回転、ホイールでズーム
-- プロパティプレビュー: ホイールでズームのみ（回転固定）
-- 全ビュー共通: 右方向へドラッグするとシーンが右に回転（直感的操作）
+- マウスドラッグで回転
+- ホイールでズーム
+- クリックでオブジェクト選択
+- 右方向へドラッグでシーンが右回転（直感的操作）
+
+**床面描画**:
+- グリッド描画
+- 原点マーカー
+- 前面方向インジケーター
 
 **状態管理**:
-- `view3DState`: メイン3Dビュー状態
-- `previewState`: プロパティパネルプレビュー状態
+- `view3DState`: メイン3Dビュー状態（回転、ズーム、選択状態）
 
-**依存**: mapState.js, objectPropertyManager.js, rectangleManager.js, objectTypes.js
+**依存**: threeDModels.js, threeDUtils.js, mapState.js, rectangleManager.js, objectPropertyManager.js, viewCube.js
+
+### modules/threeDRenderer.js (66行)
+**責務**: 後方互換性のための再エクスポート
+
+**再エクスポート**:
+- threeDViewCore.js からすべてのメインビュー関数
+- threeDPreview.js からすべてのプレビュー関数
+- threeDModels.js からすべてのモデル描画関数
+
+**依存**: threeDViewCore.js, threeDPreview.js, threeDModels.js
 
 ## ユーティリティ層
 
@@ -336,6 +437,23 @@ apps/frontend/static/
 - `parsePGM(uint8Array)` - PGMフォーマットパース
 - `pgmToImage(pgmData)` - PGMデータ→Image変換
 - `hexToRgb(hex)` - HEX→RGB変換
+
+**依存**: なし
+
+### utils/threeDUtils.js (188行)
+**責務**: 3D描画用ユーティリティ関数
+
+**主要関数**:
+- `worldToIso(x, y, z)` - ワールド座標→等角投影座標変換（メインビュー用）
+- `worldToPreviewIso(x, y, z)` - ワールド座標→等角投影座標変換（プレビュー用）
+- `lightenColor(color, factor)` - 色を明るくする
+- `darkenColor(color, factor)` - 色を暗くする
+- `sortFacesByDepth(faces)` - 面を奥行き順にソート（描画順序決定）
+- `applyRotation(x, y, z, rotation)` - 回転変換を適用
+
+**等角投影座標系**:
+- X軸反転により2Dマップとの整合性を維持
+- 右方向ドラッグで右回転する直感的な回転操作
 
 **依存**: なし
 
@@ -413,6 +531,84 @@ showError('エラーが発生しました', 2000);
 
 **依存**: mapState.js, objectPropertyManager.js, rectangleManager.js, objectTypes.js, toast.js, threeDRenderer.js
 
+### ui/viewCube.js (336行)
+**責務**: ビューキューブ（3D回転UI）
+
+**主要関数**:
+- `initializeViewCube(container, onRotationChange)` - ビューキューブの初期化
+- `updateViewCube(rotation)` - 回転状態の更新
+- `drawViewCube(ctx, rotation)` - ビューキューブの描画
+- `handleViewCubeClick(x, y)` - クリック処理（面選択）
+
+**機能**:
+- 3Dビューの現在の回転状態を視覚的に表示
+- 面をクリックして視点を即座に変更
+- 標準視点への素早いアクセス（正面、背面、左、右、上、下）
+
+**依存**: なし
+
+### ui/objectCatalogList.js (225行)
+**責務**: カタログリストの表示・フィルタ・選択
+
+**主要関数**:
+- `initializeObjectCatalog()` - オブジェクトカタログの初期化
+- `updateObjectCatalog(filterText)` - カタログリストの更新
+- `createCatalogItem(rectangle)` - カタログアイテムの生成
+- `selectCatalogItem(rectangleId)` - カタログアイテムの選択
+
+**機能**:
+- オブジェクトタイプ別のフィルタリング
+- テキスト検索
+- サムネイルプレビュー
+- 選択状態の視覚的フィードバック
+
+**依存**: rectangleManager.js, objectTypes.js
+
+### ui/objectCatalogEditor.js (365行)
+**責務**: 詳細編集パネル、フォーム、保存
+
+**主要関数**:
+- `showCatalogDetail(rectangleId)` - 詳細パネルの表示
+- `createFormInput(field, currentValue, rectangle)` - フォーム入力の生成
+- `saveCatalogEdit(rectangleId)` - 編集内容の保存
+- `switchCatalogTab(tabName)` - タブ切り替え（プロパティ/3Dプレビュー）
+
+**機能**:
+- カテゴリ別の動的フォーム生成
+- リアルタイムバリデーション
+- 3Dプレビューとの連携
+- 編集履歴の管理
+
+**依存**: rectangleManager.js, objectTypes.js, objectPropertyManager.js
+
+### ui/objectCatalogPreview.js (600行)
+**責務**: 3Dプレビュー（リサイザー含む）
+
+**主要関数**:
+- `updatePreview(rectangleId)` - 3Dプレビューの更新
+- `initializeCatalogResizer()` - リサイザーの初期化
+- `handlePreviewMouseDown(e)` - マウス押下（回転開始）
+- `handlePreviewMouseMove(e)` - マウス移動（回転中）
+- `handlePreviewWheel(e)` - ホイール（ズーム）
+
+**機能**:
+- インタラクティブな3Dプレビュー（マウスドラッグで回転）
+- リサイザーによるプレビューサイズ調整
+- ズーム機能
+- リアルタイムプロパティ反映
+
+**依存**: threeDModels.js, threeDUtils.js, viewCube.js, rectangleManager.js
+
+### ui/objectCatalog.js (65行)
+**責務**: 後方互換性のための再エクスポート
+
+**再エクスポート**:
+- objectCatalogList.js からすべてのリスト関数
+- objectCatalogEditor.js からすべての編集関数
+- objectCatalogPreview.js からすべてのプレビュー関数
+
+**依存**: objectCatalogList.js, objectCatalogEditor.js, objectCatalogPreview.js
+
 ### ui/events.js (404行)
 **責務**: イベントリスナーの統合管理
 
@@ -453,6 +649,66 @@ showError('エラーが発生しました', 2000);
 | metadata-overlay.css | 188行 | メタデータオーバーレイ専用スタイル |
 | tabs.css | 128行 | タブUI専用スタイル |
 
+## リファクタリングの成果
+
+### 2024年11月 - 3Dレンダリングとインタラクションの分離
+
+**目的**: 1250行の `threeDRenderer.js` を責務ごとに分離し、保守性を向上
+
+**分離結果**:
+- **utils/threeDUtils.js (188行)**: 座標変換、色処理などの純粋関数
+- **modules/threeDModels.js (1944行)**: カテゴリ別3Dモデル描画ロジック
+- **modules/threeDPreview.js (428行)**: プロパティパネル用プレビュー管理
+- **modules/threeDViewCore.js (1177行)**: メインビュー管理とイベント処理
+- **modules/threeDRenderer.js (66行)**: 後方互換性のための再エクスポート層
+
+**効果**:
+- 責務の明確化により、特定の機能（例: プレビュー機能のみ）の修正が容易に
+- ユーティリティ関数の再利用性向上
+- テストの容易性向上（純粋関数の分離）
+
+### 2024年11月 - 四角形インタラクションの分離
+
+**目的**: 四角形編集機能を責務ごとに分離
+
+**分離結果**:
+- **modules/rectangleEditCore.js (783行)**: 当たり判定、マウスイベント、編集操作
+- **modules/rectangleMeasure.js (238行)**: 測量モード専用UI・ロジック
+- **modules/rectangleInteraction.js (44行)**: 後方互換性のための再エクスポート層
+
+**効果**:
+- 編集機能と測量機能の分離により、各機能の独立した修正が可能
+- 測量UIの改善が他の編集機能に影響しない
+
+### 2024年11月 - オブジェクトカタログUIの分離
+
+**目的**: オブジェクトカタログ機能を責務ごとに分離
+
+**分離結果**:
+- **ui/objectCatalogList.js (225行)**: リスト表示、フィルタ、選択
+- **ui/objectCatalogEditor.js (365行)**: 詳細編集パネル、フォーム
+- **ui/objectCatalogPreview.js (600行)**: 3Dプレビュー、リサイザー
+- **ui/objectCatalog.js (65行)**: 後方互換性のための再エクスポート層
+- **ui/viewCube.js (336行)**: ビューキューブUI（3D回転コントロール）
+
+**効果**:
+- リスト、編集、プレビューの独立した保守
+- viewCube.jsの独立により、他の3Dビューでも再利用可能
+
+### モジュール数の推移
+
+| 時期 | ファイル数 | 平均行数 | 最大行数 |
+|------|-----------|---------|---------|
+| リファクタリング前 (index.html) | 1 | 3,238行 | 3,238行 |
+| 初期分離後 | 27 | 約200行 | 1,250行 (threeDRenderer.js) |
+| 2024年11月 | 31 | 約180行 | 1,944行 (threeDModels.js) |
+
+### 今後の方針
+
+- **再エクスポート層の活用**: 後方互換性を保ちつつ、段階的なリファクタリングを継続
+- **pure function の分離**: 副作用のない関数を utils/ に集約し、テスト容易性を向上
+- **UI層の更なる分離**: 必要に応じて大きなUIモジュールを分割
+
 ## トークン消費の最適化
 
 ### シナリオ例: レイヤー機能の修正
@@ -484,6 +740,22 @@ After (リファクタリング後):
 - js/utils/coordinates.js (1,100トークン)
 - js/state/mapState.js (1,500トークン)
 合計: 2,600トークン (削減率: 92%)
+```
+
+### シナリオ例: 3Dプレビュー機能の修正
+
+Before (リファクタリング前):
+```
+必要なファイル: threeDRenderer.js (約10,000トークン)
+```
+
+After (2024年11月リファクタリング後):
+```
+必要なファイル:
+- js/modules/threeDPreview.js (3,500トークン)
+- js/utils/threeDUtils.js (1,500トークン)
+- js/state/mapState.js (1,500トークン)
+合計: 6,500トークン (削減率: 35%)
 ```
 
 ## 関連ドキュメント
