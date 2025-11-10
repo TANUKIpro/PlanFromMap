@@ -202,3 +202,31 @@ export const UI_DEFAULTS = {
     /** 利用可能なタブ */
     AVAILABLE_TABS: ['mapViewer', 'stats', 'operations', 'mapql']
 };
+
+// ================
+// 3Dビュー設定
+// ================
+
+/**
+ * 3Dビュー関連のデフォルト設定
+ * @type {Object}
+ */
+export const VIEW_3D_DEFAULTS = {
+    /** 初期スケール（ピクセル/メートル） */
+    INITIAL_SCALE: 100.0,
+
+    /** 最小スケール（ピクセル/メートル） */
+    MIN_SCALE: 5.0,
+
+    /** 最大スケール（ピクセル/メートル） */
+    MAX_SCALE: 500.0,
+
+    /** 初期回転角度（度） */
+    INITIAL_ROTATION: 45,
+
+    /** 初期傾き角度（度） */
+    INITIAL_TILT: 30,
+
+    /** ズーム倍率 */
+    ZOOM_FACTOR: 1.1
+};
