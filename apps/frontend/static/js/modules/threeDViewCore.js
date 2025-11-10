@@ -5,6 +5,7 @@
  * Canvas 2Dコンテキストを使用して、2Dマップから3D構造を生成・描画します。
  * 等角投影（Isometric Projection）を使用して、2Dで3Dっぽく見せます。
  *
+ * @requires ../config.js - アプリケーション設定
  * @requires ../state/mapState.js - アプリケーション状態管理
  * @requires ../modules/rectangleManager.js - 四角形管理
  * @requires ../modules/objectPropertyManager.js - プロパティ管理
@@ -28,6 +29,7 @@
  * @exports setMapBounds - マップ境界情報設定
  */
 
+import { VIEW_3D_DEFAULTS } from '../config.js';
 import { mapState } from '../state/mapState.js';
 import { getAllRectangles, getRectangleById, getRectangleLayer } from '../modules/rectangleManager.js';
 import { get3DCoordinates } from '../modules/objectPropertyManager.js';
@@ -52,18 +54,19 @@ const view3DState = {
     canvas: null,
     ctx: null,
     isVisible: false,
-    rotation: 45,           // 回転角度（度）
-    tilt: 30,              // 傾き角度（度）
-    scale: 20,             // スケール（ピクセル/メートル）
-    offsetX: 0,            // X方向オフセット
-    offsetY: 0,            // Y方向オフセット
+    rotation: VIEW_3D_DEFAULTS.INITIAL_ROTATION,     // 回転角度（度）
+    tilt: VIEW_3D_DEFAULTS.INITIAL_TILT,             // 傾き角度（度）
+    scale: VIEW_3D_DEFAULTS.INITIAL_SCALE,           // スケール（ピクセル/メートル）
+    offsetX: 0,                                       // X方向オフセット
+    offsetY: 0,                                       // Y方向オフセット
     isDragging: false,
     lastMouseX: 0,
     lastMouseY: 0,
-    mouseDownX: 0,         // マウスダウン時のX座標（クリック判定用）
-    mouseDownY: 0,         // マウスダウン時のY座標（クリック判定用）
-    selectedObjectId: null, // 選択されたオブジェクトのID
-    mapBounds: null        // マップの有効領域 {minX, minY, maxX, maxY, centerX, centerY}
+    mouseDownX: 0,                                    // マウスダウン時のX座標（クリック判定用）
+    mouseDownY: 0,                                    // マウスダウン時のY座標（クリック判定用）
+    selectedObjectId: null,                           // 選択されたオブジェクトのID
+    mapBounds: null,                                  // マップの有効領域 {minX, minY, maxX, maxY, centerX, centerY}
+    isMapCentered: false                              // マップの中央配置が完了したかどうか
 };
 
 // ================
@@ -210,6 +213,51 @@ export function render3DScene() {
 }
 
 /**
+ * マップの重心を画面中央に配置する
+ *
+ * @private
+ * @param {Object} bounds - マップの有効領域
+ * @param {HTMLImageElement} image - マップ画像
+ * @param {number} resolution - マップの解像度（m/pixel）
+ */
+function centerMapToScreen(bounds, image, resolution) {
+    // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
+    const originX = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[0] : 0;
+    const originY = Array.isArray(mapState.metadata?.origin) ? mapState.metadata.origin[1] : 0;
+
+    // 有効領域の実世界座標を計算
+    // ROSマップは左下が原点、画像は左上が原点なので Y 軸を反転
+    const boundsMinX = originX + bounds.minX * resolution;
+    const boundsMinY = originY + (image.height - bounds.maxY) * resolution;
+    const boundsMaxX = originX + bounds.maxX * resolution;
+    const boundsMaxY = originY + (image.height - bounds.minY) * resolution;
+
+    // 有効領域の中心（重心）を計算（実世界座標）
+    const centerWorldX = (boundsMinX + boundsMaxX) / 2;
+    const centerWorldY = (boundsMinY + boundsMaxY) / 2;
+    const centerWorldZ = 0; // 床面
+
+    // worldToIsoラッパー
+    const isoTransform = (x, y, z) => worldToIso(x, y, z, view3DState, mapState);
+
+    // 重心を等角投影で変換
+    const centerIso = isoTransform(centerWorldX, centerWorldY, centerWorldZ);
+
+    // 重心が画面中央に来るようにオフセットを調整
+    // centerX = width/2 + offsetX, centerY = height/2 + offsetY なので
+    // 重心のスクリーン座標が (width/2, height/2) になるようにする
+    // スクリーン座標 = centerX + centerIso.x * scale, centerY - centerIso.y * scale
+    // これが (width/2, height/2) になるべきなので
+    // width/2 + offsetX + centerIso.x * scale = width/2
+    // height/2 + offsetY - centerIso.y * scale = height/2
+    // よって offsetX = -centerIso.x * scale, offsetY = centerIso.y * scale
+    view3DState.offsetX = -centerIso.x * view3DState.scale;
+    view3DState.offsetY = centerIso.y * view3DState.scale;
+
+    console.log(`マップ重心を画面中央に配置: 実世界座標(${centerWorldX.toFixed(2)}, ${centerWorldY.toFixed(2)}), オフセット(${view3DState.offsetX.toFixed(2)}, ${view3DState.offsetY.toFixed(2)})`);
+}
+
+/**
  * マップ画像を床面に描画（テクスチャ）
  * 有効領域のみを描画し、カメラ中心はマップの重心
  *
@@ -232,6 +280,12 @@ function drawMapTexture(ctx, centerX, centerY) {
     if (!view3DState.mapBounds) return;
 
     const bounds = view3DState.mapBounds;
+
+    // 初回のみマップの重心を画面中央に配置する
+    if (!view3DState.isMapCentered) {
+        centerMapToScreen(bounds, image, resolution);
+        view3DState.isMapCentered = true;
+    }
 
     // マップの原点を取得（ROSのマップ原点: マップ左下の実世界座標）
     // metadata.originは配列形式 [x, y, theta]
@@ -915,9 +969,9 @@ function handle3DMouseUp(event) {
 function handle3DWheel(event) {
     event.preventDefault();
 
-    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    const delta = event.deltaY > 0 ? (1 / VIEW_3D_DEFAULTS.ZOOM_FACTOR) : VIEW_3D_DEFAULTS.ZOOM_FACTOR;
     view3DState.scale *= delta;
-    view3DState.scale = Math.max(5, Math.min(100, view3DState.scale));
+    view3DState.scale = Math.max(VIEW_3D_DEFAULTS.MIN_SCALE, Math.min(VIEW_3D_DEFAULTS.MAX_SCALE, view3DState.scale));
 
     render3DScene();
 }
@@ -1142,12 +1196,13 @@ export function set3DViewRotation(rotation, tilt) {
  * @returns {void}
  */
 export function reset3DView() {
-    view3DState.rotation = 45;
-    view3DState.tilt = 30;
-    view3DState.scale = 20;
+    view3DState.rotation = VIEW_3D_DEFAULTS.INITIAL_ROTATION;
+    view3DState.tilt = VIEW_3D_DEFAULTS.INITIAL_TILT;
+    view3DState.scale = VIEW_3D_DEFAULTS.INITIAL_SCALE;
     view3DState.offsetX = 0;
     view3DState.offsetY = 0;
     view3DState.mapBounds = null; // マップ境界をリセット
+    view3DState.isMapCentered = false; // 中央配置フラグをリセット
 
     // キャッシュをクリア
     if (drawMapTexture._imageData) {
