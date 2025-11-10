@@ -36,7 +36,8 @@ export {
     renderPropertyPreview,
     getPreviewState,
     drawPreviewGrid,
-    drawPreviewFrontDirection
+    drawPreviewFrontDirection,
+    drawPreviewModel
 } from './threeDPreview.js';
 
 // ユーティリティ関数（threeDUtils.js）

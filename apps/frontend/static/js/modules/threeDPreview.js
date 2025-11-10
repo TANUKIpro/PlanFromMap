@@ -17,6 +17,7 @@
  * @exports getPreviewState - プレビュー状態取得
  * @exports drawPreviewGrid - プレビュー用グリッド描画
  * @exports drawPreviewFrontDirection - プレビュー用前面方向矢印描画
+ * @exports drawPreviewModel - プレビュー用モデル描画
  */
 
 import { mapState } from '../state/mapState.js';
@@ -252,7 +253,7 @@ export function drawPreviewGrid(ctx, centerX, centerY) {
  * @param {string} frontDirection - 前面方向
  * @param {Object} objectProperties - オブジェクトプロパティ
  */
-function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
+export function drawPreviewModel(ctx, coords3D, color, centerX, centerY, objectType, frontDirection, objectProperties) {
     switch (objectType) {
         case OBJECT_TYPES.SHELF:
             drawPreviewShelf(ctx, coords3D, color, centerX, centerY, frontDirection, objectProperties, worldToPreviewIso, previewState);
