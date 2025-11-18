@@ -372,12 +372,23 @@
 
 .catalog-preview-viewcube {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 120px;
-    height: 120px;
+    top: 8px;
+    right: 8px;
+    width: 100px;
+    height: 100px;
     cursor: pointer;
     pointer-events: all;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(203, 213, 224, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+}
+
+.catalog-preview-viewcube:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: rgba(102, 126, 234, 0.4);
 }
 
 .catalog-preview-empty {
